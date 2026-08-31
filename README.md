@@ -46,7 +46,7 @@ Upstream reference implementation already uses EUPL-1.2 license, hence we are op
 
 ## Contributing and issues
 
-Issue tracking and pull requests are **not** enabled on this mirror right now, but will be enabled in September. For more details, see
+Issue tracking and pull requests are **not** enabled on this mirror right now. Issue tracking is planned to be enabled in September, 2026. For more details, see
 [CONTRIBUTING.md](CONTRIBUTING.md). For security reports, see
 [SECURITY.md](SECURITY.md).
 
