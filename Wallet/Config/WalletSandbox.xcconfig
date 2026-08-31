@@ -1,0 +1,33 @@
+// PLACEHOLDER -- published by oss-sync/extra/, not the file used to build.
+//
+// The real WalletSandbox.xcconfig is denylisted: its values are deployment
+// endpoints, telemetry service names and TestFlight app ids. The KEYS are
+// published so a reader can see which settings exist and how the variants
+// differ in shape; the values that identify infrastructure are replaced.
+//
+// Values kept real below are structural and identify nothing: BUILD_VARIANT,
+// CORE_USER_AUTH, BATCH_COUNT, APS_ENVIRONMENT, the redirect URI (derived from
+// the published bundle id) and BURGERAMT_SERVICE_LINK (a public bund.de
+// service). oss-sync/check-placeholders.sh fails the sync if this file's key
+// set stops matching the real one, so it cannot silently rot.
+
+// Include the version config
+#include "version.xcconfig"
+
+VCI_ISSUER_URL = PLACEHOLDER_VCI_ISSUER_URL
+PID_ISSUER_NAME = PLACEHOLDER_PID_ISSUER_NAME
+VCI_REDIRECT_URI = org.sprind.wallet.sandbox:/authorization
+CORE_USER_AUTH = false
+BUILD_VARIANT = SANDBOX
+WALLET_HOST_URL = PLACEHOLDER_WALLET_HOST_URL
+BURGERAMT_SERVICE_LINK = https:/$()/servicesuche.bund.de
+PRIVACY_POLICY_LINK = PLACEHOLDER_PRIVACY_POLICY_LINK
+WALLET_OTLP_HOST_URL = PLACEHOLDER_WALLET_OTLP_HOST_URL
+WALLET_OTLP_SERVICE_NAME = PLACEHOLDER_WALLET_OTLP_SERVICE_NAME
+FEATURE_FLAG_BASE_URL = PLACEHOLDER_FEATURE_FLAG_BASE_URL
+APP_UPDATE_URL = PLACEHOLDER_APP_UPDATE_URL
+BATCH_COUNT = 10
+PID_MSO_MDOC_CONFIG_ID = PLACEHOLDER_PID_MSO_MDOC_CONFIG_ID
+PID_SD_JWT_CONFIG_ID = PLACEHOLDER_PID_SD_JWT_CONFIG_ID
+APS_ENVIRONMENT = development
+APS_ENVIRONMENT[config=SandboxRelease] = production

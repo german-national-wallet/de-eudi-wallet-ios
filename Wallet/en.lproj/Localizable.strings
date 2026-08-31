@@ -1,0 +1,9 @@
+/* Push notification banner strings.
+ *
+ * These live in the MAIN bundle, not logic-resources' Localizable.xcstrings,
+ * because iOS resolves aps.alert.title-loc-key / loc-key against the main
+ * bundle only. Keep the values in sync with global.error.Wallet_revoked and
+ * global.error.Wallet_revoked_body in the catalogue. */
+
+"user_revoke_title" = "Your EUDI Wallet has been permanently locked";
+"user_revoke_body" = "Your wallet was locked to protect you from an attack or in case you lost your device.";

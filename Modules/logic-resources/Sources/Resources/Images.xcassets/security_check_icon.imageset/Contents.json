@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "pepicons-pencil_smartphone-notch.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

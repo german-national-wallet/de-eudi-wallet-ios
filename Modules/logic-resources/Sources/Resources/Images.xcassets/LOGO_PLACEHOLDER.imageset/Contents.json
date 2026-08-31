@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "LOGO_PLACEHOLDER.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

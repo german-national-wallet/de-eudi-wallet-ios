@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "eye_icon_off.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

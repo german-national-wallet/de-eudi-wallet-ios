@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "building_blocks.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

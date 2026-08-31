@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Restricts the TLS 1.2 ClientHello to NIAP FCP v2.1 algorithms (drops rsa_pkcs1_sha1 and non-AEAD suites) on iOS 26.4+ -->
+		<key>NSRequiresNIAPTLSPackageVersion</key>
+		<string>FCP_v2.1</string>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>bg_splash</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<false/>
+	</dict>
+	<key>Build Type</key>
+	<string>$(BUILD_TYPE)</string>
+	<key>Build Variant</key>
+	<string>$(BUILD_VARIANT)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(APP_BUILD_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eudi-openid4vp</string>
+				<string>mdoc-openid4vp</string>
+				<string>openid4vp</string>
+				<string>openid-credential-offer</string>
+				<string>rqes</string>
+				<string>haip-vc</string>
+				<string>haip-vci</string>
+				<string>haip-vp</string>
+			</array>
+		</dict>
+	</array>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>E80704007F00070302</string>
+	</array>
+	<key>BURGERAMT_SERVICE_LINK</key>
+	<string>$(BURGERAMT_SERVICE_LINK)</string>
+	<key>PRIVACY_POLICY_LINK</key>
+	<string>$(PRIVACY_POLICY_LINK)</string>
+	<key>CORE_USER_AUTH</key>
+	<string>$(CORE_USER_AUTH)</string>
+	<key>BATCH_COUNT</key>
+	<string>$(BATCH_COUNT)</string>
+	<key>PID_MSO_MDOC_CONFIG_ID</key>
+	<string>$(PID_MSO_MDOC_CONFIG_ID)</string>
+	<key>PID_SD_JWT_CONFIG_ID</key>
+	<string>$(PID_SD_JWT_CONFIG_ID)</string>
+	<key>VCI_ISSUER_URL</key>
+	<string>$(VCI_ISSUER_URL)</string>
+	<key>PID_ISSUER_NAME</key>
+	<string>$(PID_ISSUER_NAME)</string>
+	<key>VCI_REDIRECT_URI</key>
+	<string>$(VCI_REDIRECT_URI)</string>
+	<key>WALLET_HOST_URL</key>
+	<string>$(WALLET_HOST_URL)</string>
+	<key>WALLET_OTLP_HOST_URL</key>
+	<string>$(WALLET_OTLP_HOST_URL)</string>
+	<key>WALLET_OTLP_SERVICE_NAME</key>
+	<string>$(WALLET_OTLP_SERVICE_NAME)</string>
+	<key>FEATURE_FLAG_BASE_URL</key>
+	<string>$(FEATURE_FLAG_BASE_URL)</string>
+	<key>APP_UPDATE_URL</key>
+	<string>$(APP_UPDATE_URL)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+</dict>
+</plist>
