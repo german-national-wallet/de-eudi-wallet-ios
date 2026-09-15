@@ -12,6 +12,7 @@ struct ConsentView<Router: RouterHost>: View {
   @ObservedObject private var viewModel: ConsentViewModel<Router>
   @State private var showDetails: Bool
   @State private var showInfoSheet: Bool
+  @State private var isCancelDialogPresented = false
   
   let columns = [
           GridItem(.flexible(), alignment: .leading),
@@ -28,7 +29,10 @@ struct ConsentView<Router: RouterHost>: View {
     ContentScreenView {
       ZStack {
         VStack {
-          HeaderContentView(onBack: viewModel.backButtonTapped, onClose: viewModel.closeButtonTapped)
+          HeaderContentView(
+            onBack: viewModel.backButtonTapped,
+            onClose: { isCancelDialogPresented = true }
+          )
           
           ScrollView {
             VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
@@ -85,6 +89,10 @@ struct ConsentView<Router: RouterHost>: View {
       }
       .background(DSColor.background)
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: viewModel.closeButtonTapped
+    )
    }
   
   private func consentCardView(group: ConsentItemGroup) -> some View {

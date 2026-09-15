@@ -97,7 +97,7 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
         await pnsAccountInteractor.syncAccountIfNeeded()
       }
 
-      let destination = revocationDestination(continueRoute: route)
+      let destination = introDestination(continueRoute: revocationDestination(continueRoute: route))
 
       if await !deepLinkController.isDeeplinkFlowActive() {
         router.push(with: destination)
@@ -119,6 +119,15 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
       isErrorPopupVisible = true
       configureErrorPopupViewModel(error: .unknown)
     }
+  }
+
+  private func introDestination(continueRoute: AppRoute) -> AppRoute {
+    guard !interactor.hasSeenAppIntro() else {
+      return continueRoute
+    }
+    return .featureStartupModule(
+      .appIntro(config: AppIntroUiConfig(continueRoute: continueRoute))
+    )
   }
 
   private func revocationDestination(continueRoute: AppRoute) -> AppRoute {

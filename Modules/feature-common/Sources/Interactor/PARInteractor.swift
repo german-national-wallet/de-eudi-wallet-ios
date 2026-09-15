@@ -6,12 +6,14 @@
 import Foundation
 import CryptoKit
 import logic_core
+import logic_business
 import JOSESwift
 import wallet_backend
 
 public protocol PARInteractor: AnyObject {
   func fetchPushAuthorisationRequest() async throws -> WalletStorage.Document?
   func removePendingDocs(of docId: String) async throws
+  func removeAllPendingDocs() async
   func issuePAR() async throws -> WalletStorage.Document
 }
 
@@ -19,35 +21,29 @@ final class PARInteractorImpl: PARInteractor {
   private let walletPoPInteractor: WalletPoPController
   private let walletKitController: WalletKitController
   private let secureEnclaveController: SecureEnclaveController
-  private let walletRegistrationInteractor: WalletRegistrationInteractor
   private let parExpirationTime: TimeInterval
+  private let logger: Logging?
 
   init(
     walletPoPInteractor: WalletPoPController,
     walletKitController: WalletKitController,
-    walletRegistrationInteractor: WalletRegistrationInteractor,
     parExpirationTime: TimeInterval = TimeInterval(5 * 60),
-    secureEnclaveController: SecureEnclaveController
+    secureEnclaveController: SecureEnclaveController,
+    logger: Logging? = nil
   ) {
     self.walletPoPInteractor = walletPoPInteractor
     self.walletKitController = walletKitController
-    self.walletRegistrationInteractor = walletRegistrationInteractor
     self.parExpirationTime = parExpirationTime
     self.secureEnclaveController = secureEnclaveController
+    self.logger = logger
   }
 
   func fetchPushAuthorisationRequest() async throws -> WalletStorage.Document? {
-    if returnPARIfExists() {
-      if let existingDoc = walletKitController.wallet.storage.pendingDocuments.first {
-        return existingDoc
-      }
-    }
-    let pendingDoc = try await issuePAR()
-    return pendingDoc
+    await removeAllPendingDocs()
+    return try await issuePAR()
   }
-  
+
   func issuePAR() async throws -> WalletStorage.Document {
-    _ = try await walletRegistrationInteractor.registerWalletInstance()
     guard let pendingDoc = try await walletKitController.issuePAR() else {
         throw PARGenerationError.wiaParCreationFailed
      }
@@ -67,12 +63,17 @@ final class PARInteractorImpl: PARInteractor {
       try await walletKitController.deleteDocument(with: deferredDoc.id, status: .deferred)
     }
   }
-  
-  private func returnPARIfExists() -> Bool {
-    let walletKit =  walletKitController.wallet.storage.pendingDocuments
-    return !walletKit.isEmpty
+
+  func removeAllPendingDocs() async {
+    for pendingDoc in walletKitController.wallet.storage.pendingDocuments {
+      do {
+        try await walletKitController.deleteDocument(with: pendingDoc.id, status: .pending)
+      } catch {
+        logger?.d("PARInteractor:: pending doc \(pendingDoc.id) was already gone: \(error.localizedDescription)")
+      }
+    }
   }
-  
+
   private func getDPopConstructorParameters(_ wia: String, _ privateKey: SecKey?) throws -> IssuerDPoPConstructorParam? {
     do {
       guard let privateKey = privateKey else { throw PoPGenerationError.keyGenerationFailed }

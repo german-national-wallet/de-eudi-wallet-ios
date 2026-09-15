@@ -68,5 +68,12 @@ public final class FeatureDashboardAssembly: Assembly {
           reachabilityController: r.force(ReachabilityController.self)
         )
       }
+      
+      container.register(SettingsTabInteractor.self) { r in
+        SettingsTabInteractorImpl(
+          walletController: r.force(WalletKitController.self),
+          configLogic: r.force(ConfigLogic.self)
+        )
+      }
     }
 }

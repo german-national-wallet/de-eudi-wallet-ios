@@ -1,0 +1,209 @@
+[modules.LogicAuth]
+output = "Modules/logic-authentication/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_authentication"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+    "Modules/logic-authentication/Sources/**/*.swift"
+]
+
+[modules.LogicUi]
+output = "Modules/logic-ui/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core",
+	"logic_business",
+	"logic_analytics",
+	"logic_ui"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift"
+]
+
+[modules.LogicApi]
+output = "Modules/logic-api/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_business",
+	"logic_analytics",
+	"logic_api"
+]
+sources = [
+	"Modules/logic-api/Sources/**/*.swift"
+]
+
+[modules.FeatureCommon]
+output = "Modules/feature-common/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_ui", 
+	"logic_api", 
+	"logic_authentication",
+	"wallet_backend",
+	"feature_common"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift",
+	"Modules/logic-authentication/Sources/**/*.swift",
+	"Modules/wallet-backend/Sources/**/*.swift",
+    "Modules/feature-common/Sources/**/*.swift"
+]
+
+[modules.FeatureDashboard]
+output = "Modules/feature-dashboard/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_ui", 
+	"logic_api", 
+	"logic_authentication",
+	"feature_common",
+	"feature_issuance",
+	"feature_dashboard"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift",
+	"Modules/logic-authentication/Sources/**/*.swift",
+    "Modules/feature-common/Sources/**/*.swift",
+    "Modules/feature-issuance/Sources/Interactor/CredentialsInterator.swift",
+    "Modules/feature-dashboard/Sources/**/*.swift",
+	"Modules/feature-issuance/Sources/Interactor/AddDocumentInteractor.swift"
+]
+
+[modules.FeatureStartup]
+output = "Modules/feature-startup/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_ui", 
+	"logic_api", 
+	"logic_authentication",
+	"feature_common",
+	"feature_startup",
+	"feature_startup",
+	"feature_issuance",
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift",
+	"Modules/logic-authentication/Sources/**/*.swift",
+    "Modules/feature-common/Sources/**/*.swift",
+    "Modules/feature-startup/Sources/**/*.swift",
+	"Modules/feature-startup/Sources/**/*.swift",
+	"Modules/feature-issuance/Sources/**/*.swift"
+]
+
+[modules.FeaturePresentation]
+output = "Modules/feature-presentation/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_ui", 
+	"logic_api", 
+	"logic_authentication",
+	"feature_common",
+	"feature_presentation"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift",
+	"Modules/logic-authentication/Sources/**/*.swift",
+    "Modules/feature-common/Sources/**/*.swift",
+    "Modules/feature-presentation/Sources/**/*.swift"
+]
+
+[modules.FeatureIssuance]
+output = "Modules/feature-issuance/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business", 
+	"logic_analytics",
+	"logic_ui", 
+	"logic_api", 
+	"logic_authentication",
+	"feature_common",
+	"feature_issuance"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-analytics/Sources/**/*.swift",
+	"Modules/logic-ui/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift",
+	"Modules/logic-authentication/Sources/**/*.swift",
+    "Modules/feature-common/Sources/**/*.swift",
+    "Modules/feature-issuance/Sources/**/*.swift"
+]
+
+[modules.LogicCore]
+output = "Modules/logic-core/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core", 
+	"logic_business",
+	"logic_api"
+]
+sources = [
+	"Modules/logic-core/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift",
+	"Modules/logic-api/Sources/**/*.swift"
+]
+
+[modules.LogicFeatureFlags]
+output = "Modules/logic-feature-flags/Tests/Sources/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_feature_flags",
+	"logic_business"
+]
+sources = [
+	"Modules/logic-feature-flags/Sources/**/*.swift",
+	"Modules/logic-business/Sources/**/*.swift"
+]
+
+[modules.WalletBackend]
+output = "Modules/wallet-backend/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_business",
+	"logic_api",
+	"wallet_backend"
+]
+sources = [
+	"Modules/wallet-backend/Sources/**/*.swift"
+]
+
+[modules.PushNotificationService]
+output = "Modules/push-notification-service/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_business",
+	"logic_api",
+	"logic_feature_flags",
+	"push_notification_service"
+]
+sources = [
+	"Modules/push-notification-service/Sources/**/*.swift"
+]

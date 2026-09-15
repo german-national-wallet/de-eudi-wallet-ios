@@ -72,6 +72,8 @@ struct OfferCodeView<Router: RouterHost>: View {
     .task {
       await viewModel.checkPendingIssuance()
     }
+
+    .background(EnableSwipeBackGesture())
   }
 }
 
@@ -140,7 +142,9 @@ private func content(
     )
     .disabled(!isPrimaryButtonEnabled)
     .accessibilityIdentifier("pinSubmitPrimaryButton")
-    .padding(DSStyle.Spacers.SPACING_MEDIUM)
+    .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+    .padding(.top, DSStyle.Spacers.SPACING_MEDIUM)
+    .padding(.bottom, DSStyle.Spacers.SPACING_EXTRA_SMALL)
     .background(DSColor.background)
   }
   .modifier(KeyboardOverlapPadding())

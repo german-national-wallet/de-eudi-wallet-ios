@@ -76,7 +76,7 @@ let package = Package(
       ],
       path: "./Sources",
       resources: [
-        .process("DesignSystem/Resources/EUDI Diatype")
+        .process("DesignSystem/Resources")
       ]
     ),
     .testTarget(

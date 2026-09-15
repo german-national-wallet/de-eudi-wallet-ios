@@ -27,6 +27,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
   let prefsController: PrefsController
   let secureEnclaveController: SecureEnclaveController
   let pinSessionInteractor: PinSessionInteractor
+  let issuanceCancellationInteractor: IssuanceCancellationInteractor
   let logger: Logging?
 
   public init(
@@ -40,6 +41,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     throttlePinInput: Bool = true,
     onPinEntered: PinCallbackWrapper?,
     pinSessionInteractor: PinSessionInteractor,
+    issuanceCancellationInteractor: IssuanceCancellationInteractor,
     logger: Logging?
   ) {
     self.onPinEntered = onPinEntered
@@ -53,6 +55,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     self.secureEnclaveController = secureEnclaveController
     self.parInteractor = parInteractor
     self.pinSessionInteractor = pinSessionInteractor
+    self.issuanceCancellationInteractor = issuanceCancellationInteractor
     self.logger = logger
 
     super.init(
@@ -192,13 +195,40 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     }
   }
   
+  /// Leaves the card PIN info sheet before pushing: the push is swallowed while
+  /// the sheet is still on screen.
+  public func setCardPinTapped() {
+    isSheetPresented = false
+    guard let interactor = issuanceVarificationInteractor else { return }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      self?.router.push(with: .featureIssuanceModule(
+        .setEidTransportPinInstructionsView(
+          config: NoConfig(),
+          issuanceVerificationInteractor: interactor
+        )
+      ))
+    }
+  }
+
   public func handleCloseButton() {
     switch viewState.config.pinScreenType {
       case .issueEidPinFlow:
-        router.popTo(with: .featureDashboardModule(.dashboard))
-      
+        router.cancelToStart()
+
+      case .setupWalletPinflow, .confirmNewWalletPinFlow:
+        abandonIssuance()
+        router.cancelToStart()
+
       default:
         self.closeButtonTapped()
+    }
+  }
+
+  private func abandonIssuance() {
+    Task { [issuanceCancellationInteractor, issuanceVarificationInteractor] in
+      await issuanceCancellationInteractor.cancelIssuance(
+        verificationInteractor: issuanceVarificationInteractor
+      )
     }
   }
 }

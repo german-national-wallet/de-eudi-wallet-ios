@@ -17,6 +17,7 @@ public extension DesignSystem.Components.Buttons {
 
     private let title: LocalizedStringKey
     private let action: () -> Void
+    private let leadingIcon: Image?
     private let trailingIcon: Image?
 
     /// Creates a new `PrimaryButton` with a localizable string key.
@@ -27,10 +28,12 @@ public extension DesignSystem.Components.Buttons {
     ///   - action: A closure to execute when the button is tapped.
     public init(
       title: LocalizedStringKey,
+      leadingIcon: Image? = nil,
       trailingIcon: Image? = nil,
       action: @escaping () -> Void
     ) {
       self.title = title
+      self.leadingIcon = leadingIcon
       self.trailingIcon = trailingIcon
       self.action = action
     }
@@ -43,10 +46,12 @@ public extension DesignSystem.Components.Buttons {
     ///   - action: A closure to execute when the button is tapped.
     public init(
       title: String,
+      leadingIcon: Image? = nil,
       trailingIcon: Image? = nil,
       action: @escaping () -> Void
     ) {
       self.title = LocalizedStringKey(title)
+      self.leadingIcon = leadingIcon
       self.trailingIcon = trailingIcon
       self.action = action
     }
@@ -54,6 +59,15 @@ public extension DesignSystem.Components.Buttons {
     public var body: some View {
       Button(action: action) {
         HStack(spacing: 8) {
+          if let leadingIcon {
+            leadingIcon
+              .renderingMode(.template)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 16, height: 16)
+              .foregroundColor(isEnabled ? DSColor.onBackground : DSColor.onBackground.opacity(0.38))
+              .accessibilityHidden(true)
+          }
           Text(title)
             .font(DSTypography.Label.large)
             .fontWeight(DSStyle.FontWeight.medium_500)

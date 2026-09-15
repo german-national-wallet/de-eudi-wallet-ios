@@ -20,7 +20,7 @@ public enum AppBuildType: String, @unchecked Sendable {
 }
 
 public enum AppBuildVariant: String, @unchecked Sendable {
-  case DEV, SANDBOX, STAGING
+  case DEV, SANDBOX, STAGING, PROD
 
   public static var current: AppBuildVariant {
     guard let variant = AppBuildVariant(rawValue: "Build Variant".valueFromBundle) else {

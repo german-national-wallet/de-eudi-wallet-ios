@@ -7,10 +7,11 @@ import SwiftUI
 import logic_ui
 import logic_resources
 import feature_common
-import AVKit
 
 struct IssuanceCardView<Router: RouterHost>: View {
   @ObservedObject var viewModel: IssuanceCardViewModel<Router>
+
+  @State private var isCancelDialogPresented = false
 
   init(with viewModel: IssuanceCardViewModel<Router>) {
       self.viewModel = viewModel
@@ -29,23 +30,28 @@ struct IssuanceCardView<Router: RouterHost>: View {
       padding: .zero,
       isLoading: viewModel.viewState.isLoading
     ) {
-      VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {
-        HeaderContentView(
-          onBack: viewModel.backButtonTapped,
-          onClose: viewModel.closeButtonTapped,
-          onHelp: viewModel.viewHelpAndTips,
-          progress: progressSteps
-        )
+      HeaderContentView(
+        onBack: viewModel.backButtonTapped,
+        onClose: { isCancelDialogPresented = true },
+        onHelp: viewModel.viewHelpAndTips,
+        progress: progressSteps
+      )
 
+      VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {
         DSTitleLabel(viewModel.viewState.navigationTitle)
           .frame(maxWidth: .infinity, alignment: .leading)
           .padding(.bottom, DSStyle.Spacers.SPACING_MEDIUM)
 
-        LoopingVideoView()
-
-        Spacer()
+        VideoAnimationView(
+          asset: .nfcTappingTop,
+          size: Constants.scanAnimationSize,
+          playCount: Constants.scanAnimationPlayCount
+        )
+        .padding(.bottom, DSStyle.Spacers.SPACING_MEDIUM)
 
         scanningHintBanner
+
+        Spacer()
 
         DSPrimaryButton(title: LocalizableStringKey.restartScanning.toString, action: viewModel.startAusweisReadFlow)
           .shimmer(isLoading: viewModel.viewState.isLoading)
@@ -54,11 +60,16 @@ struct IssuanceCardView<Router: RouterHost>: View {
         DSSecondaryButton(title: LocalizableStringKey.scanningTips.toString, action: viewModel.viewHelpAndTips)
           .padding(.bottom, DSStyle.Spacers.SPACING_MEDIUM)
       }
-      .padding()
+      .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+      .padding(.top, DSStyle.Spacers.SPACING_MEDIUM)
+      .padding(.bottom, DSStyle.Spacers.SPACING_MEDIUM)
       .shimmer(isLoading: viewModel.viewState.isLoading)
       .sheet(isPresented: $viewModel.showHelpAndTipsActionSheet, content: {
-        CardScanningTipsPopupView(contactCustomerCareAction: viewModel.contactCustomerCareTapped)
-          .presentationDetents([.medium])
+        CardScanningTipsPopupView(
+          contactCustomerCareAction: viewModel.contactCustomerCareTapped,
+          onClose: { viewModel.showHelpAndTipsActionSheet = false }
+        )
+        .presentationDetents([.medium])
       })
     }
     .ignoresSafeArea(edges: .bottom)
@@ -67,19 +78,26 @@ struct IssuanceCardView<Router: RouterHost>: View {
         ConfirmationPopupView(viewModel: viewModel.errorPopupViewModel)
       }
     }
+    .cancelConfirmationDialog(isPresented: $isCancelDialogPresented) {
+      viewModel.abandonIssuance()
+      viewModel.closeButtonTapped()
+    }
+
+    .background(EnableSwipeBackGesture())
   }
 
   private var scanningHintBanner: some View {
     HStack(alignment: .top, spacing: DSStyle.Spacers.SPACING_SMALL) {
-      Theme.shared.image.infoCircle
+      Theme.shared.image.infoCircleImage
         .renderingMode(.template)
         .resizable()
         .scaledToFit()
         .frame(
-          width: DSStyle.Sizes.Icons.medium,
-          height: DSStyle.Sizes.Icons.medium
+          width: Constants.inlineIconSize,
+          height: Constants.inlineIconSize
         )
-        .foregroundColor(DSColor.onSurface)
+        .foregroundColor(DSColor.onSurfaceVariant)
+        .centeredOnFirstLine(of: DSTypography.Body.large)
         .accessibilityHidden(true)
 
       Text(.scanningBannerIOS)
@@ -98,86 +116,66 @@ struct IssuanceCardView<Router: RouterHost>: View {
 
 struct CardScanningTipsPopupView: View {
   let contactCustomerCareAction: () -> Void
-  
-  init(contactCustomerCareAction: @escaping () -> Void) {
+  let onClose: () -> Void
+
+  init(
+    contactCustomerCareAction: @escaping () -> Void,
+    onClose: @escaping () -> Void
+  ) {
     self.contactCustomerCareAction = contactCustomerCareAction
+    self.onClose = onClose
   }
-  
+
   var body: some View {
-    VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-      HStack {
-        Theme.shared.image.infoCircle
+    VStack(spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
+      VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM) {
+        Theme.shared.image.help
           .resizable()
-          .frame(width: DSStyle.Sizes.Icons.xLarge, height: DSStyle.Sizes.Icons.xLarge)
-          .foregroundColor(DSColor.primary)
-        
-        Text(LocalizableStringKey.scanningHelpPopupTitle.toString)
-          .font(DSTypography.Title.large)
-          .foregroundColor(DSColor.primary)
-          .padding(DSStyle.Spacers.SPACING_MEDIUM)
+          .scaledToFit()
+          .frame(
+            width: DSStyle.Sizes.Icons.large,
+            height: DSStyle.Sizes.Icons.large
+          )
+          .foregroundColor(DSColor.onSurface)
+          .accessibilityHidden(true)
+
+        DSTitleLabel(.scanningHelpPopupTitle, alignment: .center)
       }
-      
-      BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara1.toString)
-        .font(DSTypography.Body.large)
-        .foregroundColor(DSColor.onSurface)
-        .fontWeight(DSStyle.FontWeight.regular_400)
-      
-      BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara2.toString)
-        .font(DSTypography.Body.large)
-        .foregroundColor(DSColor.onSurface)
-        .fontWeight(DSStyle.FontWeight.regular_400)
-      
-      BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara3.toString)
-        .font(DSTypography.Body.large)
-        .foregroundColor(DSColor.onSurface)
-        .fontWeight(DSStyle.FontWeight.regular_400)
-        .padding(.bottom, DSStyle.Spacers.SPACING_MEDIUM)
-      
-      Button(
-        action: contactCustomerCareAction
-      ) {
-        HStack {
-          ThemeManager.shared.image.phoneIPhone
-          
-          Text(.scanningHelpCustomerServiceCalling)
-            .font(DSTypography.Label.large)
-            .fontWeight(DSStyle.FontWeight.medium_500)
-            .foregroundColor(DSColor.primary)
+      .frame(maxWidth: .infinity)
+
+      ScrollView {
+        VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_EXTRA_SMALL) {
+          BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara1.toString)
+          BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara2.toString)
+          BulletPointText(text: LocalizableStringKey.scanningHelpPopupDetailPara3.toString)
         }
+        .font(DSTypography.Body.large)
+        .foregroundColor(DSColor.onSurface)
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .buttonStyle(DSButton.OutlinePressedButtonStyle())
-      .padding(.top, DSStyle.Spacers.SPACING_MEDIUM)
-      
-      Spacer()
+
+      VStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
+        DSPrimaryButton(
+          title: LocalizableStringKey.scanningHelpCustomerServiceCalling.toString,
+          leadingIcon: Theme.shared.image.phone,
+          action: contactCustomerCareAction
+        )
+
+        DSSecondaryButton(
+          title: LocalizableStringKey.globalCloseHintButton.toString,
+          action: onClose
+        )
+      }
     }
-    .padding(DSStyle.Spacers.SPACING_MEDIUM_LARGE)
+    .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM_LARGE)
+    .padding(.top, DSStyle.Spacers.SPACING_LARGE)
+    .padding(.bottom, DSStyle.Spacers.SPACING_LARGE_MEDIUM)
     .background(DSColor.background)
   }
 }
 
-struct LoopingVideoView: View {
-    @State private var player: AVPlayer = {
-        let url = Bundle.main.url(forResource: "NFC_Scan_iOS", withExtension: "mp4")!
-        let item = AVPlayerItem(url: url)
-        let player = AVPlayer(playerItem: item)
-
-        NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: item,
-            queue: .main
-        ) { _ in
-            player.seek(to: .zero)
-            player.play()
-        }
-
-        player.play()
-        return player
-    }()
-
-    var body: some View {
-        VideoPlayer(player: player)
-            .frame(width: 300, height: 300)
-            .cornerRadius(12)
-            .background(Color.white)
-    }
+private enum Constants {
+  static let scanAnimationSize: CGFloat = 300
+  static let scanAnimationPlayCount = 2
+  static let inlineIconSize: CGFloat = 18
 }

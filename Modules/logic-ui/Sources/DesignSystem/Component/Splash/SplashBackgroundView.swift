@@ -18,38 +18,26 @@ import logic_resources
 
 public struct SplashBackgroundView: View {
 
-  let isAnimating: Bool
-
-  public init(isAnimating: Bool = false) {
-    self.isAnimating = isAnimating
-  }
+  public init() {}
 
   public var body: some View {
-    ZStack {
-      Theme.shared.image.backgroundSplash
-        .resizable()
-        .scaledToFill()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-
-      Circle()
-        .fill(DesignSystem.Styles.Colors.inverseOnSurface)
-        .frame(width: 100, height: 100)
-        .opacity(isAnimating ? 1.0 : 0)
-
-    }
-    .ignoresSafeArea(.all)
+    Color.clear
+      .overlay {
+        Theme.shared.image.backgroundSplash
+      }
+      .clipped()
+      .ignoresSafeArea(.all)
   }
 }
 
 #Preview {
   Group {
-    SplashBackgroundView(isAnimating: true)
+    SplashBackgroundView()
   }
 }
 
 #Preview("Dark Mode") {
   Group {
-    SplashBackgroundView(isAnimating: true)
+    SplashBackgroundView()
   }
 }

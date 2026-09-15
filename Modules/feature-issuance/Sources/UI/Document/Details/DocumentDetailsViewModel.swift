@@ -121,7 +121,7 @@ final class DocumentDetailsViewModel<Router: RouterHost>: ViewModel<Router, Docu
   }
 
   func onContinue() {
-    router.push(with: .featureDashboardModule(.dashboard))
+    router.popTo(with: .featureDashboardModule(.dashboard))
   }
 
   func onDeleteDocument() {

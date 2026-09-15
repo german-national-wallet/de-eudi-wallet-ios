@@ -57,7 +57,6 @@ public protocol ImageManagerProtocol: Sendable {
   var hourglassImage: Image { get }
   var chooseDocumentImage: Image { get }
   var scanDocumentImage: Image { get }
-  var infoCircle: Image { get }
   var relyingPartyVerified: Image { get }
   var docFill: Image { get }
   var logoEuDigitalIndentityWallet: Image { get }
@@ -87,6 +86,8 @@ public protocol ImageManagerProtocol: Sendable {
   var infoCircleImage: Image { get }
   var deEagleWingImage: Image { get }
   var deEagleWingCroppedImage: Image { get }
+  var pidCardBackgroundImage: Image { get }
+  var pidCardEagleImage: Image { get }
   var wrongPinIcon: Image { get }
   var erikaCanFront1: Image { get }
   var erikaCanFront2: Image { get }
@@ -98,13 +99,14 @@ public protocol ImageManagerProtocol: Sendable {
   var transportPinLetter: Image { get }
   var tranportPinEnvelope: Image { get }
   var phoneIPhone: Image { get }
+  var phone: Image { get }
   var checkCircle: Image { get }
   var orangeRetryError: Image { get }
-  var multipleAusweisCards: Image { get }
   var ausweisPinAndCard: Image { get }
   var setupWalletPin: Image { get }
   var userPhonePin: Image { get }
   var warningIndicator: Image { get }
+  var warning: Image { get }
   var redWarningIndicator: Image { get }
   var backgroundPID: Image { get }
   var backgroundSplash: Image { get }
@@ -125,12 +127,17 @@ public protocol ImageManagerProtocol: Sendable {
   var checkboxUnselected: Image { get }
   var workInProgessLockIcon: Image { get }
   var workInProgessIcon: Image { get }
+  var tranportPinLetter: Image { get }
   var help: Image { get }
   var buildingBlocks: Image { get }
   var externalLink: Image { get }
   var burgeramtInfo: Image { get }
   var pinCodeAsset: Image { get }
   var pinIllusItem: Image { get }
+  var tabbarOverview: Image { get }
+  var tabbarActivity: Image { get }
+  var tabbarSettings: Image { get }
+  var tabbarQRReader: Image { get }
 }
 
 final class ImageManager: ImageManagerProtocol {
@@ -178,7 +185,6 @@ final class ImageManager: ImageManagerProtocol {
     case hourglassImage
     case chooseDocumentImage = "choose-document-image"
     case scanDocumentImage = "scan-document-image"
-    case infoCircle = "info.circle"
     case relyingPartyVerified = "relying-party-verified"
     case docFill = "doc.fill"
     case logoEuDigitalIndentityWallet = "logo-eu-digital-indentity-wallet"
@@ -205,6 +211,8 @@ final class ImageManager: ImageManagerProtocol {
     case infoCircleImage = "info-circle"
     case deEagleWingImage = "de-eagle-wing"
     case deEagleWingCroppedImage = "de-eagle-wing-transparent"
+    case pidCardBackgroundImage = "pid-card-background"
+    case pidCardEagleImage = "pid-card-eagle"
     case wrongPinIcon = "wrong-pin-lm"
     case erikaCanFront1 = "erika_can_front1"
     case erikaCanFront2 = "erika_can_front2"
@@ -216,13 +224,14 @@ final class ImageManager: ImageManagerProtocol {
     case tranportPinEnvelope = "ausweis_envelope"
     case tranportPinLetter = "transport_letter_pin"
     case phoneIPhone = "phone-iphone"
+    case phone = "phone"
     case checkCircle = "check-circle"
     case orangeRetryError = "orange-close"
-    case multipleAusweisCards = "multiple_ausweis_cards"
     case ausweisPinAndCard = "ausweis_pin_and_card"
     case setupWalletPin = "setup_pin_phone_icon"
     case userPhonePin = "user_phone_pin"
     case warningIndicator = "warning-indicator"
+    case warning = "warning"
     case redWarningIndicator = "red_warning"
     case backgroundPID = "dashboard_background"
     case backgroundSplash = "bg_splash"
@@ -243,12 +252,16 @@ final class ImageManager: ImageManagerProtocol {
     case checkboxUnselected = "checkbox_unselected"
     case workInProgessLockIcon = "work-in-progress-lock"
     case workInProgessIcon = "wip_card"
-    case help = "questionmark.circle"
+    case help = "question_icon"
     case buildingBlocks = "building_blocks"
     case externalLink = "external_link"
     case burgeramtInfo = "burgeramt_info"
     case pinCodeAsset = "pin_code_assets"
     case pinIllusItem = "pin_illus_item"
+    case tabbarOverview = "icon-wallet"
+    case tabbarActivity = "icon-activities"
+    case tabbarSettings = "icon-settings"
+    case tabbarQRReader = "icon-qr"
   }
 
   // MARK: - Properties
@@ -377,9 +390,6 @@ final class ImageManager: ImageManagerProtocol {
   var scanDocumentImage: Image {
     Image(ImageEnum.scanDocumentImage.rawValue, bundle: bundle)
   }
-  var infoCircle: Image {
-    Image(systemName: ImageEnum.infoCircle.rawValue)
-  }
   var relyingPartyVerified: Image {
     Image(ImageEnum.relyingPartyVerified.rawValue, bundle: bundle)
   }
@@ -467,6 +477,12 @@ final class ImageManager: ImageManagerProtocol {
   var deEagleWingCroppedImage: Image {
     Image(ImageEnum.deEagleWingCroppedImage.rawValue, bundle: bundle)
   }
+  var pidCardBackgroundImage: Image {
+    Image(ImageEnum.pidCardBackgroundImage.rawValue, bundle: bundle)
+  }
+  var pidCardEagleImage: Image {
+    Image(ImageEnum.pidCardEagleImage.rawValue, bundle: bundle)
+  }
   var wrongPinIcon: Image {
       Image(ImageEnum.wrongPinIcon.rawValue, bundle: bundle)
   }
@@ -500,14 +516,14 @@ final class ImageManager: ImageManagerProtocol {
   var phoneIPhone: Image {
     Image(ImageEnum.phoneIPhone.rawValue, bundle: bundle)
   }
+  var phone: Image {
+    Image(ImageEnum.phone.rawValue, bundle: bundle)
+  }
   var checkCircle: Image {
     Image(ImageEnum.checkCircle.rawValue, bundle: bundle)
   }
   var orangeRetryError: Image {
     Image(ImageEnum.orangeRetryError.rawValue, bundle: bundle)
-  }
-  var multipleAusweisCards: Image {
-    Image(ImageEnum.multipleAusweisCards.rawValue, bundle: bundle)
   }
   var ausweisPinAndCard: Image {
     Image(ImageEnum.ausweisPinAndCard.rawValue, bundle: bundle)
@@ -521,6 +537,9 @@ final class ImageManager: ImageManagerProtocol {
   var warningIndicator: Image {
     Image(ImageEnum.warningIndicator.rawValue, bundle: bundle)
   }
+  var warning: Image {
+    Image(ImageEnum.warning.rawValue, bundle: bundle)
+  }
   var redWarningIndicator: Image {
     Image(ImageEnum.redWarningIndicator.rawValue, bundle: bundle)
   }
@@ -528,7 +547,7 @@ final class ImageManager: ImageManagerProtocol {
     Image(ImageEnum.backgroundPID.rawValue, bundle: bundle)
   }
   var backgroundSplash: Image {
-    Image(ImageEnum.backgroundSplash.rawValue, bundle: bundle)
+    Image(ImageEnum.backgroundSplash.rawValue, bundle: .main)
   }
   var bdrLogo: Image {
     Image(ImageEnum.bdrLogo.rawValue, bundle: bundle)
@@ -584,8 +603,11 @@ final class ImageManager: ImageManagerProtocol {
   var workInProgessIcon: Image {
     Image(ImageEnum.workInProgessIcon.rawValue, bundle: bundle)
   }
+  var tranportPinLetter: Image {
+    Image(ImageEnum.tranportPinLetter.rawValue, bundle: bundle)
+  }
   var help: Image {
-    Image(systemName: ImageEnum.help.rawValue)
+    Image(ImageEnum.help.rawValue, bundle: bundle)
   }
   var buildingBlocks: Image {
     Image(ImageEnum.buildingBlocks.rawValue, bundle: bundle)
@@ -601,5 +623,17 @@ final class ImageManager: ImageManagerProtocol {
   }
   var pinIllusItem: Image {
     Image(ImageEnum.pinIllusItem.rawValue, bundle: bundle)
+  }
+  var tabbarOverview: Image {
+    Image(ImageEnum.tabbarOverview.rawValue, bundle: bundle)
+  }
+  var tabbarActivity: Image {
+    Image(ImageEnum.tabbarActivity.rawValue, bundle: bundle)
+  }
+  var tabbarSettings: Image {
+    Image(ImageEnum.tabbarSettings.rawValue, bundle: bundle)
+  }
+  var tabbarQRReader: Image {
+    Image(ImageEnum.tabbarQRReader.rawValue, bundle: bundle)
   }
 }

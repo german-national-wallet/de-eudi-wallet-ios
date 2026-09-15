@@ -59,6 +59,7 @@ struct Application: App {
         // Also reset the "revocation onboarding seen" flag so a reset wallet
         // re-shows the revocation screens, giving UI tests a deterministic state.
         DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenRevocationCode)
+        DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenAppIntro)
       }
 
       UIView.setAnimationsEnabled(false)

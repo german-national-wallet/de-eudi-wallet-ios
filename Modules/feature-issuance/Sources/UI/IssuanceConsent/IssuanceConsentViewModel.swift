@@ -54,14 +54,18 @@ public extension UIConfig {
 
 final class IssuanceConsentViewModel<Router: RouterHost>: ViewModel<Router, IssuanceConsentViewState> {
   @Published var isRejectSheetOpen = false
-  
+
+  private let issuanceCancellationInteractor: IssuanceCancellationInteractor
+
   public init(
     router: Router,
-    config: any UIConfigType
+    config: any UIConfigType,
+    issuanceCancellationInteractor: IssuanceCancellationInteractor
   ) {
     guard let config = config as? UIConfig.IssuanceConsentViewConfig else {
       fatalError("Config error :: config must be of type UIConfig.InstructionsViewConfig")
     }
+    self.issuanceCancellationInteractor = issuanceCancellationInteractor
     super.init(
       router: router,
       initialState: .init(
@@ -102,6 +106,9 @@ final class IssuanceConsentViewModel<Router: RouterHost>: ViewModel<Router, Issu
 
   func rejectConfirmed() {
     isRejectSheetOpen = false
+    Task { [issuanceCancellationInteractor, interactor = viewState.config.issuanceInteractor] in
+      await issuanceCancellationInteractor.cancelIssuance(verificationInteractor: interactor)
+    }
     closeButtonTapped()
   }
 }

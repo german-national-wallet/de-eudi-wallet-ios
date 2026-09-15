@@ -182,12 +182,9 @@ struct CredentialDetailsHeader: View {
     if let backgroundColor {
       backgroundColor
     } else {
-      ZStack(alignment: .trailing) {
-        DSColor.colorPID
-        Theme.shared.image.deEagleWingCroppedImage
-          .resizable()
-          .aspectRatio(contentMode: .fit)
-      }
+      Theme.shared.image.pidCardBackgroundImage
+        .resizable()
+        .scaledToFill()
     }
   }
 }

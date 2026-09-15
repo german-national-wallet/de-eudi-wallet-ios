@@ -102,6 +102,8 @@ struct IssuerDetailsView<Router: RouterHost>: View {
         .background(DSColor.background)
       }
     }
+  
+    .background(EnableSwipeBackGesture())
   }
   
   private struct PidIssuerDetailsCell: View {

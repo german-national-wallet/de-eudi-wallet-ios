@@ -26,17 +26,18 @@ public final class DashboardRouter {
   public static func resolve(module: FeatureDashboardRouteModule, host: some RouterHost) -> AnyView {
     switch module {
     case .dashboard:
-      DashboardCredentialView(
+      DashboardView(
         with: .init(
           router: host,
-          interactor: DIGraph.resolver.force(DashboardInteractor.self),
-          logger: DIGraph.resolver.force(Logging.self),
-          deepLinkController: DIGraph.resolver.force(
-            DeepLinkController.self
-          ),
-          analyticsController: DIGraph.resolver.force(
-            AnalyticsController.self
-          )
+          dashboardInteractor: DIGraph.resolver.force(DashboardInteractor.self),
+          homeTabInteractor: DIGraph.resolver.force(HomeTabInteractor.self),
+          documentTabInteractor: DIGraph.resolver.force(DocumentTabInteractor.self),
+          transactionTabInteractor: DIGraph.resolver.force(TransactionTabInteractor.self),
+          credentialsInteractor: DIGraph.resolver.force(CredentialsInteractor.self),
+          settingsTabInteractor: DIGraph.resolver.force(SettingsTabInteractor.self),
+          secureEnclaveController: DIGraph.resolver.force(SecureEnclaveController.self),
+          configLogic: DIGraph.resolver.force(ConfigLogic.self),
+          deepLinkController: DIGraph.resolver.force(DeepLinkController.self)
         )
       ).eraseToAnyView()
     case .signDocument:
@@ -49,17 +50,8 @@ public final class DashboardRouter {
         )
       ).eraseToAnyView()
     case .sideMenu:
-      SideMenuView(
-        with: .init(
-          router: host,
-          interactor: DIGraph.resolver.force(
-            SideMenuInteractor.self
-          ),
-          configLogic: DIGraph.resolver.force(
-            ConfigLogic.self
-          )
-        )
-      ).eraseToAnyView()
+      // NOTE: Sidemenu inactivated
+      EmptyView().eraseToAnyView()
     case .debugConfig:
       DebugConfigView(
         with: .init(

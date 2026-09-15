@@ -11,6 +11,7 @@ public struct PINView<Router: RouterHost>: View {
   @ObservedObject var viewModel: PINViewModel<Router>
   @State private var pinInput = ""
   @State private var isSecureEntry = true
+  @State private var isCancelDialogPresented = false
 
   public init(viewModel: PINViewModel<Router>) {
     self.viewModel = viewModel
@@ -20,7 +21,7 @@ public struct PINView<Router: RouterHost>: View {
     VStack {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
-        onClose: viewModel.handleCloseButton,
+        onClose: { isCancelDialogPresented = true },
         onHelp: viewModel.viewState.config.showsHelpButton
           ? { viewModel.isSheetPresented = true }
           : nil,
@@ -58,7 +59,6 @@ public struct PINView<Router: RouterHost>: View {
         self.addBottomButtons()
       }
     }
-    .ignoresSafeArea(.container, edges: .bottom)
     .background(DSColor.background.ignoresSafeArea())
     .onAppear {
       viewModel.onViewAppeared()
@@ -91,22 +91,17 @@ public struct PINView<Router: RouterHost>: View {
       case .eidCanFlow:
         CanInfoView()
           .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
-          .presentationDetents([.height(600)])
+          .presentationDetents([.fraction(0.9)])
           .background(DSColor.background)
           .ignoresSafeArea()
         
       case .issueEidPinFlow:
-        PINIssuanceInfoView(
-          onFindNearbyBurgerAmt: viewModel.openBurgeramtWebpage,
-          router: viewModel.router,
-          isSheetPresented: $viewModel.isSheetPresented,
-          issuanceInteractor: viewModel.issuanceVarificationInteractor
+        CardPinLetterInfoSheetView(
+          onSetCardPin: viewModel.setCardPinTapped,
+          onClose: { viewModel.isSheetPresented = false }
         )
-        .background(DSColor.background)
-        .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
-        .ignoresSafeArea()
-        .presentationDetents([.fraction(0.7)])
-        
+        .presentationDetents([.fraction(0.9)])
+
       case .transportPinFlow:
         BottomSheetViewWithAction(
           title: LocalizableStringKey.setupPinSheetTitle.toString,
@@ -114,17 +109,21 @@ public struct PINView<Router: RouterHost>: View {
           buttonTitle: LocalizableStringKey.setupPinSheetButtonText.toString,
           action: {}
         )
-        .presentationDetents([.medium])
+        .presentationDetents([.fraction(0.9)])
       default:
         BottomSheetView(
           title: LocalizableStringKey.whatIsSecurityPassword.toString,
           message: LocalizableStringKey.whatIsSecurityPasswordMessage.toString
         )
-        .presentationDetents([.medium])
+        .presentationDetents([.fraction(0.9)])
       }
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: viewModel.handleCloseButton
+    )
   }
-  
+
   func addBottomButtons() -> AnyView {
     let view =
     VStack {
@@ -153,7 +152,7 @@ public struct PINView<Router: RouterHost>: View {
     return view
       .fixedSize(horizontal: false, vertical: true)
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
-      .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
+      .padding(.bottom, DSStyle.Spacers.SPACING_EXTRA_SMALL)
       .eraseToAnyView()
   }
 }

@@ -31,6 +31,26 @@ public protocol RouterHost {
   @MainActor func isScreenOnBackStack(with route: AppRoute) -> Bool
 }
 
+public extension RouterHost {
+
+  /// Unwinds the current flow back to whichever screen the wallet starts on.
+  ///
+  /// A wallet that still holds no documents starts on the add-document screen
+  /// rather than the overview (see `StartupInteractor`), so the overview is not
+  /// on the back stack and a bare `popTo(.dashboard)` is a no-op there — which
+  /// silently leaves cancel buttons doing nothing. Both branches pop: pushing
+  /// the overview instead would strand the abandoned flow underneath it.
+  @MainActor func cancelToStart() {
+    let dashboard = AppRoute.featureDashboardModule(.dashboard)
+
+    if isScreenOnBackStack(with: dashboard) {
+      popTo(with: dashboard)
+    } else {
+      popTo(with: .featureIssuanceModule(.issuanceAddDocument(config: NoConfig())))
+    }
+  }
+}
+
 public final class PreviewRouter: RouterHost {
 
   public init() {}

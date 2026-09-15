@@ -144,9 +144,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
     case .credential_offer, .haip_vci:
       let config = UIConfig.Generic(
         arguments: ["uri": deepLinkExecutable.plainUrl.absoluteString],
-        navigationSuccessType: hasDocuments
-        ? .popTo(.featureDashboardModule(.dashboard))
-        : .push(.featureDashboardModule(.dashboard)),
+        navigationSuccessType: .popTo(.featureDashboardModule(.dashboard)),
         navigationCancelType: .pop
       )
       if !routerHost.isScreenForeground(with: .featureIssuanceModule(.credentialOfferRequest(config: config))) {

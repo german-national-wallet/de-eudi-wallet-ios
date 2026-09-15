@@ -16,9 +16,6 @@
 import SwiftUI
 import logic_ui
 import logic_resources
-import logic_business
-import feature_common
-import logic_core
 
 struct DashboardView<Router: RouterHost>: View {
 
@@ -35,25 +32,45 @@ struct DashboardView<Router: RouterHost>: View {
       navigationTitle: viewModel.viewState.navigationTitle,
       toolbarContent: viewModel.viewState.toolBarContent
     ) {
-      content(
-        tabView: { tab in
-          return switch tab {
-          case .documents:
-            viewModel.viewState.documentTab
-              .eraseToAnyView()
-          case .home:
-            viewModel.viewState.homeTab
-              .eraseToAnyView()
-          case .transactions:
-            viewModel.viewState.transactionTab
-              .eraseToAnyView()
-          }
-        },
-        selectedTab: $viewModel.selectedTab
-      )
+        content(
+          tabView: { tab in
+            return switch tab {
+            case .overview:
+              overviewContent.eraseToAnyView()
+            case .activity:
+              viewModel.viewState.activitiesTab
+                .eraseToAnyView()
+            case .settings:
+              viewModel.viewState.settingsTab
+                .eraseToAnyView()
+            default:
+              EmptyView().eraseToAnyView()
+            }
+          },
+          selectionBinding: Binding(
+            get: { viewModel.selectedTab },
+            set: { requestedTab in
+              guard requestedTab != .qrReader else {
+                viewModel.selectedTab = viewModel.selectedTab
+                viewModel.shouldPresentQRReader = true
+                return
+              }
+              viewModel.selectedTab = requestedTab
+            }),
+          qrPresentationBinding: $viewModel.shouldPresentQRReader
+        )
     }
-    .task {
-      await viewModel.handleDeepLink()
+    .onAppear {
+      viewModel.onAppear()
+    }
+  }
+  
+  @ViewBuilder
+  private var overviewContent: some View {
+      if viewModel.viewState.hasIssuedDocuments {
+      viewModel.viewState.credentialsTab.eraseToAnyView()
+    } else {
+      viewModel.viewState.addDocumentTab?.eraseToAnyView()
     }
   }
 }
@@ -61,49 +78,67 @@ struct DashboardView<Router: RouterHost>: View {
 @MainActor
 @ViewBuilder
 private func content(
-  tabView: @escaping (SelectedTab) -> AnyView,
-  selectedTab: Binding<SelectedTab>
+  tabView: @escaping (DashboardTab) -> AnyView,
+  selectionBinding: Binding<DashboardTab>,
+  qrPresentationBinding: Binding<Bool>
 ) -> some View {
-  TabView(selection: selectedTab) {
-
-    tabView(.home)
-    .tabItem {
-      Label(
-        LocalizableStringKey.home.toString,
-        systemImage: "house.fill"
-      )
-    }
-    .tag(SelectedTab.home)
-
-    tabView(.documents)
-    .tabItem {
-      Label(
-        .documents,
-        systemImage: "doc.fill"
-      )
-    }
-    .tag(SelectedTab.documents)
-
-    tabView(.transactions)
-      .tabItem {
-        Label(
-          .transactions,
-          systemImage: "arrow.left.arrow.right"
-        )
+  TabView(selection: selectionBinding) {
+      Tab(value: .overview) {
+        tabView(.overview)
+      } label: {
+        tabLabel(for: .overview)
       }
-      //.tag(SelectedTab.transactions)
+      Tab(value: .activity) {
+        tabView(.activity)
+      } label: {
+        tabLabel(for: .activity)
+      }
+      Tab(value: .settings) {
+        tabView(.settings)
+      } label: {
+        tabLabel(for: .settings)
+      }
+      Tab(value: .qrReader, role: .search) {
+        // QR screen placeholder. Do not fill.
+      } label: {
+        Label {} icon: {
+          DashboardTab.qrReader.tabIcon
+            .renderingMode(.template)
+            .foregroundStyle(Theme.shared.color.onSurface)
+            .accessibilityHidden(true)
+        }
+        .accessibilityLabel(Text(LocalizableStringKey.dashboardTabBarTitleLabelScanner.toString))
+        .accessibilityIdentifier("dashboardScanQrButton")
+      }
+  }
+  .tint(Theme.shared.color.onSurface)
+  .sheet(isPresented: qrPresentationBinding) {
+    qrPresentationBinding.wrappedValue = false
+  } content: {
+    // TODO: QR Implementation should go here
+    VStack {
+      Text("QR Reader here")
+    }
+  }
+}
+
+@MainActor
+@ViewBuilder
+private func tabLabel(for tab: DashboardTab) -> some View {
+  Label {
+    Text(tab.tabTitle)
+      .font(DSStyle.Typography.Body.small)
+      .multilineTextAlignment(.center)
+  } icon: {
+    tab.tabIcon.accessibilityHidden(true)
   }
 }
 
 #Preview {
-  ContentScreenView(
-    padding: .zero,
-    canScroll: false,
-    background: Theme.shared.color.surface
-  ) {
+  ContentScreenView(padding: .zero, canScroll: false, background: Theme.shared.color.surface) {
     content(
-      tabView: {_ in EmptyView().eraseToAnyView()},
-      selectedTab: .constant(.home)
-    )
+      tabView: { _ in EmptyView().eraseToAnyView() },
+      selectionBinding: .constant(.overview),
+      qrPresentationBinding: .constant(false))
   }
 }

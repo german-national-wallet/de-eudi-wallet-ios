@@ -66,7 +66,7 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
     .centerDialog(
       isPresented: $viewModel.showCloseConfirmationPopup,
       icon: Theme.shared.image.infoCircleImage,
-      title: .eaaIssuanceDialogCancelTitle,
+      title: .eaaConsentCancelPopupTitle,
       subtitle: .eaaIssuanceDialogCancelSubTitle,
       buttons: [
         CustomAlertDialogConfig(
@@ -132,13 +132,18 @@ private func content(
       onViewData: onViewData
     )
 
-    DSSubTitleLabel(.pidInspectionPidIssuerTitle)
+    DSSubTitleLabel(.pidInspectionPidIssuerTitle, color: DSColor.onBackgroundVariant)
 
     Button(action: issuerDetailsAction) {
       HStack {
+        // The asset is a bare glyph, so the circular badge behind it comes from here.
         Theme.shared.image.buildingBlocks
-          .frame(width: DSStyle.Spacers.SPACING_LARGE, height: DSStyle.Spacers.SPACING_LARGE)
-          .clipped()
+          .resizable()
+          .scaledToFit()
+          .frame(width: DSStyle.Sizes.Icons.medium, height: DSStyle.Sizes.Icons.medium)
+          .frame(width: DSStyle.Sizes.Icons.xxLarge, height: DSStyle.Sizes.Icons.xxLarge)
+          .background(DSColor.surfaceContainerLow)
+          .clipShape(Circle())
 
         Text(issuerName)
           .font(DSTypography.Body.large)

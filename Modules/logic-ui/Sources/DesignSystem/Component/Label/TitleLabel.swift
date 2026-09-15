@@ -17,6 +17,7 @@ public extension DesignSystem.Components.Labels {
     private let title: LocalizedStringKey
     private let font: Font
     private let color: Color
+    private let alignment: TextAlignment
 
     /// Creates a new `TitleLabel` with an app localizable string key.
     ///
@@ -27,11 +28,13 @@ public extension DesignSystem.Components.Labels {
     public init(
       _ title: LocalizableStringKey,
       font: Font = DSTypography.Title.large,
-      color: Color = DSColor.onBackground
+      color: Color = DSColor.onBackground,
+      alignment: TextAlignment = .leading
     ) {
       self.title = LocalizedStringKey(title.toString)
       self.font = font
       self.color = color
+      self.alignment = alignment
     }
 
     /// Creates a new `TitleLabel` with a raw string (non-localized).
@@ -43,18 +46,20 @@ public extension DesignSystem.Components.Labels {
     public init(
       _ title: String,
       font: Font = DSTypography.Title.large,
-      color: Color = DSColor.onBackground
+      color: Color = DSColor.onBackground,
+      alignment: TextAlignment = .leading
     ) {
       self.title = LocalizedStringKey(title)
       self.font = font
       self.color = color
+      self.alignment = alignment
     }
 
     public var body: some View {
       Text(title)
         .font(font)
         .foregroundStyle(color)
-        .multilineTextAlignment(.leading)
+        .multilineTextAlignment(alignment)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.isHeader)
     }

@@ -79,6 +79,7 @@ extension IssuanceCardViewModel: IssuanceVerificationInteractorDelegate {
     self.setState {
       $0.copy(isLoading: false)
     }
+    abandonIssuance()
     self.router.popTo(with: .featureIssuanceCardModule(.issuanceAddDocument(config: NoConfig())))
   }
   
@@ -102,7 +103,7 @@ extension IssuanceCardViewModel: IssuanceVerificationInteractorDelegate {
       primaryButtonTitle: .walletPinSetupPrimaryButtonTitle,
       introStyle: .stepped(currentStep: 4, totalSteps: 4),
       primaryRoute: .featureIssuanceModule(.pinView(config: makeBiometryConfigForSetWalletPin(), issuanceVerificationInteractor: nil)),
-      onClose: self.closeButtonTapped,
+      onClose: { [weak self] in self?.router.cancelToStart() },
       onHelp: walletPinSetupHelpTapped
     )
   }

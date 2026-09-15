@@ -97,6 +97,8 @@ public typealias DSSubTitleLabel = DesignSystem.Components.Labels.SubTitleLabel
 
 public typealias DSBodyLabel = DesignSystem.Components.Labels.BodyLabel
 
+public typealias DSPageIndicator = DesignSystem.Components.PageIndicator
+
 /// `DSToggle` is a shorthand alias for accessing predefined Toggles in the Design System.
 ///
 /// Example:

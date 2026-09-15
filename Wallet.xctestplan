@@ -1,0 +1,112 @@
+{
+  "configurations" : [
+    {
+      "id" : "D081D3EF-C7D4-419F-84E7-75A782F84C42",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:EUDI Reference App.xcodeproj",
+      "identifier" : "F14907B72ABAF54B00DDFE56",
+      "name" : "EUDI Reference App"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/feature-issuance",
+        "identifier" : "feature-issuance-tests",
+        "name" : "feature-issuance-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-business",
+        "identifier" : "logic-business-tests",
+        "name" : "logic-business-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/feature-dashboard",
+        "identifier" : "feature-dashboard-tests",
+        "name" : "feature-dashboard-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-api",
+        "identifier" : "logic-api-tests",
+        "name" : "logic-api-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/feature-startup",
+        "identifier" : "feature-startup-tests",
+        "name" : "feature-startup-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/feature-common",
+        "identifier" : "feature-common-tests",
+        "name" : "feature-common-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-core",
+        "identifier" : "logic-core-tests",
+        "name" : "logic-core-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-ui",
+        "identifier" : "logic-ui-tests",
+        "name" : "logic-ui-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-feature-flags",
+        "identifier" : "logic-feature-flags-tests",
+        "name" : "logic-feature-flags-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/feature-presentation",
+        "identifier" : "feature-presentation-tests",
+        "name" : "feature-presentation-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/logic-authentication",
+        "identifier" : "logic-authentication-tests",
+        "name" : "logic-authentication-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/wallet-backend",
+        "identifier" : "wallet-backend-tests",
+        "name" : "wallet-backend-tests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/push-notification-service",
+        "identifier" : "push-notification-service-tests",
+        "name" : "push-notification-service-tests"
+      }
+    }
+  ],
+  "version" : 1
+}

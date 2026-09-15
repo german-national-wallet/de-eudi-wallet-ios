@@ -62,8 +62,8 @@ public final class FeatureCommonAssembly: Assembly {
       PARInteractorImpl(
         walletPoPInteractor: r.force(WalletPoPController.self),
         walletKitController: r.force(WalletKitController.self),
-        walletRegistrationInteractor: r.force(WalletRegistrationInteractor.self),
-        secureEnclaveController: r.force(SecureEnclaveController.self)
+        secureEnclaveController: r.force(SecureEnclaveController.self),
+        logger: r.force(Logging.self)
       )
     }.inObjectScope(ObjectScope.transient)
 
@@ -72,6 +72,13 @@ public final class FeatureCommonAssembly: Assembly {
         mdvmInteractor: r.force(MDVMInteractor.self),
         rwscaInteractor: r.force(RWSCAInteractor.self),
         secureEnclaveController: r.force(SecureEnclaveController.self)
+      )
+    }.inObjectScope(ObjectScope.transient)
+
+    container.register(IssuanceCancellationInteractor.self) { r in
+      IssuanceCancellationInteractorImpl(
+        parInteractor: r.force(PARInteractor.self),
+        pinSessionInteractor: r.force(PinSessionInteractor.self)
       )
     }.inObjectScope(ObjectScope.transient)
   }

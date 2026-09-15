@@ -38,6 +38,13 @@ public extension DesignSystem.Styles.Shadow {
     x: 0,
     y: 2
   )
+
+  static let high = Style(
+    color: Color(hex: "#1D1D1E").opacity(0.2),
+    radius: 8,
+    x: 0,
+    y: 2
+  )
 }
 
 public extension View {

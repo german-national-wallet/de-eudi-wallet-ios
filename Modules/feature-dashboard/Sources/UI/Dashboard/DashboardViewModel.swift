@@ -17,6 +17,7 @@ import Foundation
 import logic_ui
 import logic_business
 import logic_core
+import logic_analytics
 import feature_common
 import feature_issuance
 
@@ -25,14 +26,48 @@ struct DashboardState<Router: RouterHost>: ViewState {
   let homeTab: HomeTabView<Router>?
   let documentTab: DocumentTabView<Router>?
   let transactionTab: TransactionTabView<Router>?
+  let credentialsTab: DashboardCredentialView<Router>?
+  let addDocumentTab: AddDocumentView<Router>?
+  let activitiesTab: ActivitiesTabView<Router>?
+  let settingsTab: SettingsTabView<Router>?
+  
+  let hasIssuedDocuments: Bool
   let toolBarContent: ToolBarContent
   let navigationTitle: LocalizableStringKey
 }
 
-enum SelectedTab {
-  case home
-  case documents
-  case transactions
+enum DashboardTab: String {
+  case overview
+  case activity
+  case settings
+  case qrReader
+  
+  var tabTitle: String {
+    return switch self {
+    case .overview: LocalizableStringKey.dashboardTabBarTitleLabelOverview.toString
+    case .activity: LocalizableStringKey.dashboardTabBarTitleLabelActivity.toString
+    case .settings: LocalizableStringKey.dashboardTabBarTitleLabelSettings.toString
+    case .qrReader: ""
+    }
+  }
+  
+  var tabIcon: Image {
+    return switch self {
+    case .overview: Theme.shared.image.tabbarOverview
+    case .activity: Theme.shared.image.tabbarActivity
+    case .settings: Theme.shared.image.tabbarSettings
+    case .qrReader: Theme.shared.image.tabbarQRReader
+    }
+  }
+  
+  var a11Text: String {
+    return switch self {
+    case .overview: LocalizableStringKey.dashboardTabBarTitleLabelOverview.toString
+    case .activity: LocalizableStringKey.dashboardTabBarTitleLabelActivity.toString
+    case .settings: LocalizableStringKey.dashboardTabBarTitleLabelSettings.toString
+    case .qrReader: LocalizableStringKey.scanQrCode.toString
+    }
+  }
 }
 
 final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardState<Router>> {
@@ -43,8 +78,9 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
   private let secureEnclaveController: SecureEnclaveController
   private let configLogic: ConfigLogic
 
-  @Published var selectedTab: SelectedTab = .home
-
+  @Published var selectedTab: DashboardTab = .overview
+  @Published var shouldPresentQRReader: Bool = false
+  
   init(
     router: Router,
     dashboardInteractor: DashboardInteractor,
@@ -52,6 +88,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     documentTabInteractor: DocumentTabInteractor,
     transactionTabInteractor: TransactionTabInteractor,
     credentialsInteractor: CredentialsInteractor,
+    settingsTabInteractor: SettingsTabInteractor,
     secureEnclaveController: SecureEnclaveController,
     configLogic: ConfigLogic,
     deepLinkController: DeepLinkController
@@ -68,6 +105,11 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
           homeTab: nil,
           documentTab: nil,
           transactionTab: nil,
+          credentialsTab: nil,
+          addDocumentTab: nil,
+          activitiesTab: nil,
+          settingsTab: nil,
+          hasIssuedDocuments: dashboardInteractor.hasDocuments,
           toolBarContent: .init(
             trailingActions: nil,
             leadingActions: nil
@@ -75,28 +117,12 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
           navigationTitle: .custom("")
         )
       )
-//    super.init(
-//      router: router,
-//      initialState: .init(
-//        isLoading: true,
-//        documents: DocumentUIModel.mocks(),
-//        bearer: BearerUIModel.mock(),
-//        phase: .active,
-//        pendingBleModalAction: false,
-//        appVersion: interactor.getAppVersion(),
-//        allowUserInteraction: interactor.hasIssuedDocuments(),
-//        pendingDeletionDocument: nil,
-//        succededIssuedDocuments: [],
-//        failedDocuments: [],
-//        moreOptions: [.changeQuickPin]
-//      )
-//    )
-
       createTabs(
         homeTabInteractor: homeTabInteractor,
         documentTabInteractor: documentTabInteractor,
         transactionTabInteractor: transactionTabInteractor,
         credentialsInteractor: credentialsInteractor,
+        settingsTabInteractor: settingsTabInteractor,
         secureEnclaveController: secureEnclaveController,
         configLogic: configLogic
       )
@@ -108,6 +134,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
       documentTabInteractor: DocumentTabInteractor,
       transactionTabInteractor: TransactionTabInteractor,
       credentialsInteractor: CredentialsInteractor,
+      settingsTabInteractor: SettingsTabInteractor,
       secureEnclaveController: SecureEnclaveController,
       configLogic: ConfigLogic
     ) {
@@ -115,6 +142,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
       func updateState(toolbar: ToolBarContent, title: LocalizableStringKey) {
         self.setState {
           $0.copy(
+            hasIssuedDocuments: dashboardInteractor.hasDocuments,
             toolBarContent: toolbar,
             navigationTitle: title
           )
@@ -152,23 +180,46 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
                 updateState(toolbar: toolbar, title: title)
               }
             )
+          ),
+          credentialsTab: DashboardCredentialView(
+            with: .init(
+              router: router,
+              interactor: dashboardInteractor,
+              logger: DIGraph.resolver.force(Logging.self),
+              deepLinkController: deepLinkController,
+              analyticsController: DIGraph.resolver.force(AnalyticsController.self)
+            )
+          ),
+          addDocumentTab: AddDocumentView(
+            with: .init(
+              router: router,
+              interactor: DIGraph.resolver.force(AddDocumentInteractor.self),
+              deepLinkController: deepLinkController,
+              secureEnclaveController: secureEnclaveController,
+              analyticsController: DIGraph.resolver.force(AnalyticsController.self),
+              config: IssuanceFlowUiConfig(flow: .noDocument)
+            )
+          ),
+          activitiesTab: ActivitiesTabView(),
+          settingsTab: SettingsTabView(
+            with: .init(
+              router: router,
+              interactor: settingsTabInteractor,
+              configLogic: configLogic
+            )
           )
         )
       }
     }
     
-    func handleDeepLink() async {
-      if let deepLink = deepLinkController.getPendingDeepLinkAction() {
-        deepLinkController.handleDeepLinkAction(
-          routerHost: router,
-          deepLinkExecutable: deepLink,
-          remoteSessionCoordinator: deepLink.requiresCoordinator
-          ? await dashboardInteractor.getWalletKitController().startSameDevicePresentation(deepLink: deepLink.link)
-          : nil
-        )
-      }
+    func onAppear() {
+        self.setState {
+          $0.copy(
+            hasIssuedDocuments: dashboardInteractor.hasDocuments
+          )
+        }
     }
-
+        
   /*func fetch() async {
     switch await interactor.fetchDashboard(failedDocuments: viewState.failedDocuments) {
     case .success(let bearer, let documents, let hasIssuedDocuments):

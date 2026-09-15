@@ -41,22 +41,22 @@ public actor NetworkManagerImpl: NetworkManager {
   private let debugConfigController: DebugConfigController?
   nonisolated private let networkLogger: NetworkLogger
 
-  let session: Session = {
-    let configuration = URLSessionConfiguration.default
-    return Session(
-      configuration: configuration,
-      redirectHandler: Redirector(behavior: .doNotFollow)
-    )
-  }()
+  let session: Session
 
   public init(
     baseHost: String,
     logger: Logging?,
-    debugConfigController: DebugConfigController? = nil
+    debugConfigController: DebugConfigController? = nil,
+    certificatePinner: CertificatePinner = .shared
   ) {
     self.baseHost = baseHost
     self.debugConfigController = debugConfigController
     self.networkLogger = NetworkLogger(logger: logger)
+    self.session = Session(
+      configuration: URLSessionConfiguration.default,
+      serverTrustManager: PinnedServerTrustManager(pinner: certificatePinner),
+      redirectHandler: Redirector(behavior: .doNotFollow)
+    )
   }
 
   public func execute<R: NetworkRequest>(

@@ -3,26 +3,6 @@
     {
       "filename" : "info-circle.pdf",
       "idiom" : "universal"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "light"
-        }
-      ],
-      "filename" : "info-circle 2.pdf",
-      "idiom" : "universal"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "info-circle-dark.pdf",
-      "idiom" : "universal"
     }
   ],
   "info" : {

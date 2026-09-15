@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "feature-dashboard",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS("18.0")],
   products: [
     .library(
       name: "feature-dashboard",

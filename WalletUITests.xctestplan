@@ -1,0 +1,25 @@
+{
+  "configurations" : [
+    {
+      "id" : "00BC0FFF-E33E-4B61-AD39-B95698F1D07D",
+      "name" : "Configuration 1",
+      "options" : {
+        "language" : "en",
+        "region" : "US"
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:IDGo.xcodeproj",
+        "identifier" : "2CFFD8EA2E70293800688AC7",
+        "name" : "EudiWalletDEUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

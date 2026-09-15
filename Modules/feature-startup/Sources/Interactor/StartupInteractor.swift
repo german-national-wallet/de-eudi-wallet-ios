@@ -27,6 +27,8 @@ public protocol StartupInteractor {
   func storedRevocationCode() -> String?
   func hasSeenRevocationCode() -> Bool
   func markRevocationCodeSeen()
+  func hasSeenAppIntro() -> Bool
+  func markAppIntroSeen()
 }
 
 final class StartupInteractorImpl: StartupInteractor {
@@ -79,11 +81,7 @@ final class StartupInteractorImpl: StartupInteractor {
             title: .loginTitle,
             caption: .loginCaption,
             quickPinOnlyCaption: .loginCaptionQuickPinOnly,
-            navigationSuccessType: .push(
-              hasDocuments
-              ? .featureDashboardModule(.dashboard)
-              : .featureIssuanceModule(.issuanceAddDocument(config: IssuanceFlowUiConfig(flow: .noDocument)))
-            ),
+            navigationSuccessType: .push(.featureDashboardModule(.dashboard)),
             navigationErrorScreen: nil,
             navigationBackType: nil,
             isPreAuthorization: true,
@@ -104,11 +102,7 @@ final class StartupInteractorImpl: StartupInteractor {
     await manageStorageForFirstRun()
     try? await walletKitController.loadDocuments()
     try? await Task.sleep(nanoseconds: splashAnimationDuration.nanoseconds)
-    if hasDocuments {
-      return .featureDashboardModule(.dashboard)
-    } else {
-      return .featureIssuanceModule(.issuanceAddDocument(config: IssuanceFlowUiConfig(flow: .noDocument)))
-    }
+    return .featureDashboardModule(.dashboard)
   }
 
   private func manageStorageForFirstRun() async {
@@ -119,6 +113,7 @@ final class StartupInteractorImpl: StartupInteractor {
       keyChainController.clearAllKeychainItems()
       prefsController.remove(forKey: .isPinInitialized)
       prefsController.remove(forKey: .hasSeenRevocationCode)
+      prefsController.remove(forKey: .hasSeenAppIntro)
       prefsController.setValue(true, forKey: .runAtLeastOnce)
     }
   }
@@ -169,6 +164,14 @@ final class StartupInteractorImpl: StartupInteractor {
 
   func markRevocationCodeSeen() {
     prefsController.setValue(true, forKey: .hasSeenRevocationCode)
+  }
+
+  func hasSeenAppIntro() -> Bool {
+    prefsController.getBool(forKey: .hasSeenAppIntro)
+  }
+
+  func markAppIntroSeen() {
+    prefsController.setValue(true, forKey: .hasSeenAppIntro)
   }
 }
 

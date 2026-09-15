@@ -17,12 +17,17 @@ public extension DesignSystem.Components.Buttons {
     let showsBorder: Bool
     let borderWidth: CGFloat
 
+    /// The design pairs the 48pt button height with 10pt of vertical padding.
+    /// A plain `.padding()` would put 16pt top and bottom, making a single-line
+    /// label 54pt tall and overriding `height` entirely.
+    private static let verticalPadding: CGFloat = 10
+
     public init(
       outlineColor: Color = .clear,
       pressedBackgroundColor: Color = Color.clear,
       defaultBackgroundColor: Color = DesignSystem.Styles.Colors.primary,
       disabledBackgroundColor: Color = DesignSystem.Styles.Colors.primaryContainer.opacity(0.38),
-      height: CGFloat = 50,
+      height: CGFloat = 48,
       showsBorder: Bool = true,
       borderWidth: CGFloat = 2.0
     ) {
@@ -46,7 +51,8 @@ public extension DesignSystem.Components.Buttons {
       }
 
       return configuration.label
-        .padding()
+        .padding(.vertical, Self.verticalPadding)
+        .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
         .contentShape(Rectangle())
         .frame(maxWidth: .infinity, minHeight: height)
         .foregroundColor(outlineColor)

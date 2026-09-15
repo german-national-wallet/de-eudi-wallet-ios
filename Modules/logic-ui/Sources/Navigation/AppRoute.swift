@@ -21,6 +21,7 @@ import logic_resources
 public enum FeatureStartupRouteModule: AppRouteModule {
 
   case startup
+  case appIntro(config: any UIConfigType)
   case revocationOnboarding(config: any UIConfigType)
   case revocationSaveKey(config: any UIConfigType)
 
@@ -28,6 +29,8 @@ public enum FeatureStartupRouteModule: AppRouteModule {
     return switch self {
     case .startup:
       (key: "Startup", arguments: [:])
+    case .appIntro(let config):
+      (key: "appIntro", arguments: ["config": config.log])
     case .revocationOnboarding(let config):
       (key: "revocationOnboarding", arguments: ["config": config.log])
     case .revocationSaveKey(let config):
@@ -266,7 +269,6 @@ public enum FeatureIssuanceRouteModule: AppRouteModule {
   case setEidPinView(config: any UIConfigType, onPinEntered: PinCallbackWrapper?, issuanceVerificationInteractor: IssuanceVerificationInteractor?)
   case setNewEidInstructionsPinView(config: any UIConfigType, issuanceVerificationInteractor: IssuanceVerificationInteractor?, pinCallbackWrapper: PinCallbackWrapper?, pinScreenType: PINScreenType)
   case issuanceSuccessView(config: any UIConfigType, callback: (@Sendable () -> Void)? = nil)
-  case issuanceOnboardingView
   case issuanceOnboardingCardView
   case issuanceOnboardingInstructionView(issuanceVerificationInteractor: IssuanceVerificationInteractor?)
   case issuanceProcessOverviewView(issuanceVerificationInteractor: IssuanceVerificationInteractor?)
@@ -303,8 +305,6 @@ public enum FeatureIssuanceRouteModule: AppRouteModule {
       (key: "setNewEidPin", arguments: ["config": config.log])
     case .issuanceSuccessView(config: let config, _):
       (key: "issuanceSuccessView", arguments: ["config": config.log])
-    case .issuanceOnboardingView:
-      (key: "issuanceOnboardingView", arguments: [:])
     case .issuanceOnboardingCardView:
       (key: "issuanceOnboardingCardView", arguments: [:])
     case .issuanceOnboardingInstructionView:

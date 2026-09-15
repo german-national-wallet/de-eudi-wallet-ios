@@ -8,10 +8,10 @@ import logic_ui
 import logic_resources
 import feature_common
 
-/// Confirms the credential that is about to be added, after the card has been read
-/// and before the wallet code is set. Reached from `IssuanceCardView` on a successful scan.
 struct IssuancePidPreviewView<Router: RouterHost>: View {
   @ObservedObject private var viewModel: IssuancePidPreviewViewModel<Router>
+
+  @State private var isCancelDialogPresented = false
 
   init(with viewModel: IssuancePidPreviewViewModel<Router>) {
     self.viewModel = viewModel
@@ -20,7 +20,7 @@ struct IssuancePidPreviewView<Router: RouterHost>: View {
   var body: some View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
-        onClose: viewModel.closeButtonTapped,
+        onClose: { isCancelDialogPresented = true },
         onHelp: viewModel.helpTapped,
         progress: (current: 4, total: 4)
       )
@@ -30,15 +30,10 @@ struct IssuancePidPreviewView<Router: RouterHost>: View {
           DSTitleLabel(.pidIDPreviewTitle)
             .accessibilityIdentifier("issuancePidPreviewTitle")
 
-          ZStack {
-            RoundedRectangle(cornerRadius: 16)
-              .foregroundStyle(DSColor.surfaceContainer)
-              .frame(height: 240)
-              .frame(maxWidth: .infinity)
-              .accessibilityHidden(true)
-
-            ThemeManager.shared.image.workInProgessIcon
-          }
+          PIDCredentialCardView(
+            credentialTitle: LocalizableStringKey.dashboardCardTitle.toString,
+            issuer: LocalizableStringKey.dashboardCardIssuer.toString
+          )
 
           issuerView
         }
@@ -52,7 +47,7 @@ struct IssuancePidPreviewView<Router: RouterHost>: View {
     }
     .centerDialog(
       isPresented: $viewModel.isRejectDialogOpen,
-      icon: Theme.shared.image.infoCircle,
+      icon: Theme.shared.image.infoCircleImage,
       title: .issuanceConsentRejectInfoTitle,
       subtitle: .issuanceConsentRejectInfoParagraph,
       buttons: [
@@ -74,6 +69,14 @@ struct IssuancePidPreviewView<Router: RouterHost>: View {
         )
       ]
     )
+    // Confirming means the user abandoned issuance, so this runs the same
+    // cancel-then-close as the reject dialog rather than only navigating away.
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: viewModel.rejectConfirmed
+    )
+
+    .background(DisableSwipeBackGesture())
   }
 
   private var issuerView: some View {

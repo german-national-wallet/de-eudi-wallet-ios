@@ -43,6 +43,14 @@ public struct PinTextFieldView: View {
   private let borderWidth: CGFloat = 1
   private let focusedBorderWidth: CGFloat = 2
 
+  /// Inline-error metrics taken from the Figma pin-entry component.
+  private enum Constants {
+    static let errorIconSize: CGFloat = 18
+    /// Figma reads 2pt, measured from a 28pt icon box whose own padding supplied
+    /// the rest of the gap. With the box dropped, that padding moves here.
+    static let errorIconSpacing: CGFloat = DSStyle.Spacers.SPACING_SMALL
+  }
+
   private var activeIndex: Int {
     return currentIndex - 1
   }
@@ -122,7 +130,8 @@ public struct PinTextFieldView: View {
   }
 
   public var body: some View {
-    VStack(spacing: 15) {
+    // The design puts the error row 8pt below the entry row.
+    VStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
       HStack(spacing: .zero) {
         pinDots
           .accessibilityHidden(true)
@@ -198,20 +207,19 @@ public struct PinTextFieldView: View {
   }
 
   private func errorLabel(_ message: String) -> some View {
-    HStack(alignment: .top, spacing: DSStyle.Spacers.SPACING_SMALL) {
-      // Template rendered on purpose: the bundled `info-circle` carries its own colours, and its
-      // light variant is white, so it stays invisible until it takes the error colour.
-      Theme.shared.image.infoCircleImage
-        .renderingMode(.template)
+    HStack(alignment: .top, spacing: Constants.errorIconSpacing) {
+      Theme.shared.image.warning
         .resizable()
         .scaledToFit()
-        .frame(width: DSStyle.Sizes.Icons.small, height: DSStyle.Sizes.Icons.small)
-        .foregroundColor(DSColor.error)
+        .frame(width: Constants.errorIconSize, height: Constants.errorIconSize)
+        .centeredOnFirstLine(of: DSTypography.Body.large)
+        .accessibilityHidden(true)
 
       Text(message)
-        .font(DSTypography.Label.large)
+        .font(DSTypography.Body.large)
         .foregroundStyle(DSColor.error)
         .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     .frame(width: entryRowWidth, alignment: .leading)
   }

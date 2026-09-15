@@ -9,11 +9,13 @@ import logic_resources
 public struct EAACredentialCardView: View {
 
   private enum Layout {
-    /// The logo fills the brand panel, so this only sets how narrow that panel may become.
     static let logoMaxWidth: CGFloat = 80
     static let logoSidePadding: CGFloat = DSStyle.Spacers.SPACING_MEDIUM_SMALL
+    static let logoTopPadding: CGFloat = DSStyle.Spacers.SPACING_SMALL
+    static let logoHeightRatio: CGFloat = 0.5
     static let brandPanelWidthRatio: CGFloat = 0.30
     static let brandPanelMinWidth: CGFloat = logoMaxWidth + logoSidePadding * 2
+    static let viewDetailsIconSize: CGFloat = 18
   }
 
   private var viewHeight: CGFloat = 60
@@ -104,20 +106,43 @@ public struct EAACredentialCardView: View {
           .foregroundColor(DSColor.onSurfaceVariant)
           .accessibilityIdentifier("eaaCredentialIssuerView")
       }
+
+      if onViewData != nil {
+        Spacer(minLength: DSStyle.Spacers.SPACING_SMALL)
+
+        viewDetailsLink
+      }
     }
     .padding(DSStyle.Spacers.SPACING_MEDIUM)
   }
 
-  // MARK: - Right: issuer brand region + logo
+  private var viewDetailsLink: some View {
+    HStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
+      Text(.eaaOfferViewDetailsButtonTitle)
+        .font(DSTypography.Label.large)
+        .foregroundColor(DSColor.onSecondaryContainer)
+
+      Theme.shared.image.arrowForward
+        .renderingMode(.template)
+        .resizable()
+        .scaledToFit()
+        .frame(width: Layout.viewDetailsIconSize, height: Layout.viewDetailsIconSize)
+        .foregroundColor(DSColor.onSecondaryContainer)
+        .accessibilityHidden(true)
+    }
+    .accessibilityIdentifier("eaaCredentialViewDetailsLink")
+  }
 
   private func brandPanel(width: CGFloat) -> some View {
     brandBackground
       .frame(width: width)
       .frame(maxHeight: .infinity)
       .clipped()
-      .overlay {
+      .overlay(alignment: .top) {
         if let logoURL = logoURL, !logoURL.isEmpty {
           logo
+            .padding(.horizontal, Layout.logoSidePadding)
+            .padding(.top, Layout.logoTopPadding)
         }
       }
   }
@@ -135,13 +160,12 @@ public struct EAACredentialCardView: View {
       if case .success(let image) = phase {
         image
           .resizable()
-          .scaledToFill()
+          .scaledToFit()
       } else {
         Color.clear
       }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .clipped()
+    .frame(maxWidth: .infinity, maxHeight: viewHeight * Layout.logoHeightRatio, alignment: .top)
     .accessibilityIdentifier("eaaCredentialLogoView")
   }
 }

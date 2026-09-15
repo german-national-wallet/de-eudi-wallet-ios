@@ -279,6 +279,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case ageEqualOrOver
   case issuingDate
   case dashboardCardTitle
+  case dashboardCardIssuer
   case years
   case errorFetchTransactionLog
   case parSetupFailed
@@ -355,8 +356,23 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case issuanceOnboardingPinInfoViewSecondaryButtonTitle
   case issuanceOnboardingPinInfoViewTertiaryButtonTitle
   case issuanceOnboardingPinInfoViewHelpButtonTitle
+  case redirectInfoTitle
+  /// Takes the host the user is about to be sent to.
+  case redirectInfoTarget([String])
+  case redirectInfoDisclaimer
+  case redirectInfoPrimaryButton
+  case redirectInfoSecondaryButton
   case pidNoCardAvailableInfoTitle
   case pidNoCardAvailableInfoParagraph
+  case pidNoLetterForgotInfoTitle
+  case pidNoLetterForgotInfoParagraph
+  case pidCardPinLetterInfoTitle
+  case pidCardPinLetterInfoHeadline1
+  case pidCardPinLetterInfoParagraph1
+  case pidCardPinLetterInfoHeadline2
+  case pidCardPinLetterInfoParagraph2
+  case pidCardPinLetterInfoSecButton
+  case pidCardPinEntrySecButton
   case globalOfficeButton
   case issuanceOnboardingPrimaryButtonTitle
   case pidOnboardingCardsTitle
@@ -377,8 +393,19 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidIDPreviewCredentialSubline
   case pidIDPreviewIssuerName
   case walletPinSetupBanner
+  case pidIssuanceLoadingTitle
+  case nfcSystemSheetTitleStart
+  case nfcSystemSheetParagraphStart
+  case nfcSystemSheetTitleSuccess
+  case nfcSystemSheetParagraphSuccessOneTimePin
+  case nfcSystemSheetParagraphSuccessCardPin
+  case nfcSystemSheetTitleError
+  case nfcSystemSheetParagraphErrorOneTimePin
+  case nfcSystemSheetParagraphErrorCardPin
   case pidEidFunctionInfoTitle
+  case pidEidFunctionInfoHeading1
   case pidEidFunctionInfoParagraph1
+  case pidEidFunctionInfoHeading2
   case pidEidFunctionInfoParagraph2
   case globalCloseHintButton
   case globalCloseButton
@@ -515,6 +542,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case eaaOfferViewSubTitle
   case eaaOfferViewTxCodeInfo([String])
   case eaaOfferViewPrimaryButtonTitle
+  case eaaOfferViewDetailsButtonTitle
   case eaaOfferViewLoadingText
   case eaaOfferViewTxCodeFlowInstruction
 
@@ -530,6 +558,10 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case eaaIssuanceDialogCancelSubTitle
   case eaaIssuanceDialogCancelPrimButton
   case eaaIssuanceDialogCancelSecButton
+  case pidIssuanceDialogCancelTitle
+  case pidIssuanceDialogCancelSubTitle
+  case pidIssuanceDialogCancelPrimButton
+  case pidIssuanceDialogCancelSecButton
   case eaaIssuanceTransactionCodeEntryPrimButton
   case eaaIssuanceLoadingTitle
   case eaaIssuanceSuccessTitle
@@ -556,6 +588,20 @@ public enum LocalizableStringKey: Equatable, Sendable {
   /// As `pinAccessibilityDigitsEntered`, for fields that accept more than digits.
   case pinAccessibilityCharactersEntered([String])
   
+  case appOnboardingOnboarding1Title
+  case appOnboardingOnboarding1Paragraph
+  case appOnboardingOnboarding1PrimButton
+  case appOnboardingOnboarding1TertiaryButton
+  case appOnboardingOnboarding2Title
+  case appOnboardingOnboarding2Paragraph
+  case appOnboardingOnboarding2PrimButton
+  case appOnboardingOnboarding2TertiaryButton
+  case appOnboardingOnboarding4Title
+  case appOnboardingOnboarding4Paragraph
+  case appOnboardingOnboarding4PrimButton
+  case appOnboardingAnimationPauseA11y
+  case appOnboardingAnimationPlayA11y
+
   // MARK: Revocation keys
   case appOnboardingWalletRevocationIntroTitle
   case appOnboardingWalletRevocationIntroPara1
@@ -570,6 +616,13 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case appOnboardingWalletRevocationSaveKeyPrimButton
 
   case eaaIssuerInfoTitle
+  
+  // MARK: Dashboard TabBar Terms
+ 
+  case dashboardTabBarTitleLabelOverview
+  case dashboardTabBarTitleLabelActivity
+  case dashboardTabBarTitleLabelSettings
+  case dashboardTabBarTitleLabelScanner
 }
 
 public extension LocalizableStringKey {
@@ -578,5 +631,18 @@ public extension LocalizableStringKey {
   }
   var toLocalizedStringKey: LocalizedStringKey {
     LocalizedStringKey(self.toString)
+  }
+  /// The localized value with inline markdown (e.g. `**bold**`) applied.
+  ///
+  /// `inlineOnlyPreservingWhitespace` keeps literal newlines in the translation,
+  /// so a value may use `\n` to break lines. `.full` would drop them, since it
+  /// parses the value as markdown blocks and flattens them. A translation with
+  /// no markers comes through unchanged, so untagged values stay valid.
+  var toAttributedString: AttributedString {
+    let raw = self.toString
+    return (try? AttributedString(
+      markdown: raw,
+      options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+    )) ?? AttributedString(raw)
   }
 }

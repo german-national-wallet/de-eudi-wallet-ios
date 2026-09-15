@@ -77,7 +77,7 @@ public struct HomeCardView: View {
               .typography(Theme.shared.font.bodyLarge)
               .fontWeight(.semibold)
           } icon: {
-            Theme.shared.image.infoCircle
+            Theme.shared.image.infoCircleImage
           }
           .foregroundStyle(Theme.shared.color.primary)
           .padding(SPACING_SMALL)

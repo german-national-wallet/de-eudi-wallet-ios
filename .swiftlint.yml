@@ -1,0 +1,58 @@
+excluded:
+    - "build/*"
+    - "Modules/logic-business/Tests/*"
+    - "Modules/logic-ui/Tests/*"
+    - "Modules/logic-api/Tests/*"
+    - "Modules/logic-analytics/Tests/*"
+    - "Modules/logic-analytics/.build/*"
+    - "Modules/logic-test/*"
+    - "Modules/logic-business/.build/*"
+    - "Modules/logic-ui/Tests/.build/*"
+    - "Modules/logic-api/Tests/.build/*"
+    - "Modules/logic-api/.build/*"
+    - "Modules/logic-core/.build/*"
+    - "Modules/logic-authentication/Tests/*"
+    - "Modules/logic-authentication/.build/*"
+    - "Modules/feature-test/*"
+    - "Modules/feature-startup/Tests/*"
+    - "Modules/feature-common/Tests/*"
+    - "Modules/feature-startup/.build/*"
+    - "Modules/feature-login/Tests/*"
+    - "Modules/feature-login/.build/*"
+    - "Modules/feature-dashboard/Tests/*"
+    - "Modules/feature-dashboard/.build/*"
+    - "Modules/feature-common/.build/*"
+    - "Modules/feature-common/Tests/*"
+    - "Modules/feature-presentation/.build/*"
+    - "Modules/feature-presentation/Tests/*"
+    - "Modules/feature-issuance/.build/*"
+    - "Modules/feature-issuance/Tests/*"
+    - "Modules/feature-proximity/.build/*"
+    - "Modules/feature-proximity/Tests/*"
+    - "Modules/logic-authentication/Tests/*"
+    - "Modules/logic-authentication/.build/*"
+    - "Modules/logic-authentication/Tests/*"
+    - "Modules/logic-authentication/.build/*"
+    - "**/GeneratedMocks.swift"
+
+disabled_rules:
+  - identifier_name
+  - non_optional_string_data_conversion
+  - comment_spacing
+  - cyclomatic_complexity
+  - function_body_length
+  - type_body_length
+  - function_parameter_count
+  - nesting
+  - file_length
+  - switch_case_alignment
+  - trailing_whitespace
+  - todo
+
+line_length: 300
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 50
+    error: 60

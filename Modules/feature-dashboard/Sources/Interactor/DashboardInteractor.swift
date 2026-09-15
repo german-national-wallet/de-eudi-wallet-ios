@@ -18,6 +18,7 @@ import logic_core
 import logic_business
 
 public protocol DashboardInteractor: Sendable {
+  var hasDocuments: Bool { get }
   func getWalletKitController() -> WalletKitController
   func getPIDDocument() throws -> DocClaimsDecodable?
   func deleteDocument(with id: String) async throws
@@ -28,6 +29,10 @@ public protocol DashboardInteractor: Sendable {
 final class DashboardInteractorImpl: DashboardInteractor {
   private let walletKitController: WalletKitController
   private let prefsController: PrefsController
+  
+  var hasDocuments: Bool {
+    return !walletKitController.fetchAllDocuments().isEmpty
+  }
   
   init(
     walletKitController: WalletKitController,

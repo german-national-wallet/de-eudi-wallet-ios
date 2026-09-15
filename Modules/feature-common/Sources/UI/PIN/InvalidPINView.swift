@@ -9,7 +9,9 @@ import logic_resources
 
 struct InvalidPINView<Router: RouterHost>: View {
   @ObservedObject var viewModel: InvalidPINViewModel<Router>
-  
+
+  @State private var isCancelDialogPresented = false
+
   init(with viewModel: InvalidPINViewModel<Router>) {
     self.viewModel = viewModel
   }
@@ -17,7 +19,7 @@ struct InvalidPINView<Router: RouterHost>: View {
   var body: some View {
     ContentScreenView(padding: 0) {
       VStack(alignment: .leading) {
-        HeaderContentView(onClose: viewModel.onCancelButtonClicked)
+        HeaderContentView(onClose: { isCancelDialogPresented = true })
         
         DSTitleLabel(viewModel.viewState.config.title)
         
@@ -83,5 +85,9 @@ struct InvalidPINView<Router: RouterHost>: View {
         .presentationDetents([.medium])
       }
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: viewModel.onCancelButtonClicked
+    )
   }
 }

@@ -16,6 +16,8 @@ struct IntroWarningBanner: View {
         .scaledToFit()
         .frame(width: DSIconSize.small, height: DSIconSize.small)
         .foregroundColor(DSColor.onSurface)
+        .centeredOnFirstLine(of: DSTypography.Body.large)
+        .accessibilityHidden(true)
 
       Text(text)
         .font(DSTypography.Body.large)

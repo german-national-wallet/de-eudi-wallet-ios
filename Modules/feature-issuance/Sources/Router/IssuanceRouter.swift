@@ -113,6 +113,9 @@ public final class IssuanceRouter {
           analyticsController: DIGraph.resolver.force(
             AnalyticsController.self
           ),
+          issuanceCancellationInteractor: DIGraph.resolver.force(
+            IssuanceCancellationInteractor.self
+          ),
           config: config,
           requestURI: requestURI,
           eidPin: eidPin,
@@ -138,6 +141,7 @@ public final class IssuanceRouter {
             config: config,
             onPinEntered: onCANEntered,
             pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
             logger: DIGraph.resolver.force(Logging.self)
           )
         ).eraseToAnyView()
@@ -159,6 +163,7 @@ public final class IssuanceRouter {
             config: config,
             onPinEntered: onCANEntered,
             pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
             logger: DIGraph.resolver.force(Logging.self)
 
           )
@@ -178,6 +183,7 @@ public final class IssuanceRouter {
           config: config,
           onPinEntered: onPinEntered,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
           logger: DIGraph.resolver.force(Logging.self)
         ),
         onPinEntered: onPinEntered
@@ -235,6 +241,7 @@ public final class IssuanceRouter {
           ),
           onPinEntered: onCANEntered,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
           logger: DIGraph.resolver.force(Logging.self)
         )
       )
@@ -280,7 +287,10 @@ public final class IssuanceRouter {
       IssuancePidPreviewView(
         with: .init(
           router: host,
-          config: config
+          config: config,
+          issuanceCancellationInteractor: DIGraph.resolver.force(
+            IssuanceCancellationInteractor.self
+          )
         )
       ).eraseToAnyView()
 
@@ -319,32 +329,18 @@ public final class IssuanceRouter {
         }
       ).eraseToAnyView()
 
-    case .issuanceOnboardingView:
-      InstructionsView(
-        viewModel: .init(
-          router: host,
-          config: UIConfig.InstructionsViewConfig(
-            mainTitle: .issuanceOnboardingTitle,
-            message: .issuanceOnboardingMessage,
-            image: Theme.shared.image.multipleAusweisCards,
-            illustrationWidthFactor: 0.7,
-            primaryButtonTitle: .issuanceOnboardingPrimaryButtonTitle,
-            introStyle: .stepped(currentStep: 1, totalSteps: 4),
-            primaryRoute: .featureIssuanceModule(
-              .issuanceOnboardingInstructionView(
-                issuanceVerificationInteractor: DIGraph.resolver.force(
-                  IssuanceVerificationInteractor.self
-                )
-              )
-            )))
-       ).eraseToAnyView()
-      
     case .issuanceOnboardingInstructionView(let issuanceInteractor):
       IssuanceOnboardingPinCardView(
         router: host,
         issuanceInteractor: issuanceInteractor,
         onBack: { host.pop() },
-        onClose: { host.popTo(with: .featureDashboardModule(.dashboard)) },
+        onClose: {
+          Task {
+            await DIGraph.resolver.force(IssuanceCancellationInteractor.self)
+              .cancelIssuance(verificationInteractor: issuanceInteractor)
+          }
+          host.cancelToStart()
+        },
         onCardPinKnownTapped: {
           host.push(with: .featureIssuanceModule(
             .issuanceProcessOverviewView(
@@ -360,6 +356,19 @@ public final class IssuanceRouter {
               issuanceVerificationInteractor: issuanceInteractor
             )
           ))
+        },
+        onNoPinLetterOrForgottenTapped: {
+          host.push(with: .featureCommonModule(
+            .illustratedNoticeView(
+              config: IllustratedNoticeUiConfig(
+                title: .pidNoLetterForgotInfoTitle,
+                message: .pidNoLetterForgotInfoParagraph,
+                illustration: Theme.shared.image.burgeramtInfo,
+                primaryButtonTitle: .globalOfficeButton,
+                primaryAction: .findBurgeramt
+              )
+            )
+          ))
         }
       ).eraseToAnyView()
 
@@ -368,7 +377,13 @@ public final class IssuanceRouter {
         router: host,
         issuanceInteractor: issuanceInteractor,
         onBack: { host.pop() },
-        onClose: { host.popTo(with: .featureDashboardModule(.dashboard)) },
+        onClose: {
+          Task {
+            await DIGraph.resolver.force(IssuanceCancellationInteractor.self)
+              .cancelIssuance(verificationInteractor: issuanceInteractor)
+          }
+          host.cancelToStart()
+        },
         onContinue: {
           host.push(with: .featureIssuanceModule(
             .consentView(
@@ -387,7 +402,7 @@ public final class IssuanceRouter {
             .pinView(
               config: UIConfig.Biometry(
                 navigationTitle: .issuanceEidPinEntryTitle,
-                caption: .issuanceEidUnkownTitle,
+                caption: .pidCardPinEntrySecButton,
                 quickPinOnlyCaption: .space,
                 navigationSuccessType: .pop,
                 navigationBackType: .pop,
@@ -401,6 +416,9 @@ public final class IssuanceRouter {
               issuanceVerificationInteractor: issuanceInteractor
             )),
           issuanceInteractor: issuanceInteractor
+          ),
+          issuanceCancellationInteractor: DIGraph.resolver.force(
+            IssuanceCancellationInteractor.self
           )
         )
       ).eraseToAnyView()
@@ -462,4 +480,5 @@ public final class IssuanceRouter {
       .eraseToAnyView()
     }
   }
+
 }

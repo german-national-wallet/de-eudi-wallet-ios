@@ -129,6 +129,7 @@ public final class PresentationRouter {
           config: config,
           onPinEntered: nil,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
           logger: DIGraph.resolver.force(Logging.self)
         )
       ).eraseToAnyView()

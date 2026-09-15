@@ -13,6 +13,7 @@ struct IssuanceConsentView<Router: RouterHost>: View {
   @ObservedObject private var viewModel: IssuanceConsentViewModel<Router>
   @State private var showInfoSheet: Bool
   @State private var isShowingAllData: Bool
+  @State private var isCancelDialogPresented = false
 
   private let collapsedClaimCount = 6
 
@@ -38,7 +39,7 @@ struct IssuanceConsentView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
-        onClose: viewModel.closeButtonTapped,
+        onClose: { isCancelDialogPresented = true },
         onHelp: { showInfoSheet = true },
         progress: (current: 1, total: 4)
       )
@@ -61,7 +62,7 @@ struct IssuanceConsentView<Router: RouterHost>: View {
           pidIssuerView
         }
         .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
-        .padding(.top, DSStyle.Spacers.SPACING_SMALL)
+        .padding(.top, DSStyle.Spacers.SPACING_MEDIUM)
         .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
       }
       .scrollIndicators(.hidden)
@@ -76,7 +77,7 @@ struct IssuanceConsentView<Router: RouterHost>: View {
     }
     .centerDialog(
       isPresented: $viewModel.isRejectSheetOpen,
-      icon: Theme.shared.image.infoCircle,
+      icon: Theme.shared.image.infoCircleImage,
       title: .issuanceConsentRejectInfoTitle,
       subtitle: .issuanceConsentRejectInfoParagraph,
       buttons: [
@@ -98,6 +99,14 @@ struct IssuanceConsentView<Router: RouterHost>: View {
         )
       ]
     )
+    // Confirming means the user abandoned issuance, so this runs the same
+    // cancel-then-close as the reject dialog rather than only navigating away.
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: viewModel.rejectConfirmed
+    )
+
+    .background(EnableSwipeBackGesture())
   }
 
   private var consentListView: some View {

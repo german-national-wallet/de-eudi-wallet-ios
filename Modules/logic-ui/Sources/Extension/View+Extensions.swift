@@ -55,6 +55,40 @@ public extension View {
 }
 
 public extension View {
+
+  /// Centres an icon in the 48pt square the design system gives every icon
+  /// button.
+  ///
+  /// Sizing the button to its glyph instead collapses the gap between adjacent
+  /// controls — two 24pt icons 8pt apart read as 8pt of space, where the design
+  /// shows 32pt — and leaves the tap target under Apple's 44pt minimum.
+  func iconButtonSlot(size: CGFloat = 48) -> some View {
+    self
+      .frame(width: size, height: size)
+      .contentShape(Rectangle())
+  }
+
+  /// Centres an icon on the first line of the text it sits beside. Use with
+  /// `HStack(alignment: .top)`.
+  ///
+  /// The hidden space gives the container the text font's own line height, so
+  /// the icon lands on the middle of line one whatever that height turns out to
+  /// be. Aligning on `.firstTextBaseline` instead sits the icon's bottom edge on
+  /// the baseline, which rides high whenever the icon is taller than the font's
+  /// cap height — an 18pt icon against 16pt copy, for instance.
+  func centeredOnFirstLine(of font: Font) -> some View {
+    ZStack {
+      Text(verbatim: " ")
+        .font(font)
+        .hidden()
+        .accessibilityHidden(true)
+
+      self
+    }
+  }
+}
+
+public extension View {
   @ViewBuilder func `if`<Content: View>(
     _ condition: Bool,
     transform: (Self) -> Content

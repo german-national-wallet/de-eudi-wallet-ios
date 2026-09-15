@@ -92,7 +92,7 @@ final class LocalizableManager: LocalizableManagerType {
       "issuance_details_doc_deletion_caption": "pid_presentation.dialog_rp_rejection.paragraph",
       
       // QR/Scanner related
-      "scan_qr_code": "pid_presentation.rp_info.title", // Placeholder
+      "scan_qr_code": "overview.qr_scanner.title",
       "scanner_qr_title": "pid_presentation.rp_info.title", // Placeholder
       "scanner_qr_caption": "pid_presentation.rp_info.paragraph_1", // Placeholder
       "scanner_qr_title_issuing": "pid_issuance.onboarding_cards.title", // Placeholder
@@ -978,6 +978,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedStringWithArguments(forKey: mapKey("var-date-of-creation"), arguments: args)
       case .dashboardCardTitle:
         bundle.localizedString(forKey: mapKey("dashboard_card_title"))
+      case .dashboardCardIssuer:
+        bundle.localizedString(forKey: "__variable_text.pid_credential_1.var_issuer_name")
       case .firstName:
         bundle.localizedString(forKey: mapKey("first_name"))
       case .lastName:
@@ -1162,10 +1164,39 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_issuance.onboarding_eid.tert_button_1")
       case .issuanceOnboardingPinInfoViewHelpButtonTitle:
         bundle.localizedString(forKey: "pid_issuance.onboarding_eid.tert_button_2")
+      case .redirectInfoTitle:
+        bundle.localizedString(forKey: "global.redirect_info.title")
+      case .redirectInfoTarget(let args):
+        bundle.localizedString(forKey: "global.redirect_info.paragraph_1")
+          .replacingOccurrences(of: "PROVIDER.DOMAIN", with: args.first ?? "")
+      case .redirectInfoDisclaimer:
+        bundle.localizedString(forKey: "global.redirect_info.paragraph_2")
+      case .redirectInfoPrimaryButton:
+        bundle.localizedString(forKey: "global.redirect_info.prim_button")
+      case .redirectInfoSecondaryButton:
+        bundle.localizedString(forKey: "global.redirect_info.sec_button")
       case .pidNoCardAvailableInfoTitle:
         bundle.localizedString(forKey: "pid_issuance.no_card_available_info.title")
       case .pidNoCardAvailableInfoParagraph:
         bundle.localizedString(forKey: "pid_issuance.no_card_available_info.paragraph")
+      case .pidNoLetterForgotInfoTitle:
+        bundle.localizedString(forKey: "pid_issuance.no_letter_forgot_info.title")
+      case .pidNoLetterForgotInfoParagraph:
+        bundle.localizedString(forKey: "pid_issuance.no_letter_forgot_info.paragraph")
+      case .pidCardPinLetterInfoTitle:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.title")
+      case .pidCardPinLetterInfoHeadline1:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.headline_1")
+      case .pidCardPinLetterInfoParagraph1:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.paragraph_1")
+      case .pidCardPinLetterInfoHeadline2:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.headline_2")
+      case .pidCardPinLetterInfoParagraph2:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.paragraph_2")
+      case .pidCardPinLetterInfoSecButton:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_letter_info.sec_button")
+      case .pidCardPinEntrySecButton:
+        bundle.localizedString(forKey: "pid_issuance.card_pin_entry.sec_button")
       case .globalOfficeButton:
         bundle.localizedString(forKey: "global.office_button")
       case .issuanceOnboardingPrimaryButtonTitle:
@@ -1206,10 +1237,32 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "__variable_text.pid_issuer.var_issuer_name")
       case .walletPinSetupBanner:
         bundle.localizedString(forKey: "pid_issuance.wallet_pin_intro.banner")
+      case .pidIssuanceLoadingTitle:
+        bundle.localizedString(forKey: "pid_issuance.loading.title")
+      case .nfcSystemSheetTitleStart:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_start")
+      case .nfcSystemSheetParagraphStart:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_start")
+      case .nfcSystemSheetTitleSuccess:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_success")
+      case .nfcSystemSheetParagraphSuccessOneTimePin:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_success_one_time_pin")
+      case .nfcSystemSheetParagraphSuccessCardPin:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_success_card_pin")
+      case .nfcSystemSheetTitleError:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_error")
+      case .nfcSystemSheetParagraphErrorOneTimePin:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_one_time_pin")
+      case .nfcSystemSheetParagraphErrorCardPin:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_card_pin")
       case .pidEidFunctionInfoTitle:
         bundle.localizedString(forKey: "pid_issuance.eid_function_info.title")
+      case .pidEidFunctionInfoHeading1:
+        bundle.localizedString(forKey: "pid_issuance.eid_function_info.heading_1")
       case .pidEidFunctionInfoParagraph1:
         bundle.localizedString(forKey: "pid_issuance.eid_function_info.paragraph_1")
+      case .pidEidFunctionInfoHeading2:
+        bundle.localizedString(forKey: "pid_issuance.eid_function_info.heading_2")
       case .pidEidFunctionInfoParagraph2:
         bundle.localizedString(forKey: "pid_issuance.eid_function_info.paragraph_2")
       case .globalCloseHintButton:
@@ -1492,6 +1545,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedStringWithArguments(forKey: "eaa.offer_view.tx_code_info", arguments: args)
       case .eaaOfferViewPrimaryButtonTitle:
         bundle.localizedString(forKey: "eaa_issuance.transaction_code_intro.prim_button")
+      case .eaaOfferViewDetailsButtonTitle:
+        bundle.localizedString(forKey: "eaa_issuance.eaa_info.tert_button")
       case .eaaOfferTransactionCodeViewTitle(let args):
         bundle.localizedStringWithArguments(forKey: "eaa.offer.tx_code.title", arguments: args)
       case .eaaOfferTxCodeInvalidEntry:
@@ -1514,6 +1569,14 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "eaa_issuance.dialog_cancel.prim_button")
       case .eaaIssuanceDialogCancelSecButton:
         bundle.localizedString(forKey: "eaa_issuance.dialog_cancel.sec_button")
+      case .pidIssuanceDialogCancelTitle:
+        bundle.localizedString(forKey: "pid_issuance.dialog_cancel.title")
+      case .pidIssuanceDialogCancelSubTitle:
+        bundle.localizedString(forKey: "pid_issuance.dialog_cancel.paragraph")
+      case .pidIssuanceDialogCancelPrimButton:
+        bundle.localizedString(forKey: "pid_issuance.dialog_cancel.prim_button")
+      case .pidIssuanceDialogCancelSecButton:
+        bundle.localizedString(forKey: "pid_issuance.dialog_cancel.sec_button")
       case .eaaIssuanceTransactionCodeEntryPrimButton:
         bundle.localizedString(forKey: "eaa_issuance.transaction_code_entry.prim_button")
       case .eaaIssuanceLoadingTitle:
@@ -1553,6 +1616,33 @@ final class LocalizableManager: LocalizableManagerType {
       case .pinAccessibilityCharactersEntered(let args):
         bundle.localizedStringWithArguments(forKey: "pin.accessibility.characters_entered", arguments: args)
 
+      case .appOnboardingOnboarding1Title:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.title")
+      case .appOnboardingOnboarding1Paragraph:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.paragraph")
+      case .appOnboardingOnboarding1PrimButton:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.prim_button")
+      case .appOnboardingOnboarding1TertiaryButton:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.tertiary_button")
+      case .appOnboardingOnboarding2Title:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_2.title")
+      case .appOnboardingOnboarding2Paragraph:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_2.paragraph")
+      case .appOnboardingOnboarding2PrimButton:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_2.prim_button")
+      case .appOnboardingOnboarding2TertiaryButton:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_2.tertiary_button")
+      case .appOnboardingOnboarding4Title:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_4.title")
+      case .appOnboardingOnboarding4Paragraph:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_4.paragraph")
+      case .appOnboardingOnboarding4PrimButton:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_4.prim_button")
+      case .appOnboardingAnimationPauseA11y:
+        bundle.localizedString(forKey: "app_onboarding.animation.pause_a11y")
+      case .appOnboardingAnimationPlayA11y:
+        bundle.localizedString(forKey: "app_onboarding.animation.play_a11y")
+
       case .appOnboardingWalletRevocationIntroTitle:
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.title")
       case .appOnboardingWalletRevocationIntroPara1:
@@ -1577,6 +1667,16 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_save_key.prim_button")
       case .eaaIssuerInfoTitle:
         bundle.localizedString(forKey: "eaa_issuance.eaa_info_issuer.title")
+        
+      // MARK: Dashboard TabBar terms
+      case .dashboardTabBarTitleLabelOverview:
+        bundle.localizedString(forKey: "tap_navigation.label_1")
+      case .dashboardTabBarTitleLabelActivity:
+        bundle.localizedString(forKey: "tap_navigation.label_2")
+      case .dashboardTabBarTitleLabelSettings:
+        bundle.localizedString(forKey: "tap_navigation.label_3")
+      case .dashboardTabBarTitleLabelScanner:
+        bundle.localizedString(forKey: "tap_navigation.label_4")
       }
     }
   }

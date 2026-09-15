@@ -24,6 +24,17 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
   private let logger: Logging?
 
   @Published var isErrorPopupVisible = false
+  @Published var isIssued = false
+
+  private var hasLeftSuccessState = false
+
+  private let successStateTimeout: Duration = .seconds(5)
+
+  private var successStateWatchdog: Task<Void, Never>?
+
+  deinit {
+    successStateWatchdog?.cancel()
+  }
 
   let errorPopupViewModel = ConfirmationPopupViewModel()
   
@@ -51,7 +62,23 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
     }
     super.init(router: router, initialState: .init(config: config))
   }
-  
+
+  func successAnimationFinished() {
+    guard !hasLeftSuccessState else { return }
+    hasLeftSuccessState = true
+    successStateWatchdog?.cancel()
+    router.popTo(with: .featureStartupModule(.startup))
+  }
+
+  private func startSuccessStateWatchdog() {
+    successStateWatchdog = Task { [weak self, successStateTimeout] in
+      try? await Task.sleep(for: successStateTimeout)
+      guard !Task.isCancelled, let self, !self.hasLeftSuccessState else { return }
+      self.logger?.d("IssuanceLoadingViewModel:: success animation never reported completion, continuing")
+      self.successAnimationFinished()
+    }
+  }
+
   func configureErrorPopupViewModel(error: BackendError, fallbackTraceID: String = "") {
     errorPopupViewModel.configure(backendError: error, analyticsTraceId: fallbackTraceID) {
       self.isErrorPopupVisible = false
@@ -79,8 +106,8 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
 
       if credentialsIssued {
         analyticsController.endTrace(finalAttributes: [:], errorDescription: nil)
-        let config = UIConfig.Success(title: UIConfig.Success.Title(value: .pidIssuanceWalletPinReenterSucces), buttons: [], visualKind: .defaultIcon)
-        self.router.push(with: .featureIssuanceCardModule(.issuanceSuccessView(config: config)))
+        self.isIssued = true
+        self.startSuccessStateWatchdog()
       } else {
         logger?.e("Wallet registration failed: no credentials were issued")
         analyticsController.endTrace(

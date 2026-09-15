@@ -24,6 +24,16 @@ public final class StartupRouter {
 
   public static func resolve(module: FeatureStartupRouteModule, host: some RouterHost) -> AnyView {
     switch module {
+    case .appIntro(let config):
+      AppIntroView(
+        with: .init(
+          router: host,
+          config: config,
+          interactor: DIGraph.resolver.force(
+            StartupInteractor.self
+          )
+        )
+      ).eraseToAnyView()
     case .revocationOnboarding(let config):
       WalletRevocationView(
         with: .init(

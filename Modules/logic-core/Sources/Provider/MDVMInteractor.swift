@@ -172,10 +172,22 @@ public final class MDVMInteractorImpl: MDVMInteractor {
     MDVMDeviceClass(
       systemVersion: UIDevice.current.systemVersion,
       model: UIDevice.current.model,
+      hardwareModel: hardwareModelIdentifier(),
       identifierForVendor: installationIdentifier(),
       uname: ProcessInfo.processInfo.environment["COMPUTERNAME"] ?? "",
       osVersion: ProcessInfo.processInfo.operatingSystemVersionString
     )
+  }
+
+  private func hardwareModelIdentifier() -> String {
+    var systemInfo = utsname()
+    uname(&systemInfo)
+    let hardwareModel = withUnsafePointer(to: &systemInfo.machine) { pointer in
+      pointer.withMemoryRebound(to: CChar.self, capacity: MemoryLayout.size(ofValue: pointer.pointee)) { cString in
+        String(cString: cString)
+      }
+    }
+    return hardwareModel
   }
 
   private func installationIdentifier() -> String {

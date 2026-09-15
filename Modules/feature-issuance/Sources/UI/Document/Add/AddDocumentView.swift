@@ -19,19 +19,19 @@ import feature_common
 import logic_resources
 import logic_core
 
-struct AddDocumentView<Router: RouterHost>: View {
+public struct AddDocumentView<Router: RouterHost>: View {
   
   @ObservedObject var viewModel: AddDocumentViewModel<Router>
   var contentSize: CGFloat = 0.0
   @State private var showWebView = false
   private let verifier: String = "https://playground.eudi-wallet.org/"
   
-  init(with viewModel: AddDocumentViewModel<Router>) {
+  public init(with viewModel: AddDocumentViewModel<Router>) {
     self.viewModel = viewModel
     self.contentSize = getScreenRect().width / 2.0
   }
   
-  var body: some View {
+  public var body: some View {
     ContentScreenView(
       padding: .zero,
       canScroll: true,
@@ -40,16 +40,6 @@ struct AddDocumentView<Router: RouterHost>: View {
       isLoading: viewModel.viewState.isLoading,
       toolbarContent: viewModel.toolbarContent()
     ) {
-      HStack {
-        Button(action: {
-          viewModel.onMenuTap()
-        }, label: {
-          Theme.shared.image.burgerMenu
-        })
-        Spacer()
-      }
-      .padding(.leading, DSStyle.Spacers.SPACING_MEDIUM)
-
       Content(viewState: viewModel.viewState) {
         viewModel.onClick()
       }

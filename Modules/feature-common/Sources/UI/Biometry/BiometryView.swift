@@ -55,7 +55,7 @@ private func content(
 ) -> some View {
   VStack {
     HeaderContentView(onBack: onBack)
-      .padding(.vertical, DSStyle.Spacers.SPACING_SMALL)
+      .padding(.bottom, DSStyle.Spacers.SPACING_SMALL)
     
     PresentationProgressView(progress: 0.75)
       .frame(height: 10)
@@ -112,7 +112,7 @@ private func pinView(
       HStack(spacing: 8) {
         Spacer()
         
-        Theme.shared.image.infoCircle
+        Theme.shared.image.infoCircleImage
           .resizable()
           .frame(width: 16, height: 16)
           .foregroundColor(DSColor.primary)

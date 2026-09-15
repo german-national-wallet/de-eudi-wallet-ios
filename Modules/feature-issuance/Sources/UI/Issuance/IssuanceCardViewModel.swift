@@ -38,6 +38,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
   var issuanceVarificationInteractor: IssuanceVerificationInteractor
   var interactor: IssuanceCardInteractor
   var parInteractor: PARInteractor
+  let issuanceCancellationInteractor: IssuanceCancellationInteractor
   var promptData = PromptData(
     title: "Lets get you started",
     description: "Press the NFC button to start"
@@ -60,6 +61,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
     secureEnclaveController: SecureEnclaveController,
     quickPinInteractor: QuickPinInteractor,
     analyticsController: AnalyticsController,
+    issuanceCancellationInteractor: IssuanceCancellationInteractor,
     config: any UIConfigType,
     requestURI: String,
     eidPin: String,
@@ -79,6 +81,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
     self.quickPinInteractor = quickPinInteractor
     self.delegate = delegate
     self.analyticsController = analyticsController
+    self.issuanceCancellationInteractor = issuanceCancellationInteractor
     self.logger = logger
 
     super.init(
@@ -146,7 +149,16 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
   }
   
   func onCancelPinSubmission() {
+    abandonIssuance()
     closeButtonTapped()
+  }
+
+  func abandonIssuance() {
+    Task { [issuanceCancellationInteractor, issuanceVarificationInteractor] in
+      await issuanceCancellationInteractor.cancelIssuance(
+        verificationInteractor: issuanceVarificationInteractor
+      )
+    }
   }
   
   func contactCustomerCareTapped() {

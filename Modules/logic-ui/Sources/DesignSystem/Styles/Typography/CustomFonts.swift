@@ -14,6 +14,7 @@ public struct CustomFonts {
     let fontNames = [
       "EUDIDiatype-Regular",
       "EUDIDiatype-Bold",
+      "EUDIDiatypeMedium",
       "EUDIDiatypeWide-Semibold",
       "EUDIDiatypeSemiMono-Medium",
       "EUDIDiatypeSemiExtended-Bold"

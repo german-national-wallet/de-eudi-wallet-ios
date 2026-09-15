@@ -30,7 +30,7 @@ public struct PINIssuanceInfoView<Router: RouterHost>: View {
       VStack {
         VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
           HStack {
-            Theme.shared.image.infoCircle
+            Theme.shared.image.infoCircleImage
               .resizable()
               .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
               .foregroundColor(DSColor.onBackground)

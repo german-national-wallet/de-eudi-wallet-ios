@@ -16,7 +16,21 @@ struct IssuanceLoadingView<Router: RouterHost>: View {
 
   var body: some View {
     ZStack {
-      ContentLoaderView()
+      Group {
+        if viewModel.isIssued {
+          ContentSuccessView(
+            width: Constants.loaderSize,
+            successText: LocalizableStringKey.eaaIssuanceSuccessTitle.toString,
+            onFinished: viewModel.successAnimationFinished
+          )
+        } else {
+          ContentLoaderView(
+            width: Constants.loaderSize,
+            loadingText: LocalizableStringKey.pidIssuanceLoadingTitle.toString,
+            progress: .loading
+          )
+        }
+      }
         .onAppear {
           Task {
             try await viewModel.issueCredentials()
@@ -27,5 +41,13 @@ struct IssuanceLoadingView<Router: RouterHost>: View {
       }
     }
     .ignoresSafeArea(.keyboard, edges: .bottom)
+
+    .background(DisableSwipeBackGesture())
   }
+}
+
+private enum Constants {
+  /// The loader footprint both states align to, passed to `ContentLoaderView`
+  /// and `ContentSuccessView` explicitly so the two states cannot drift apart.
+  static let loaderSize: CGFloat = 50
 }

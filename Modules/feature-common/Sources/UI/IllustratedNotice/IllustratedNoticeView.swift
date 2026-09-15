@@ -2,7 +2,6 @@
 //  IllustratedNoticeView.swift
 //  feature-common
 //
-//  Implemented from Figma "PID Issuance", Blocking Error information (node 731:41777).
 //
 
 import SwiftUI
@@ -13,6 +12,8 @@ import logic_core
 public struct IllustratedNoticeView: View {
   private let config: IllustratedNoticeUiConfig
   private let onBack: () -> Void
+
+  @State private var isRedirectDialogPresented = false
 
   public init(config: any UIConfigType, onBack: @escaping () -> Void) {
     guard let config = config as? IllustratedNoticeUiConfig else {
@@ -52,6 +53,12 @@ public struct IllustratedNoticeView: View {
       .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
     }
     .ignoresSafeArea(edges: .top)
+    .redirectConfirmationDialog(
+      isPresented: $isRedirectDialogPresented,
+      url: AppEnvironment.burgeramtServiceLink
+    ) { url in
+      UIApplication.shared.open(url)
+    }
   }
 
   @ViewBuilder private var illustration: some View {
@@ -68,17 +75,17 @@ public struct IllustratedNoticeView: View {
           .frame(maxWidth: .infinity)
           .aspectRatio(1, contentMode: .fit)
       }
-
+      
       Button(action: onBack) {
-        Theme.shared.image.chevronLeft
+        Theme.shared.image.arrowBackIcon
           .renderingMode(.template)
           .resizable()
           .scaledToFit()
           .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
           .foregroundColor(DSColor.onBackground)
           .padding(DSStyle.Spacers.SPACING_SMALL)
-          .background(DSColor.secondaryContainer)
-          .clipShape(Circle())
+          .background(DSColor.secondaryContainer, in: Circle())
+          .iconButtonSlot()
       }
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
       .padding(.top, DSStyle.Spacers.SPACING_EXTRA_LARGE)
@@ -96,9 +103,7 @@ public struct IllustratedNoticeView: View {
   private func performPrimaryAction() {
     switch config.primaryAction {
     case .findBurgeramt:
-      if let url = AppEnvironment.burgeramtServiceLink {
-        UIApplication.shared.open(url)
-      }
+      isRedirectDialogPresented = true
     case .dismiss:
       onBack()
     }

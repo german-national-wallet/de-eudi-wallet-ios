@@ -141,7 +141,9 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
 
           let pendingDoc = try await parInteractor.fetchPushAuthorisationRequest()
 
-          guard let parURI = pendingDoc?.authorizePresentationUrl else { return }
+          guard let parURI = pendingDoc?.authorizePresentationUrl else {
+            throw PARGenerationError.wiaParCreationFailed
+          }
           router.push(
             with: .featureIssuanceCardModule(
               .issuanceCard(
@@ -155,14 +157,14 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
           setState { $0.copy(isLoading: false) }
         } catch {
           logger?.e("setPin failed (2): \(error.logDescriptor)")
+          setState { $0.copy(isLoading: false) }
+          showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
         }
       }
     }
   }
   
   func transportPinFlow() {
-    // Capture the entered PIN synchronously: the view clears `pin` right after onSendData(),
-    // so reading `pinString` after the await below would yield an empty string.
     let enteredPin = pinString
     Task {
       let parURI = try await parInteractor.fetchPushAuthorisationRequest()

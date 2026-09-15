@@ -16,12 +16,18 @@ struct DocumentLoaderViewState: ViewState {
 
 final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, DocumentLoaderViewState> {
 
-  private let successPause: Duration = .milliseconds(3150)
+  private let successStateTimeout: Duration = .seconds(5)
 
   private let interactor: DocumentOfferInteractor
   private let onFailure: (@Sendable () -> Void)?
   private let logger: Logging?
   private var issuanceStarted = false
+  private var hasLeftSuccessState = false
+  private var successStateWatchdog: Task<Void, Never>?
+
+  deinit {
+    successStateWatchdog?.cancel()
+  }
 
   init(
     router: Router,
@@ -69,7 +75,7 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
 
     switch state {
     case .success:
-      await confirmSuccess()
+      confirmSuccess()
     case .partialSuccess(let route), .deferredSuccess(let route):
       router.push(with: route)
     case .dynamicIssuance(let session):
@@ -101,7 +107,7 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
       return false
     case .success:
       logger?.d("loader: pending issuance resumed successfully")
-      await confirmSuccess()
+      confirmSuccess()
       return true
     case .failure:
       logger?.d("loader: pending issuance resume failed")
@@ -110,15 +116,34 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
     }
   }
 
-  private func confirmSuccess() async {
-    setState { $0.copy(progress: .success) }
-    try? await Task.sleep(for: successPause)
+  func successAnimationFinished() {
+    guard !hasLeftSuccessState else { return }
+    hasLeftSuccessState = true
+    successStateWatchdog?.cancel()
 
     switch viewState.config.successNavigation {
     case .popTo(let route):
-      router.popTo(with: route)
+      if router.isScreenOnBackStack(with: route) {
+        router.popTo(with: route)
+      } else {
+        router.push(with: route)
+      }
     case .push(let route):
       router.push(with: route)
+    }
+  }
+
+  private func confirmSuccess() {
+    setState { $0.copy(progress: .success) }
+    startSuccessStateWatchdog()
+  }
+
+  private func startSuccessStateWatchdog() {
+    successStateWatchdog = Task { [weak self, successStateTimeout] in
+      try? await Task.sleep(for: successStateTimeout)
+      guard !Task.isCancelled, let self, !self.hasLeftSuccessState else { return }
+      self.logger?.d("loader: success animation never reported completion, continuing")
+      self.successAnimationFinished()
     }
   }
 

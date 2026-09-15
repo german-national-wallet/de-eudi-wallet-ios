@@ -528,6 +528,142 @@
         }
       }
     },
+    "__os_native_dialog.bluetooth_android.button_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.bluetooth_android.button_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't allow"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.bluetooth_android.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "d-you erlauben, Geräte in der Nähe zu finden, sich mit ihnen zu verbinden und ihre relative Position zu bestimmen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow d-you to find, connect to, and determine the relative position of nearby devices?"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.camera_android.button_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur während der App-Nutzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While using the app"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.camera_android.button_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur diesmal"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only this time"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.camera_android.button_3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't allow"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.camera_android.title_camera_consent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "d-you Bilder aufnehmen und Videos aufzeichnen lassen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow d-you to take pictures and record video?"
+          }
+        }
+      }
+    },
+    "__os_native_dialog.var_date_of_issuance" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12.03.2026"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 March 2026"
+          }
+        }
+      }
+    },
     "__variable_text.activity_overview.var_rp_name_1" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1435,13 +1571,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STADT BERLIN"
+            "value" : "Stadt Berlin"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STADT BERLIN"
+            "value" : "Stadt Berlin"
           }
         }
       }
@@ -1639,13 +1775,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "UNIVERSITÄT BERLIN"
+            "value" : "Universität Berlin"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "UNIVERSITY BERLIN"
+            "value" : "Universität Berlin"
           }
         }
       }
@@ -2245,6 +2381,108 @@
         }
       }
     },
+    "__variable_text.native_dialog_android.button_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
+    "__variable_text.native_dialog_android.button_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur während der App-Nutzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While using the app"
+          }
+        }
+      }
+    },
+    "__variable_text.native_dialog_android.button_3" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur diesmal"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only this time"
+          }
+        }
+      }
+    },
+    "__variable_text.native_dialog_android.button_4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't allow"
+          }
+        }
+      }
+    },
+    "__variable_text.native_dialog_android.title_bluetooth_consent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "d-you erlauben, Geräte in der Nähe zu finden, sich mit ihnen zu verbinden und ihre relative Position zu bestimmen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow d-you to find, connect to, and determine the relative position of nearby devices?"
+          }
+        }
+      }
+    },
+    "__variable_text.native_dialog_android.title_camera_consent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "d-you Bilder aufnehmen und Videos aufzeichnen lassen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow d-you to take pictures and record video?"
+          }
+        }
+      }
+    },
     "__variable_text.pid_credential_1.var_credential_name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2370,13 +2608,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BUNDESREPUBLIK DEUTSCHLAND"
+            "value" : "Bundesrepublik Deutschland"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FEDERAL REPUBLIC OF GERMANY"
+            "value" : "Federal Republic of Germany"
           }
         }
       }
@@ -3316,19 +3554,172 @@
         }
       }
     },
+    "app_onboarding.account_revoked.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es wurde ein Sicherheitsrisiko in deiner Wallet erkannt. Zum Schutz deiner Daten wurden deine Ausweise und Nachweise entfernt. Richte deine Wallet einfach erneut ein, um fortzufahren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A security risk was detected in your wallet. To protect your data, your IDs and documents were removed. Just set up your wallet again to continue."
+          }
+        }
+      }
+    },
+    "app_onboarding.account_revoked.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet neu einrichten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up your wallet"
+          }
+        }
+      }
+    },
+    "app_onboarding.account_revoked.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Wallet wurde gesperrt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet is locked"
+          }
+        }
+      }
+    },
+    "app_onboarding.challenge_expired.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuche es bitte später noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please try again later."
+          }
+        }
+      }
+    },
+    "app_onboarding.challenge_expired.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ok"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        }
+      }
+    },
+    "app_onboarding.challenge_expired.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas ist schief gelaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong"
+          }
+        }
+      }
+    },
+    "app_onboarding.db_unavailable.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuche es bitte noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please try again later."
+          }
+        }
+      }
+    },
+    "app_onboarding.db_unavailable.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ok"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        }
+      }
+    },
+    "app_onboarding.db_unavailable.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas ist schief gelaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong"
+          }
+        }
+      }
+    },
     "app_onboarding.device_vulnerable_fixable.paragraph" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auf deinem Gerät wurde eine kritische Sicherheitslücke erkannt. Die App wurde zurückgesetzt und  alle Daten gelöscht. Bitte aktualisiere die App und starte die App danach erneut."
+            "value" : "Auf deinem Gerät wurde eine kritische Sicherheitslücke erkannt. Bitte aktualisiere das Betriebssystem und starte die App danach erneut."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A critical security vulnerability was detected on your device. The app has been reset and all data has been deleted. Please update the app, then restart it."
+            "value" : "A critical security vulnerability was detected on your device. Please update the operating system, then restart it."
           }
         }
       }
@@ -3339,13 +3730,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jetzt aktualisieren"
+            "value" : "Betriebsystem aktualisieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Update now"
+            "value" : "Update operating system"
           }
         }
       }
@@ -3356,13 +3747,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nutzung auf diesem Gerät nicht möglich"
+            "value" : "Update deines Gerätes erforderlich"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use on this device not possible"
+            "value" : "Device update required"
           }
         }
       }
@@ -3373,7 +3764,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auf deinem Gerät wurde eine kritische Sicherheitslücke erkannt. Die App wurde zurückgesetzt und  alle Daten gelöscht.  Installiere App auf einem anderen Gerät und starte die App danach erneut."
+            "value" : "Auf deinem Gerät wurde eine kritische Sicherheitslücke erkannt. Die App wurde zurückgesetzt und alle Daten gelöscht. Installiere App auf einem anderen Gerät und starte die App danach erneut."
           }
         },
         "en" : {
@@ -3397,6 +3788,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use on this device not possible"
+          }
+        }
+      }
+    },
+    "app_onboarding.hsm_unavailable.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuche es bitte später noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please try again later."
+          }
+        }
+      }
+    },
+    "app_onboarding.hsm_unavailable.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ok"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        }
+      }
+    },
+    "app_onboarding.hsm_unavailable.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas ist schief gelaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong"
           }
         }
       }
@@ -3520,19 +3962,53 @@
         }
       }
     },
+    "app_onboarding.animation.pause_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation pausieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause animation"
+          }
+        }
+      }
+    },
+    "app_onboarding.animation.play_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation fortsetzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play animation"
+          }
+        }
+      }
+    },
     "app_onboarding.onboarding_1.paragraph" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mit der EUDI Wallet DE App hast du deine digitalen Nachweise an einem Ort - vom Ausweis bis zur Kundenkarte und mehr."
+            "value" : "Mit der d-you App hast du deine digitalen Nachweise an einem Ort - vom Ausweis bis zur Kundenkarte und mehr."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With EUDI Wallet DE app, you have all your digital credentials in one place – from your ID card to loyalty cards and more."
+            "value" : "With d-you app, you have all your digital credentials in one place – from your ID card to loyalty cards and more."
           }
         }
       }
@@ -3662,13 +4138,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EUDI Wallet DE macht vieles einfacher. Deine Nachweise sind sofort verfügbar, wenn du sie brauchst - unkompliziert, ohne Suchen oder Papierkram."
+            "value" : "d-you macht vieles einfacher. Deine Nachweise sind sofort verfügbar, wenn du sie brauchst - unkompliziert, ohne Suchen oder Papierkram."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EUDI Wallet DE makes many things easier. Your documents are available instantly whenever you need them – simple, with no searching or paperwork."
+            "value" : "d-you makes many things easier. Your documents are available instantly whenever you need them – simple, with no searching or paperwork."
           }
         }
       }
@@ -3849,18 +4325,69 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jetzt aktualisieren"
+            "value" : "Betriebssystem aktualisieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Update now"
+            "value" : "Update operating system"
           }
         }
       }
     },
     "app_onboarding.outdated_os_version.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update deines Gerätes erforderlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device update required"
+          }
+        }
+      }
+    },
+    "app_onboarding.outdated_patch_level.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Gerät erfüllt die aktuellen Sicherheitsanforderungen nicht. Installiere das erforderliche Betriebssystemupdate und starte die App danach erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your device doesn't meet current security requirements. Please install the required operating system update, then restart the app."
+          }
+        }
+      }
+    },
+    "app_onboarding.outdated_patch_level.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betriebssystem aktualisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update operating system"
+          }
+        }
+      }
+    },
+    "app_onboarding.outdated_patch_level.title" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -3934,7 +4461,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Für die Sicherheit deiner Daten muss die Gerätesperre eingerichtet sein - z. B. PIN, Muster, Gesichtserkennung oder Fingerabdruck."
+            "value" : "Für die Sicherheit deiner Daten muss die Bildschirmsperre eingerichtet sein - z. B. PIN, Muster, Gesichtserkennung oder Fingerabdruck."
           }
         },
         "en" : {
@@ -3951,7 +4478,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In den Einstellungen unter Bildschirmsperre oder ähnlichem kannst du die Gerätesperre aktivieren."
+            "value" : "In den Einstellungen unter Bildschirmsperre oder ähnlichem kannst du die Bildschirmsperre aktivieren."
           }
         },
         "en" : {
@@ -3985,7 +4512,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jetzt Gerätesperre einrichten"
+            "value" : "Jetzt Bildschirmsperre einrichten"
           }
         },
         "en" : {
@@ -4002,7 +4529,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Gerät hat keine Gerätesperre eingerichtet"
+            "value" : "Dein Gerät hat keine Bildschirmsperre eingerichtet"
           }
         },
         "en" : {
@@ -4019,7 +4546,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wichtig: Um diese App zu nutzen, muss dein Smartphone mit einem Passcode, Muster, Fingerabdruck oder Gesichtserkennung gesichert sein.  Beachte auch, bei späterer Entfernung der Displaysperre wird die Wallet zurückgesetzt und alle Daten gelöscht."
+            "value" : "Wichtig: Um diese App zu nutzen, muss dein Smartphone mit einem Passcode, Muster, Fingerabdruck oder Gesichtserkennung gesichert sein.  Beachte auch, bei späterer Entfernung der Bildschirmsperre wird die Wallet zurückgesetzt und alle Daten gelöscht."
           }
         },
         "en" : {
@@ -4070,7 +4597,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jetzt Displaysperre einrichten"
+            "value" : "Jetzt Bildschirmsperre einrichten"
           }
         },
         "en" : {
@@ -4087,7 +4614,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Gerät hat keine Displaysperre eingerichtet"
+            "value" : "Dein Gerät hat keine Bildschirmsperre eingerichtet"
           }
         },
         "en" : {
@@ -4138,7 +4665,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Gerät benötigt eine Displaysperre"
+            "value" : "Dein Gerät benötigt eine Bildschirmsperre"
           }
         },
         "en" : {
@@ -4155,7 +4682,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prüfen, ob Gerätesperre vorhanden ist ..."
+            "value" : "Prüfen, ob Bildschirmsperre vorhanden ist ..."
           }
         },
         "en" : {
@@ -4172,7 +4699,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aus Sicherheitsgründen wird bei Entfernung aller Gerätesperren, die App zurückgesetzt und alle Daten gelöscht."
+            "value" : "Aus Sicherheitsgründen wird bei Entfernung aller Bildschirmsperren, die App zurückgesetzt und alle Daten gelöscht."
           }
         },
         "en" : {
@@ -4257,7 +4784,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Gerätesperre ist eingerichtet"
+            "value" : "Deine Bildschirmsperre ist eingerichtet"
           }
         },
         "en" : {
@@ -4563,7 +5090,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auf deinem Gerät wurden Hinweise auf einen Angriff erkannt. Aus Sicherheitsgründen kann die App nicht genutzt werden. Die App wurde zurückgesetzt und  alle Daten gelöscht. "
+            "value" : "Auf deinem Gerät wurden Hinweise auf einen Angriff erkannt. Aus Sicherheitsgründen kann die App nicht genutzt werden. Die App wurde zurückgesetzt und alle Daten gelöscht. "
           }
         },
         "en" : {
@@ -5141,7 +5668,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir haben für dich einen Schlüssel erstellt, der dein Wallet schützt, falls du es verlierst."
+            "value" : "Wir haben für dich einen Schlüssel erstellt, der deine Wallet schützt, falls du sie verlierst."
           }
         },
         "en" : {
@@ -5165,6 +5692,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If your phone is lost: immediately lock your wallet using your key at walletapp.org/lost-phone."
+          }
+        }
+      }
+    },
+    "app_onboarding.wallet_revocation_intro.list_2_dev" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bei Verlust: Sperre deine Wallet mit dem Schlüssel sofort auf **walletapp.org/lost-phone** "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If your phone is lost: immediately lock your wallet using your key at **walletapp.org/lost-phone**."
           }
         }
       }
@@ -5770,13 +6314,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Es erfüllt die Sicherheitsanforderungen nicht. Installiere die EUDI Wallet DE App auf einem anderen Gerät und versuche es erneut."
+            "value" : "Es erfüllt die Sicherheitsanforderungen nicht. Installiere d-you auf einem anderen Gerät und versuche es erneut."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "It doesn’t meet security requirements. Install the EUDI Wallet DE app on another device and try again."
+            "value" : "It doesn’t meet security requirements. Install the d-you app on another device and try again."
           }
         }
       }
@@ -8263,6 +8807,23 @@
         }
       }
     },
+    "eaa_issuance.eaa_info.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        }
+      }
+    },
     "eaa_issuance.eaa_info.prim_button_code" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8310,6 +8871,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reject"
+          }
+        }
+      }
+    },
+    "eaa_issuance.eaa_info.tert_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View details"
           }
         }
       }
@@ -8439,13 +9017,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EUDI Wallet DE wird gestartet ..."
+            "value" : "d-you wird gestartet ..."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Starting EUDI Wallet DE…"
+            "value" : "Starting d-you…"
           }
         }
       }
@@ -9782,13 +10360,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Details ausblenden"
+            "value" : "Werte ausblenden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hide details"
+            "value" : "Hide values"
           }
         }
       }
@@ -9799,13 +10377,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Details anzeigen"
+            "value" : "Werte anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show details"
+            "value" : "Show values"
           }
         }
       }
@@ -10955,13 +11533,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine 6-stellige Wallet-PIN hast du festgelegt, als du deinen Personalausweis in die EUDI Wallet DE App geladen hast. Sie wird abgefragt, wenn die Übertragung besonders geschützter Daten aus Nachweisen, wie des digitalen Ausweises oder Führerscheins, bestätigt werden muss. Aus Sicherheitsgründen kann die PIN nicht durch Fingerabdruck oder Gesichtserkennung ersetzt werden."
+            "value" : "Deinen 6-stellige Code hast du festgelegt, als du deinen Personalausweis in die d-you App geladen hast. Sie wird abgefragt, wenn die Übertragung besonders geschützter Daten aus Nachweisen, wie des digitalen Ausweises oder Führerscheins, bestätigt werden muss. Aus Sicherheitsgründen kann die PIN nicht durch Fingerabdruck oder Gesichtserkennung ersetzt werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You choose this 6-digit PIN when you added your ID to the EUDI Wallet DE app. It’s needed to confirm the transfer of highly protected documents, like your digital ID or driver’s license. For security reasons, the PIN cannot be replaced by fingerprint or face recognition."
+            "value" : "You choose this 6-digit Code when you added your ID to the d-you app. It’s needed to confirm the transfer of highly protected documents, like your digital ID or driver’s license. For security reasons, the PIN cannot be replaced by fingerprint or face recognition."
           }
         }
       }
@@ -12117,7 +12695,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If you lost your letter with the 5-digit one-time PIN/transport PIN, or if you set your 6-digit card PIN but forgot it, you can set a new card PIN at a local Citizens’ Office."
+            "value" : "If you lost your letter with the 5-digit one-time PIN/transport PIN, or if you set your 6-digit card PIN but forgot it, you can set a new card PIN at a local citizen's Office."
           }
         }
       }
@@ -12304,7 +12882,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The 10-digit PUK (unlock code) can be found in the PIN letter you received from the Bürgeramt (citizens' office). This letter also contains your transport PIN."
+            "value" : "The 10-digit PUK (unlock code) can be found in the PIN letter you received from the Bürgeramt (citizen's office). This letter also contains your transport PIN."
           }
         }
       }
@@ -12338,7 +12916,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find a citizens' office near you"
+            "value" : "Find a citizen's office near you"
           }
         }
       }
@@ -12661,7 +13239,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If you've forgotten your card PIN, contact your local citizens' office. They can set a new card PIN right away for you."
+            "value" : "If you've forgotten your card PIN, contact your local citizen's office. They can set a new card PIN right away for you."
           }
         }
       }
@@ -12947,13 +13525,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EUDI Wallet DE"
+            "value" : "d-you"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EUDI Wallet DE"
+            "value" : "d-you"
           }
         }
       }
@@ -13100,7 +13678,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weil deine Displaysperre entfernt wurde, wurden zu deiner Sicherheit deine Daten gelöscht . Richte in den Geräteeinstellungen eine Bildschirmsperre ein, z. B. PIN, Muster, Gesichtserkennung oder Fingerabdruck, und nutze die App anschließend wieder."
+            "value" : "Weil deine Bildschirmsperre entfernt wurde, wurden zu deiner Sicherheit deine Daten gelöscht . Richte in den Geräteeinstellungen eine Bildschirmsperre ein, z. B. PIN, Muster, Gesichtserkennung oder Fingerabdruck, und nutze die App anschließend wieder."
           }
         },
         "en" : {
@@ -13117,7 +13695,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jetzt Displaysperre aktivieren"
+            "value" : "Jetzt Bildschirmsperre aktivieren"
           }
         },
         "en" : {
@@ -13168,13 +13746,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Versuche es bitte später noch einmal."
+            "value" : "Versuche es bitte später noch einmal. Wenn dieser Fehler weiterhin auftritt, wende dich an unseren Hilfebereich. "
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Please try again later."
+            "value" : "Please try again later. If this error persists, visit our customer support."
           }
         }
       }
@@ -13185,13 +13763,30 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ok"
+            "value" : "Später erneut versuchen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Got it"
+            "value" : "Try again later"
+          }
+        }
+      }
+    },
+    "global.error.sec_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Hilfebereich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To Customer Support"
           }
         }
       }
@@ -13243,6 +13838,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unread and hide all entered digits"
+          }
+        }
+      }
+    },
+    "global.info_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr Informationen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More information"
           }
         }
       }
@@ -13327,7 +13939,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find a nearby citizean office"
+            "value" : "Find a nearby Citizen's office"
           }
         }
       }
@@ -13372,13 +13984,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hiermit verlässt du die EUDI Wallet DE App. Wir sind für die Inhalte auf der weitergeleiteten Seite nicht verantwortlich."
+            "value" : "Hiermit verlässt du die App. Wir sind für die Inhalte auf der weitergeleiteten Seite nicht verantwortlich."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're leaving the EUDI Wallet DE app. We're not responsible for the content of the page you're being redirected to."
+            "value" : "You're about to leave the app. We're not responsible for the content on the external page."
           }
         }
       }
@@ -13463,7 +14075,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Citizen's office"
+            "value" : "Search citizen's office"
           }
         }
       }
@@ -14324,13 +14936,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Über EUDI Wallet DE"
+            "value" : "Über d-you"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About EUDI Wallet DE"
+            "value" : "About d-you"
           }
         }
       }
@@ -14919,13 +15531,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Um deinen Ausweis mit deinem Smartphone auslesen zu können, muss die Kontaktlos-Funktion (NFC) eingeschaltet sein."
+            "value" : "Um deine Ausweiskarte mit deinem Gerät auslesen zu können, muss die Kontaktlos-Funktion (NFC) eingeschaltet sein."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To scan your ID with your smartphone, make sure NFC (contactless) is turned on in your device settings."
+            "value" : "To scan your ID with your device, make sure NFC (contactless) is turned on in your device settings."
           }
         }
       }
@@ -14977,6 +15589,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Middle of the back of your device and your ID must be in contact."
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.banner_android_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mittlerer Bereich der Geräterückseite und Ausweis müssen sich berühren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The centre of your device's back must touch your ID card"
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.banner_android_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterer Bereich der Geräterückseite und Ausweis müssen sich berühren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The bottom of your device's back must touch your ID card"
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.banner_android_ios" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oberer Bereich der Geräterückseite und Ausweis müssen sich berühren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The top of your device's back must touch your ID card"
           }
         }
       }
@@ -15147,6 +15810,57 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Place device in the center of your ID, then start scanning"
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.title_card_pin_android_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät mittig auf Ausweis legen, dann scannen starten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place device in the centre on your ID card, then start scanning"
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.title_card_pin_android_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät unten auf Ausweis legen, dann scannen starten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place device at the bottom of your ID card, then start scanning"
+          }
+        }
+      }
+    },
+    "nfc_scanning.nfc_tap.title_card_pin_android_ios" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät oben auf Ausweis legen, dann scannen starten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place device at the top of your ID card, then start scanning"
           }
         }
       }
@@ -15848,6 +16562,40 @@
         }
       }
     },
+    "notification.wallet_revoked_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Wallet wurde gesperrt, um dich vor einem Angriff zu schützen oder falls du dein Gerät verloren hast."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet was locked to protect you from an attack or in case you lost your device."
+          }
+        }
+      }
+    },
+    "notification.wallet_revoked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine d-you App wurde dauerhaft gesperrt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your d-you App has been permanently locked "
+          }
+        }
+      }
+    },
     "overview.camera_opt_in.paragraph" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15871,13 +16619,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\"EUDI Wallet DE\" möchte deine Kamera nutzen"
+            "value" : "\"d-you\" möchte deine Kamera nutzen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\"EUDI Wallet DE\" would like to access your camera"
+            "value" : "\"d-you\" would like to access your camera"
           }
         }
       }
@@ -16065,6 +16813,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid QR code"
+          }
+        }
+      }
+    },
+    "overview.no_bluetooth_access.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Bluetooth-Funktion deines Gerätes wird benötigt, um eine sichere Datenverbindung zum Empfängergerät zu ermöglich. "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access to your device's Bluetooth is required to establish a secure data connection to the receiving device."
+          }
+        }
+      }
+    },
+    "overview.no_bluetooth_access.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth-Zugriff erlauben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Bluetooth access"
+          }
+        }
+      }
+    },
+    "overview.no_bluetooth_access.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth Zugriff erlauben, um dich vor Ort auszuweisen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Bluetooth to verify your identity in person"
           }
         }
       }
@@ -17730,7 +18529,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Important: You can now enter your card PIN one last time. If it is incorrect again, the card PIN will be blocked. If you have not yet set your 6-digit card PIN, you can do so using the 5-digit transport PIN from the PIN letter or on site at the citizens' office."
+            "value" : "Important: You can now enter your card PIN one last time. If it is incorrect again, the card PIN will be blocked. If you have not yet set your 6-digit card PIN, you can do so using the 5-digit transport PIN from the PIN letter or on site at the citizen's office."
           }
         }
       }
@@ -17934,7 +18733,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You set it either when picking up your ID at the citizens' office, or with the 5-digit transport PIN from your PIN letter. Haven't set it yet? You can do it here, once."
+            "value" : "You set it either when picking up your ID at the citizen's office, or with the 5-digit transport PIN from your PIN letter. Haven't set it yet? You can do it here, once."
           }
         }
       }
@@ -18200,13 +18999,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Folgende Daten werden von deiner Ausweiskarte ausgelesen"
+            "value" : "Folgende Daten werden von deiner Ausweiskarte ausgelesen:"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The following data will be read from your ID card"
+            "value" : "The following data will be read from your ID card:"
           }
         }
       }
@@ -18687,6 +19486,40 @@
         }
       }
     },
+    "pid_issuance.data_consent.less_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weniger Daten anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show less data"
+          }
+        }
+      }
+    },
+    "pid_issuance.data_consent.more_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Daten anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show more data"
+          }
+        }
+      }
+    },
     "pid_issuance.data_consent.prim_button" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18721,40 +19554,6 @@
         }
       }
     },
-    "pid_issuance.data_consent.toggle_unvisible_button" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Weniger Daten anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Show less data"
-          }
-        }
-      }
-    },
-    "pid_issuance.data_consent.toggle_visible_button" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weitere Daten anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show more data"
-          }
-        }
-      }
-    },
     "pid_issuance.data_consent.text_provider_information" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18785,6 +19584,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your digital ID will be created using this data"
+          }
+        }
+      }
+    },
+    "pid_issuance.data_consent.toggle_unvisible_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Weniger Daten anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Show less data"
+          }
+        }
+      }
+    },
+    "pid_issuance.data_consent.toggle_visible_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Daten anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show more data"
           }
         }
       }
@@ -18828,14 +19661,14 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zurück"
+            "state" : "needs_review",
+            "value" : "Schließen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Back"
+            "value" : "Close"
           }
         }
       }
@@ -18925,19 +19758,240 @@
         }
       }
     },
+    "pid_issuance.digital_id_consent.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herausgeber"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuer"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_consent.prim_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_consent.tert_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View details"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_consent.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Ausweis wird hinzugefügt:"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This credential will be added"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.label_address" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.label_certifacte_valid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zertifikat Ablaufdatum"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate valid until "
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.label_email" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.label_name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.label_privacy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy policy"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.sec_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem melden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report a problem"
+          }
+        }
+      }
+    },
+    "pid_issuance.digital_id_issuer.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herausgeber"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuer"
+          }
+        }
+      }
+    },
+    "pid_issuance.eid_function_info.heading_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was ist die Online-Ausweisfunktion?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is the online ID function?"
+          }
+        }
+      }
+    },
+    "pid_issuance.eid_function_info.heading_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karten-PIN einrichten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setup card PIN"
+          }
+        }
+      }
+    },
     "pid_issuance.eid_function_info.paragraph_1" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Was ist die Online-Ausweisfunktion? Sie ist die digitale Identitätsfunktion deiner Ausweiskarte — damit weist du dich sicher im Internet oder an Automaten aus und erstellst deinen Digitalen Ausweis in dieser Wallet."
+            "value" : "Sie ist die digitale Identitätsfunktion deiner Ausweiskarte - damit weist du dich sicher im Internet oder an Automaten aus und erstellst deinen Digitalen Ausweis in dieser Wallet."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What is the online ID function? It's the digital identity feature on your ID card — use it to verify yourself securely online or at kiosks, and to create your digital ID in this wallet."
+            "value" : "It's the digital identity feature on your ID card - use it to verify yourself securely online or at kiosks, and to create your digital ID in this wallet."
           }
         }
       }
@@ -18948,13 +20002,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PIN einrichten Um die Online-Ausweisfunktion zu nutzen, brauchst du eine persönliche 6-stellige Karten-PIN. Richte sie mit der 5-stelligen Transport-PIN aus deinem PIN-Brief ein, oder direkt im Bürgeramt."
+            "value" : "Um die Online-Ausweisfunktion zu nutzen, brauchst du eine persönliche 6-stellige Karten-PIN. Richte sie mit der 5-stelligen Transport-PIN aus deinem PIN-Brief ein, oder direkt im Bürgeramt."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set up your PIN To use the online ID function, you'll need a personal 6-digit card PIN. Set it up with the 5-digit transport PIN from your PIN letter, or directly at the citizens' office."
+            "value" : "To use the online ID function, you'll need a personal 6-digit card PIN. Set it up with the 5-digit transport PIN from your PIN letter, or directly at the citizen's office."
           }
         }
       }
@@ -19373,13 +20427,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ja, **Karten-PIN** festgelegt und bekannt"
+            "value" : "Ja, **Karten-PIN festgelegt** und bekannt"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yes, I've set my **card PIN** and know it"
+            "value" : "Yes, I've **set my card PIN** and know it"
           }
         }
       }
@@ -19413,7 +20467,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I don't have a **PIN letter**, or I've **forgotten my PIN**"
+            "value" : "I **don't have a PIN letter**, or I've **forgotten my PIN**"
           }
         }
       }
@@ -19481,7 +20535,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter your card PIN to retrieve data from your ID card"
+            "value" : "Enter your card PIN to retrieve your ID card data"
           }
         }
       }
@@ -19520,6 +20574,40 @@
         }
       }
     },
+    "pid_issuance.process_overview.list_4_after_initial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitalen Ausweis erstellen und zugehörigen Code bestätigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create igital ID and confirm the associated code."
+          }
+        }
+      }
+    },
+    "pid_issuance.process_overview.list_4_inital" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitalen Ausweis und zugehörigen Code erstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Digital ID and the associated code"
+          }
+        }
+      }
+    },
     "pid_issuance.process_overview.prim_button" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19543,7 +20631,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Datenschutzerklärung lesen"
+            "value" : "Read the privacy policy"
           }
         },
         "en" : {
@@ -19991,7 +21079,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Online ID function not yet activated at the Citizen’s Office"
+            "value" : "Online ID function not yet activated at the citizen’s Office"
           }
         }
       }
@@ -20144,7 +21232,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The 10-digit PUK (unlock code) can be found in the PIN letter you received from the Bürgeramt (citizens' office). This letter also contains your transport PIN."
+            "value" : "The 10-digit PUK (unlock code) can be found in the PIN letter you received from the Bürgeramt (citizen's office). This letter also contains your transport PIN."
           }
         }
       }
@@ -20291,7 +21379,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Merke dir dein Digitaler-Ausweis-Code gut. Du brauchst ihn, wenn du Daten aus deinem digitalen Ausweis mit einem Service (z. B. einer Bank) teilst. "
+            "value" : "Merke dir deinen Digitaler-Ausweis-Code gut. Du brauchst ihn, wenn du Daten aus deinem digitalen Ausweis mit einem Service (z. B. einer Bank) teilst. "
           }
         },
         "en" : {
@@ -20325,7 +21413,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lege zum Abschluss dein Digitaler-Ausweis-Code fest"
+            "value" : "Lege zum Abschluss deinen Digitaler-Ausweis-Code fest"
           }
         },
         "en" : {
@@ -20376,7 +21464,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wiederhole deine Digitaler-Ausweis-Code"
+            "value" : "Wiederhole deinen Digitaler-Ausweis-Code"
           }
         },
         "en" : {
@@ -20427,7 +21515,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lege dein Digitaler-Ausweis-Code fest"
+            "value" : "Lege deinen Digitaler-Ausweis-Code fest"
           }
         },
         "en" : {
@@ -20648,13 +21736,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d out of %2$d from %3$s"
+            "value" : "**%1$d** von **%2$d** aus %3$s"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d out of %2$d from %3$s"
+            "value" : "**%1$d** out of **%2$d** from %3$s"
           }
         }
       }
@@ -21475,6 +22563,40 @@
         }
       }
     },
+    "pid_presentation.error.banner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleibe in der Nähe des Übertragungsgeräts und schließe die App nicht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay nearby the receiving device and don't close the app."
+          }
+        }
+      }
+    },
+    "pid_presentation.error.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenübertragung fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data sent successfully"
+          }
+        }
+      }
+    },
     "pid_presentation.loading_credential.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21492,7 +22614,75 @@
         }
       }
     },
+    "pid_presentation.loading_credential.title_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib in der Nähe des Empfangsgeräts..."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay near the receiving device..."
+          }
+        }
+      }
+    },
+    "pid_presentation.loading_credential.title_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachweis wird vorbereitet..."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing credential…"
+          }
+        }
+      }
+    },
     "pid_presentation.loading.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Daten werden verarbeitet..."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your data is being processed…"
+          }
+        }
+      }
+    },
+    "pid_presentation.loading.title_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib in der Nähe des Empfangsgeräts und halte diese App geöffnet…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay near the receiving device and keep this app open..."
+          }
+        }
+      }
+    },
+    "pid_presentation.loading.title_2" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -22314,13 +23504,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine 6-stellige Wallet-PIN hast du festgelegt, als du deinen Personalausweis in die EUDI Wallet DE-App geladen hast. Sie wird abgefragt, wenn die Übertragung besonders geschützter Daten aus Nachweisen, wie des digitalen Ausweises oder Führerscheins, bestätigt werden muss. Aus Sicherheitsgründen kann die PIN nicht durch Fingerabdruck oder Gesichtserkennung ersetzt werden."
+            "value" : "Deine 6-stellige Wallet-PIN hast du festgelegt, als du deinen Personalausweis in die d-you App geladen hast. Sie wird abgefragt, wenn die Übertragung besonders geschützter Daten aus Nachweisen, wie des digitalen Ausweises oder Führerscheins, bestätigt werden muss. Aus Sicherheitsgründen kann die PIN nicht durch Fingerabdruck oder Gesichtserkennung ersetzt werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You choose this 6-digit PIN when you added your ID to the EUDI Wallet DE app. It’s needed to confirm the transfer of highly protected documents, like your digital ID or driver’s license. For security reasons, the PIN cannot be replaced by fingerprint or face recognition."
+            "value" : "You choose this 6-digit PIN when you added your ID to the d-you app. It’s needed to confirm the transfer of highly protected documents, like your digital ID or driver’s license. For security reasons, the PIN cannot be replaced by fingerprint or face recognition."
           }
         }
       }
@@ -22348,7 +23538,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Falls du dein Digitaler-Ausweis-Code vergessen hast, musst du deinen Digitalen Ausweis neu hinzufügen. Dabei kannst du einen Wallet-Code festlegen."
+            "value" : "Falls du deinen Digitaler-Ausweis-Code vergessen hast, musst du deinen Digitalen Ausweis neu hinzufügen. Dabei kannst du einen Wallet-Code festlegen."
           }
         },
         "en" : {
@@ -22648,19 +23838,240 @@
         }
       }
     },
+    "settings.archive.banner_headline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine archivierten Nachweise"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No archived credentials yet"
+          }
+        }
+      }
+    },
+    "settings.archive.banner_paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst deine Nachweise in der Detailansicht archivieren. Dann erscheinen sie hier."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can archive your credentials in the detail view. After they will appear here."
+          }
+        }
+      }
+    },
+    "settings.archive.sec_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So nutzt du "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can archive your credentials in the detail view."
+          }
+        }
+      }
+    },
+    "settings.archive.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivierte Nachweise"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credential archive"
+          }
+        }
+      }
+    },
+    "settings.faq.banner_paragraph_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spreche mit einem Mitarbeiter."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Talk to an agent right away."
+          }
+        }
+      }
+    },
+    "settings.faq.banner_paragraph_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir antworten innerhalb 1 bis 2 Tage."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We answer within 1-2 days."
+          }
+        }
+      }
+    },
+    "settings.faq.banner_title_1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ruf uns an"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Call us"
+          }
+        }
+      }
+    },
+    "settings.faq.banner_title_2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sende uns eine E-Mail"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schreibe uns eine Email"
+          }
+        }
+      }
+    },
+    "settings.faq.headline_categories" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAQ Kategories"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAQ categories"
+          }
+        }
+      }
+    },
+    "settings.faq.headline_most_asked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 meistgefragte "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 most asked"
+          }
+        }
+      }
+    },
+    "settings.faq.headline_search" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit was brauchst du Hilfe?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you need help with?"
+          }
+        }
+      }
+    },
+    "settings.faq.placeholder_search" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suche FAQs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search FAQs"
+          }
+        }
+      }
+    },
+    "settings.faq.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAQ & Kontakt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAQ & Customer Support"
+          }
+        }
+      }
+    },
     "settings.list_about_EUDI" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Über EUDI Wallet De"
+            "value" : "Über d-you"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About EUDI Wallet DE"
+            "value" : "About d-you"
           }
         }
       }
@@ -22920,6 +24331,91 @@
         }
       }
     },
+    "settings.overview.button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet zurücksetzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset the wallet"
+          }
+        }
+      }
+    },
+    "settings.overview.headline_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barrierefreiheit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessability"
+          }
+        }
+      }
+    },
+    "settings.overview.headline_legal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechtliches & Informationen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legal & Information"
+          }
+        }
+      }
+    },
+    "settings.overview.headline_settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "settings.overview.label_teaser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt Ausweis hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add ID now"
+          }
+        }
+      }
+    },
     "settings.overview.list_1" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22960,13 +24456,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Über EUDI Wallet De"
+            "value" : "Über d-you"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About EUDI Wallet DE"
+            "value" : "About d-you"
           }
         }
       }
@@ -22977,13 +24473,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Barrierefreiheit"
+            "value" : "Erklärung zur Barrierefreiheit"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accessibility"
+            "value" : "Declaration of Accessability"
           }
         }
       }
@@ -23028,13 +24524,47 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Version"
+            "value" : "Version: 1.2 Build: 236"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App version"
+            "value" : "Version: 1.2 Build: 236"
+          }
+        }
+      }
+    },
+    "settings.overview.list_archive" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivierte Nachweise"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credential archive"
+          }
+        }
+      }
+    },
+    "settings.overview.list_dark_mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Erscheinungsbild"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Appearance"
           }
         }
       }
@@ -23079,13 +24609,30 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wie funktioniert die App"
+            "value" : "Video-tutorials"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How does the app work"
+            "value" : "Video tutorials"
+          }
+        }
+      }
+    },
+    "settings.overview.list_impress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impressum"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impressum"
           }
         }
       }
@@ -23124,6 +24671,23 @@
         }
       }
     },
+    "settings.overview.list_notification" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notification"
+          }
+        }
+      }
+    },
     "settings.overview.list_privacy_policy" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23158,19 +24722,36 @@
         }
       }
     },
+    "settings.overview.list_revocation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet Verlustschutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet loss protection"
+          }
+        }
+      }
+    },
     "settings.overview.list_support" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hilfebereich"
+            "value" : "FAQ & Kontakt"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Support"
+            "value" : "FAQ & Customer Support"
           }
         }
       }
@@ -23192,6 +24773,23 @@
         }
       }
     },
+    "settings.overview.sec_button_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier drücken, um Ausweis hinzuzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap here to add ID"
+          }
+        }
+      }
+    },
     "settings.overview.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23205,6 +24803,125 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Settings"
+          }
+        }
+      }
+    },
+    "settings.revocation_key.banner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichere den Sperrschlüssel außerhalb dieses Geräts, indem du ihn dir zum Beispiel per E-Mail sendest oder in einem Cloud-basierten Passwortmanager speicherst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save the blocking key outside of this device — for example by sending it to yourself via email or storing it in a cloud-based password manager."
+          }
+        }
+      }
+    },
+    "settings.revocation_key.button_activated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
+    "settings.revocation_key.button_inital" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
+    },
+    "settings.revocation_key.headline_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Sperrschlüssel für deine Wallet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet blocking key"
+          }
+        }
+      }
+    },
+    "settings.revocation_key.paragraph" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Damit kannst du deine Walletdaten bei Verlust oder Diebstahl über die Webseite walletapp.org/lost-phone aus der Ferne löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remotely delete your wallet data in case of loss or theft at walletapp.org/lost-phone."
+          }
+        }
+      }
+    },
+    "settings.revocation_key.sec_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Text speichern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save as text"
+          }
+        }
+      }
+    },
+    "settings.revocation_key.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet Verlustschutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet Loss Protection"
           }
         }
       }

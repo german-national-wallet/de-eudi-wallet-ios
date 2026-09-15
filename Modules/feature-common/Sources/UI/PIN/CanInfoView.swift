@@ -11,7 +11,7 @@ struct CanInfoView: View {
       GeometryReader { geometry in
         VStack(alignment: .center) {
           HStack {
-            Theme.shared.image.infoCircle
+            Theme.shared.image.infoCircleImage
               .resizable()
               .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
               .foregroundColor(DSColor.onBackground)

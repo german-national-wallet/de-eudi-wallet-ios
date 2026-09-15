@@ -32,13 +32,17 @@ public extension UIConfig {
 final class IssuancePidPreviewViewModel<Router: RouterHost>: ViewModel<Router, IssuancePidPreviewViewState> {
   @Published var isRejectDialogOpen = false
 
+  private let issuanceCancellationInteractor: IssuanceCancellationInteractor
+
   public init(
     router: Router,
-    config: any UIConfigType
+    config: any UIConfigType,
+    issuanceCancellationInteractor: IssuanceCancellationInteractor
   ) {
     guard let config = config as? UIConfig.IssuancePidPreviewViewConfig else {
       fatalError("Config error :: config must be of type UIConfig.IssuancePidPreviewViewConfig")
     }
+    self.issuanceCancellationInteractor = issuanceCancellationInteractor
     super.init(
       router: router,
       initialState: .init(config: config)
@@ -55,6 +59,9 @@ final class IssuancePidPreviewViewModel<Router: RouterHost>: ViewModel<Router, I
 
   func rejectConfirmed() {
     isRejectDialogOpen = false
+    Task { [issuanceCancellationInteractor] in
+      await issuanceCancellationInteractor.cancelIssuance(verificationInteractor: nil)
+    }
     closeButtonTapped()
   }
 

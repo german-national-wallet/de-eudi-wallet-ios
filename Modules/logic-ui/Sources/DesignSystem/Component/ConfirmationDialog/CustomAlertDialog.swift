@@ -60,11 +60,13 @@ struct CustomAlertDialog: View {
           .font(DSTypography.Title.large)
           .foregroundColor(DSColor.onSurface)
           .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
 
         Text(subtitle)
           .font(DSTypography.Body.medium)
           .foregroundColor(DSColor.onSurfaceVariant)
           .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
       }
 
       VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {

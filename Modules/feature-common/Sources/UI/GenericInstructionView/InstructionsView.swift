@@ -10,6 +10,8 @@ import logic_resources
 public struct InstructionsView<Router: RouterHost>: View {
   @ObservedObject var viewModel: InstructionsViewModel<Router>
 
+  @State private var isCancelDialogPresented = false
+
   public init(viewModel: InstructionsViewModel<Router>) {
     self.viewModel = viewModel
   }
@@ -19,6 +21,10 @@ public struct InstructionsView<Router: RouterHost>: View {
       .sheet(isPresented: $viewModel.isSecondaryButtonSheetOpen) {
         sheetContent
       }
+      .cancelConfirmationDialog(
+        isPresented: $isCancelDialogPresented,
+        onConfirm: viewModel.confirmClose
+      )
   }
 
   /// Renders the intro layout selected by the config, driven by `introConfig`.
@@ -52,7 +58,7 @@ public struct InstructionsView<Router: RouterHost>: View {
       },
       onBack: viewModel.backButtonTapped,
       onHelp: config.onHelp,
-      onClose: viewModel.closeButtonTapped
+      onClose: { isCancelDialogPresented = true }
     )
   }
 

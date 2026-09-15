@@ -17,10 +17,17 @@ struct DocumentLoaderView<Router: RouterHost>: View {
 
   var body: some View {
     ContentScreenView(background: DSColor.background) {
-      ContentLoaderView(
-        loadingText: title,
-        progress: viewModel.viewState.progress
-      )
+      if viewModel.viewState.progress == .success {
+        ContentSuccessView(
+          successText: LocalizableStringKey.eaaIssuanceSuccessTitle.toString,
+          onFinished: viewModel.successAnimationFinished
+        )
+      } else {
+        ContentLoaderView(
+          loadingText: title,
+          progress: viewModel.viewState.progress
+        )
+      }
     }
     .task {
       await viewModel.issueDocuments()

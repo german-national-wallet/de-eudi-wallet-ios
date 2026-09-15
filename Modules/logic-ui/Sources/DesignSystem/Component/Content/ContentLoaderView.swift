@@ -38,8 +38,9 @@ public struct ContentLoaderView: View {
       ProgressRing(state: progress, size: width)
       HStack {
         Spacer()
-        DSTitleLabel(loadingText)
+        DSTitleLabel(loadingText, alignment: .center)
           .padding(.top, DSStyle.Spacers.SPACING_LARGE_MEDIUM)
+          .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
         Spacer()
       }
       Spacer()

@@ -106,4 +106,12 @@ public final class InstructionsViewModel<Router: RouterHost>: ViewModel<Router, 
   func secondaryButtonTapped() {
     isSecondaryButtonSheetOpen.toggle()
   }
+
+  func confirmClose() {
+    guard let onClose = viewState.config.onClose else {
+      closeButtonTapped()
+      return
+    }
+    onClose()
+  }
 }

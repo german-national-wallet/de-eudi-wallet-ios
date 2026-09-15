@@ -111,6 +111,7 @@ public extension Prefs {
     case featureFlagsLastUpdate = "feature_flags_last_update"
     case isPinInitialized
     case hasSeenRevocationCode
+    case hasSeenAppIntro
     case walletRevoked = "wallet_revoked"
   }
 }

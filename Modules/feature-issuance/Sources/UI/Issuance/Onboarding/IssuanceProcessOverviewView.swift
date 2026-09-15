@@ -22,6 +22,12 @@ private struct PrivacyPolicyLink: Identifiable {
   var id: String { url.absoluteString }
 }
 
+private enum Constants {
+  /// The design's icon slot for icons sitting inline with 16pt copy. There is no
+  /// 18pt step in `DSStyle.Sizes.Icons`, whose scale jumps 16 → 20.
+  static let inlineIconSize: CGFloat = 18
+}
+
 struct IssuanceProcessOverviewView<Router: RouterHost>: View {
   let router: Router
   let issuanceInteractor: IssuanceVerificationInteractor?
@@ -31,6 +37,7 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
 
   @State private var isPinInfoSheetPresented = false
   @State private var privacyPolicyLink: PrivacyPolicyLink?
+  @State private var isCancelDialogPresented = false
 
   private let badgeSize: CGFloat = 44
 
@@ -47,7 +54,7 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onBack: onBack,
-        onClose: onClose,
+        onClose: { isCancelDialogPresented = true },
         onHelp: { isPinInfoSheetPresented = true }
       )
       .accessibilitySortPriority(A11ySortPriority.header)
@@ -91,12 +98,18 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
       .background(DSColor.background)
       .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
       .ignoresSafeArea()
-      .presentationDetents([.fraction(0.7)])
+      .presentationDetents([.fraction(0.9)])
     }
     .sheet(item: $privacyPolicyLink) { link in
       SafariView(url: link.url)
         .ignoresSafeArea()
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: onClose
+    )
+
+    .background(EnableSwipeBackGesture())
   }
 
   @ViewBuilder private var stepList: some View {
@@ -143,13 +156,13 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
       },
       label: {
         HStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
-          Theme.shared.image.infoCircle
+          Theme.shared.image.infoCircleImage
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
             .frame(
-              width: DSStyle.Sizes.Icons.small,
-              height: DSStyle.Sizes.Icons.small
+              width: Constants.inlineIconSize,
+              height: Constants.inlineIconSize
             )
             .foregroundColor(DSColor.onBackground)
             .accessibilityHidden(true)

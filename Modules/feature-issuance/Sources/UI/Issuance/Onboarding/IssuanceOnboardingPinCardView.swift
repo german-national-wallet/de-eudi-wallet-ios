@@ -16,14 +16,16 @@ struct IssuanceOnboardingPinCardView<Router: RouterHost>: View {
   var onClose: () -> Void = {}
   var onCardPinKnownTapped: () -> Void = {}
   var onSetPinWithLetterTapped: () -> Void = {}
+  var onNoPinLetterOrForgottenTapped: () -> Void = {}
 
   @State private var isPinInfoSheetPresented = false
+  @State private var isCancelDialogPresented = false
 
   var body: some View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onBack: onBack,
-        onClose: onClose,
+        onClose: { isCancelDialogPresented = true },
         onHelp: { isPinInfoSheetPresented = true }
       )
 
@@ -74,7 +76,7 @@ struct IssuanceOnboardingPinCardView<Router: RouterHost>: View {
         OnboardingOptionCardView(
           title: .issuanceOnboardingPinInfoViewTertiaryButtonTitle,
           accessibilityId: "onboardingPinForgottenOption",
-          action: { isPinInfoSheetPresented = true }
+          action: onNoPinLetterOrForgottenTapped
         )
       }
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
@@ -82,22 +84,32 @@ struct IssuanceOnboardingPinCardView<Router: RouterHost>: View {
       .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
     }
     .sheet(isPresented: $isPinInfoSheetPresented) {
-      PINIssuanceInfoView(
-        onFindNearbyBurgerAmt: openBurgeramtWebpage,
-        router: router,
-        isSheetPresented: $isPinInfoSheetPresented,
-        issuanceInteractor: issuanceInteractor
+      CardPinLetterInfoSheetView(
+        onSetCardPin: setCardPin,
+        onClose: { isPinInfoSheetPresented = false }
       )
-      .background(DSColor.background)
-      .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
-      .ignoresSafeArea()
-      .presentationDetents([.fraction(0.7)])
+      .presentationDetents([.fraction(0.9)])
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      onConfirm: onClose
+    )
+
+    .background(EnableSwipeBackGesture())
   }
 
-  private func openBurgeramtWebpage() {
-    if let url = AppEnvironment.burgeramtServiceLink {
-      UIApplication.shared.open(url)
+  /// Dismisses the sheet before pushing, otherwise the push is swallowed while
+  /// the sheet is still on screen.
+  private func setCardPin() {
+    isPinInfoSheetPresented = false
+    guard let issuanceInteractor else { return }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+      router.push(with: .featureIssuanceModule(
+        .setEidTransportPinInstructionsView(
+          config: NoConfig(),
+          issuanceVerificationInteractor: issuanceInteractor
+        )
+      ))
     }
   }
 }

@@ -35,15 +35,13 @@ struct StartupView<Router: RouterHost>: View {
       backgroundIgnoresSafeArea: true
     ) {
       ZStack {
-        SplashBackgroundView(
-          isAnimating: viewModel.viewState.isAnimating
-        )
-        .ignoresSafeArea()
-        .onAppear {
-          withAnimation(Animation.easeInOut(duration: viewModel.viewState.splashDuration)) {
-            viewModel.startAnimatingSplash()
+        SplashBackgroundView()
+          .ignoresSafeArea()
+          .onAppear {
+            withAnimation(Animation.easeInOut(duration: viewModel.viewState.splashDuration)) {
+              viewModel.startAnimatingSplash()
+            }
           }
-        }
         if viewModel.isErrorPopupVisible {
           ConfirmationPopupView(
             viewModel: viewModel.errorPopupViewModel

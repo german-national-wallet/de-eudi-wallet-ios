@@ -22,7 +22,7 @@ import logic_core
 import logic_analytics
 
 @Copyable
-struct AddDocumentViewState: ViewState {
+public struct AddDocumentViewState: ViewState {
   let addDocumentCellModels: [AddDocumentUIModel]
   let error: ContentErrorView.Config?
   let config: IssuanceFlowUiConfig
@@ -36,7 +36,7 @@ struct AddDocumentViewState: ViewState {
   }
 }
 
-final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocumentViewState> {
+public final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocumentViewState> {
   private let interactor: AddDocumentInteractor
   private let deepLinkController: DeepLinkController
   private let secureEnclaveController: SecureEnclaveController
@@ -47,7 +47,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
   
   let errorPopupViewModel = ConfirmationPopupViewModel()
   
-  init(
+  public init(
     router: Router,
     interactor: AddDocumentInteractor,
     deepLinkController: DeepLinkController,
@@ -186,15 +186,6 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
       issuerName: String = "",
       documentName: String = ""
     ) -> AppRoute {
-      var navigationType: UIConfig.DeepLinkNavigationType {
-        return switch viewState.config.flow {
-        case .noDocument:
-            .push(screen: .featureDashboardModule(.dashboard))
-        case .extraDocument:
-            .pop(screen: .featureDashboardModule(.dashboard))
-        }
-      }
-
       var subTitle: LocalizableStringKey {
         if documentName.isEmpty {
           return .scopedIssuanceSuccessDeferredCaptionDocName([documentName])
@@ -217,7 +208,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
               .init(
                 title: .okButton,
                 style: .primary,
-                navigationType: navigationType
+                navigationType: .pop(screen: .featureDashboardModule(.dashboard))
               )
             ],
             visualKind: .customIcon(
@@ -252,7 +243,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         .credentialOfferRequest(
           config: UIConfig.Generic(
             arguments: ["uri": uri],
-            navigationSuccessType: .push(.featureDashboardModule(.dashboard)),
+            navigationSuccessType: .popTo(.featureDashboardModule(.dashboard)),
             navigationCancelType: .pop
           )
         )
@@ -267,20 +258,13 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         )
       }.value
 
-      let onSuccesNavigation = switch viewState.config.flow {
-      case .noDocument:
-          UIConfig.DeepLinkNavigationType.push(screen: .featureDashboardModule(.dashboard))
-      case .extraDocument:
-          UIConfig.DeepLinkNavigationType.pop(screen: .featureDashboardModule(.dashboard))
-      }
-
       switch state {
       case .success(let documents):
         router.push(
           with: .featureIssuanceModule(
             .issuanceSuccess(
               config: DocumentSuccessUIConfig(
-                successNavigation: onSuccesNavigation,
+                successNavigation: UIConfig.DeepLinkNavigationType.pop(screen: .featureDashboardModule(.dashboard)),
                 relyingParty: documents.first?.issuer?.name,
                 issuerLogoUrl: documents.first?.issuer?.logoUrl,
                 relyingPartyIsTrusted: false
@@ -307,12 +291,4 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         }
       }
     }
-
-  func onMenuTap() {
-    router.push(
-      with: .featureDashboardModule(
-        .sideMenu
-      )
-    )
-  }
 }

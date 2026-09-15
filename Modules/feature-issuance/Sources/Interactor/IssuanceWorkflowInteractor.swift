@@ -8,6 +8,7 @@ import AusweisApp2SDKWrapper
 import logic_ui
 import logic_core
 import logic_business
+import logic_resources
 
 protocol IssuanceWorkflowInteractorDelegate: AnyObject {
   func didRecognizeCardByWorkflowConroller()
@@ -376,7 +377,7 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
   
   func onStarted() {
     if workflowType == .setEidPin {
-      controller.startChangePin()
+      controller.startChangePin(withUserInfoMessages: Self.userInfoMessages(for: .setEidPin))
     } else {
       guard let tokenURL, !tokenURL.absoluteString.isEmpty else {
         logger?.e("IssuanceWorkflowInteractor :: tokenURL is empty")
@@ -385,10 +386,34 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
       controller.startAuthentication(
         withTcTokenUrl: tokenURL,
         withDeveloperMode: true,
-        withUserInfoMessages: nil,
+        withUserInfoMessages: Self.userInfoMessages(for: .authentication),
         withStatusMsgEnabled: true
       )
     }
+  }
+
+  private static func userInfoMessages(for flow: EidFlowType) -> AA2UserInfoMessages {
+    let successParagraph: LocalizableStringKey
+    let errorParagraph: LocalizableStringKey
+    switch flow {
+    case .setEidPin, .confirmNewPin:
+      successParagraph = .nfcSystemSheetParagraphSuccessOneTimePin
+      errorParagraph = .nfcSystemSheetParagraphErrorOneTimePin
+    case .authentication:
+      successParagraph = .nfcSystemSheetParagraphSuccessCardPin
+      errorParagraph = .nfcSystemSheetParagraphErrorCardPin
+    }
+
+    func sheetText(_ title: LocalizableStringKey, _ paragraph: LocalizableStringKey) -> String {
+      "\(title.toString)\n\(paragraph.toString)"
+    }
+
+    return AA2UserInfoMessages(
+      sessionStarted: sheetText(.nfcSystemSheetTitleStart, .nfcSystemSheetParagraphStart),
+      sessionFailed: sheetText(.nfcSystemSheetTitleError, errorParagraph),
+      sessionSucceeded: sheetText(.nfcSystemSheetTitleSuccess, successParagraph),
+      sessionInProgress: nil
+    )
   }
   
   func onStatus(workflowProgress: AusweisApp2SDKWrapper.WorkflowProgress) {

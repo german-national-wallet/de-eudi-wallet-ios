@@ -6,6 +6,7 @@
 import SwiftUI
 import logic_ui
 import logic_resources
+import feature_common
 
 struct IssuanceOnboardingCardView: View {
   var onBack: () -> Void = {}
@@ -54,9 +55,11 @@ struct IssuanceOnboardingCardView: View {
                 .fontWeight(DSStyle.FontWeight.medium_500)
                 .foregroundColor(DSColor.onSecondaryContainer)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .contentShape(Rectangle())
           }
         )
-        .frame(height: 48)
 
         OnboardingOptionCardView(
           title: .pidOnboardingCardsPrimButton,
@@ -75,8 +78,10 @@ struct IssuanceOnboardingCardView: View {
     }
     .sheet(isPresented: $isEidFunctionInfoSheetPresented) {
       EidFunctionInfoSheetView(onClose: { isEidFunctionInfoSheetPresented = false })
-        .presentationDetents([.fraction(0.75)])
+        .presentationDetents([.fraction(0.9)])
     }
+
+    .background(EnableSwipeBackGesture())
   }
 
   @ViewBuilder
@@ -90,7 +95,7 @@ struct IssuanceOnboardingCardView: View {
         )
 
       Text(label)
-        .font(DSTypography.Body.large)
+        .font(DSTypography.Body.largeBold)
         .foregroundColor(DSColor.onSurface)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -101,38 +106,40 @@ private struct EidFunctionInfoSheetView: View {
   let onClose: () -> Void
 
   var body: some View {
-    VStack(spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
-      Theme.shared.image.eidLogo
-        .resizable()
-        .scaledToFit()
-        .frame(width: DSStyle.Sizes.Icons.xxLarge, height: DSStyle.Sizes.Icons.xxLarge)
+    VStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
+      ScrollView {
+        VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM) {
+          Theme.shared.image.eidLogo
+            .resizable()
+            .scaledToFit()
+            .frame(width: DSStyle.Sizes.Icons.xxLarge, height: DSStyle.Sizes.Icons.xxLarge)
+
+          Text(.pidEidFunctionInfoTitle)
+            .font(DSTypography.Title.large)
+            .foregroundColor(DSColor.onBackground)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+
+          DSInfoCardView(
+            title: .pidEidFunctionInfoHeading1,
+            message: .pidEidFunctionInfoParagraph1
+          )
+          DSInfoCardView(
+            title: .pidEidFunctionInfoHeading2,
+            message: .pidEidFunctionInfoParagraph2
+          )
+        }
         .padding(.top, DSStyle.Spacers.SPACING_LARGE)
-
-      Text(.pidEidFunctionInfoTitle)
-        .font(DSTypography.Title.large)
-        .foregroundColor(DSColor.onBackground)
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityAddTraits(.isHeader)
-
-      Group {
-        Text(.pidEidFunctionInfoParagraph1)
-        Text(.pidEidFunctionInfoParagraph2)
       }
-      .font(DSTypography.Body.large)
-      .foregroundColor(DSColor.onSurface)
-      .multilineTextAlignment(.leading)
-      .fixedSize(horizontal: false, vertical: true)
-      .frame(maxWidth: .infinity, alignment: .leading)
-
-      Spacer()
 
       DSSecondaryButton(
         title: LocalizableStringKey.globalCloseHintButton.toString,
         action: onClose
       )
     }
-    .padding(DSStyle.Spacers.SPACING_MEDIUM)
+    .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+    .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
     .background(DSColor.background)
   }
 }

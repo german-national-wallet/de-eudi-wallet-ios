@@ -16,11 +16,7 @@ public enum AppEnvironment {
   }
   
   public static var burgeramtServiceLink: URL? {
-    if let localeCode = Locale.current.systemLanguageCode {
-      let urlString = "BURGERAMT_SERVICE_LINK".valueFromBundle + "/" + localeCode
-      return URL(string: urlString)
-    }
-    return nil
+    URL(string: "BURGERAMT_SERVICE_LINK".valueFromBundle)
   }
 
   public static var privacyPolicyLink: URL? {
