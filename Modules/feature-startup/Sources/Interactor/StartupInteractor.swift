@@ -37,7 +37,6 @@ final class StartupInteractorImpl: StartupInteractor {
   private let quickPinInteractor: QuickPinInteractor
   private let keyChainController: KeyChainController
   private let prefsController: PrefsController
-  private let mdvmInteractor: MDVMInteractor
   private let rwscaInteractor: RWSCAInteractor
   private let remoteWSCA: RemoteWSCAService?
   private let secureEnclaveController: SecureEnclaveController
@@ -52,7 +51,6 @@ final class StartupInteractorImpl: StartupInteractor {
     quickPinInteractor: QuickPinInteractor,
     keyChainController: KeyChainController,
     prefsController: PrefsController,
-    mdvmInteractor: MDVMInteractor,
     rwscaInteractor: RWSCAInteractor,
     remoteWSCA: RemoteWSCAService? = nil,
     secureEnclaveController: SecureEnclaveController,
@@ -62,7 +60,6 @@ final class StartupInteractorImpl: StartupInteractor {
     self.quickPinInteractor = quickPinInteractor
     self.keyChainController = keyChainController
     self.prefsController = prefsController
-    self.mdvmInteractor = mdvmInteractor
     self.rwscaInteractor = rwscaInteractor
     self.remoteWSCA = remoteWSCA
     self.secureEnclaveController = secureEnclaveController

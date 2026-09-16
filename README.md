@@ -4,17 +4,17 @@ This is a source code of the German National Wallet iOS application.
 
 This repository is one-way, read-only and flows out of an internal repository.
 
-## Reading the project
+## Building
 
 This mirror carries the complete application source: the Xcode project, the app
 target, every module package and the tests. It opens in Xcode and the structure
 and protocol implementations can be followed end to end.
 
-Producing a running app takes a little more. Per-environment configuration
-arrives as placeholders rather than real endpoints, and a few inputs the build
-phases expect are supplied from outside this repository — they are listed, with
-what to put in their place, under
-[What you need to supply](#what-you-need-to-supply).
+It also builds and runs as published, with no configuration step. Every
+endpoint, token and service credential is a **placeholder**, so the app starts
+and the UI is navigable, but nothing that talks to a service works until you
+supply your own — see
+[Supplying your own services](#supplying-your-own-services).
 
 ### Requirements
 
@@ -38,21 +38,23 @@ Four schemes are published, each pairing with `Debug` and `Release`:
 Signing is not published: `DEVELOPMENT_TEAM` is set, but no provisioning
 profiles or certificates accompany it.
 
-### What you need to supply
+### Build and run
 
-Three inputs are referenced by the project but come from outside this
-repository. Provide your own at these paths and the project builds:
+Open `IDGo.xcodeproj`, pick a scheme and build. Swift Package Manager resolves
+everything from `Package.resolved`; all dependencies are public.
 
-| Input to provide | Referenced by | Without it |
-|---|---|---|
-| `.env` | Resources build phase of the app target | `Build input file cannot be found` |
-| `Wallet/Config/GoogleService-Info-{Dev,Sandbox,Staging,Prod}.plist` | the *Copy GoogleService-Info.plist* build phase, which runs under `set -e` | that phase fails |
-| `Modules/logic-ui/…/Resources/EUDI Diatype/` | `CustomFonts.swift` | text falls back to the system font |
+One caveat on the command line: the project depends on `swift-secp256k1`, which
+ships a build-tool plugin. Xcode prompts to trust it on first build, but
+`xcodebuild` needs the flag explicitly:
 
-The fonts only degrade typography; the first two stop the build. A `.env` with
-the three keys below and a plist per configuration — your own, or any
-well-formed file — is enough to get a compiling app whose network calls then
-fail against the placeholder hosts.
+```sh
+xcodebuild build -project IDGo.xcodeproj -scheme "IDGo Dev" \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -skipMacroValidation -skipPackagePluginValidation
+```
+
+The only omission that changes the build is the brand typeface, which degrades
+typography but nothing else — see [Fonts](#fonts).
 
 ## Supplying your own services
 
@@ -88,7 +90,8 @@ marketing and build version.
 ### Secrets
 
 Three tokens reach the app through a `.env` file at the repository root, copied
-in as a resource. It is not published and is git-ignored; create your own:
+in as a resource. The published `.env` carries `PLACEHOLDER_*` values; replace
+them with your own:
 
 | Key | What it is for |
 |---|---|
@@ -109,10 +112,12 @@ the app falls back to the defaults compiled into each flag, so it keeps running.
 
 ### Push notifications
 
-The `GoogleService-Info-*.plist` files are **omitted entirely** rather than
-placeholdered — a placeholder plist teaches a reader nothing and re-opens a
-secret-scanner argument every time its shape changes. The copy phase maps one
-plist per configuration.
+The `GoogleService-Info-*.plist` files are **placeholders** — project
+`eudi-wallet-placeholder`, no real API key. They carry the same key set as the
+real files, so the *Copy GoogleService-Info.plist* build phase (which maps one
+plist per configuration) succeeds and everything except push works. Replace the
+one for your configuration with your own from the Firebase console to enable
+it.
 
 ### Certificates and pinning
 

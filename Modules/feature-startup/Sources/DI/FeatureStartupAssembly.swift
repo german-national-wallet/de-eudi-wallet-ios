@@ -31,7 +31,6 @@ public final class FeatureStartupAssembly: Assembly {
         quickPinInteractor: r.force(QuickPinInteractor.self),
         keyChainController: r.force(KeyChainController.self),
         prefsController: r.force(PrefsController.self),
-        mdvmInteractor: r.force(MDVMInteractor.self),
         rwscaInteractor: r.force(RWSCAInteractor.self),
         remoteWSCA: r.force(RemoteWSCAService.self, name: RemoteWSCAService.name),
         secureEnclaveController: r.force(SecureEnclaveController.self),

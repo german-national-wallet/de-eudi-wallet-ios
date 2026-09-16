@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PLACEHOLDER -- published by oss-sync/extra/, not the file used to build.
+     The real per-environment Firebase configs are denylisted: they carry a live
+     API key, project id and GCM sender id. The KEY SET is reproduced here so a
+     reader sees the shape the build expects, and so the app compiles and runs;
+     push notifications do not work against this file. Replace it with your own
+     from the Firebase console to enable them. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>PLACEHOLDER_API_KEY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>000000000000</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.sprind.wallet.sandbox</string>
+	<key>PROJECT_ID</key>
+	<string>eudi-wallet-placeholder</string>
+	<key>STORAGE_BUCKET</key>
+	<string>eudi-wallet-placeholder.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<false/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:000000000000:ios:0000000000000000000000</string>
+</dict>
+</plist>

@@ -34,6 +34,11 @@ final class WalletRegistrationInteractorImpl: WalletRegistrationInteractor {
     guard !walletRevocationInteractor.isWalletRevoked else {
       throw BackendError.notRegistered
     }
+
+    if let walletInstanceID = wpbInteractor.walletInstanceID {
+      return walletInstanceID
+    }
+
     guard let mdvmRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw BackendError.unknown
     }

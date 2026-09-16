@@ -20,6 +20,28 @@ struct WalletRegistrationInteractorImplTests {
   // MARK: - registerWalletInstance
 
   @Test
+  func registerWalletInstance_WhenWIIDAlreadyStored_ReturnsIDWithoutCallingMDVMOrWPB() async throws {
+    let mdvmInteractor = FakeMDVMInteractor(token: nil)
+    let wpbInteractor = MockWPBInteractor()
+
+    stub(wpbInteractor) { mock in
+      when(mock.walletInstanceID.get).thenReturn("existing-wi-id")
+    }
+
+    let sut = WalletRegistrationInteractorImpl(
+      mdvmInteractor: mdvmInteractor,
+      wpbInteractor: wpbInteractor,
+      walletRevocationInteractor: FakeWalletRevocationInteractor(isWalletRevoked: false)
+    )
+
+    let result = try await sut.registerWalletInstance()
+
+    #expect(result == "existing-wi-id")
+    #expect(mdvmInteractor.ensureFreshMDVMTokenCallCount == 0)
+    verify(wpbInteractor, never()).register(mdvmStoredRegistration: any())
+  }
+
+  @Test
   func registerWalletInstance_WhenWalletIsRevoked_DoesNotRegisterAgain() async {
     let mdvmInteractor = FakeMDVMInteractor(
       token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token")

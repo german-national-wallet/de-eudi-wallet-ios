@@ -28,7 +28,6 @@ final class TestStartupInteractor: EudiTest {
   var quickPinInteractor: MockQuickPinInteractor!
   var keyChainController: MockKeyChainController!
   var prefsController: MockPrefsController!
-  var mdvmInteractor: MockMDVMInteractor!
   var rwscaInteractor: MockRWSCAInteractor!
   var secureEnclaveController: MockSecureEnclaveController!
   var pidRevokeInteractor: MockPIDRevokeInteractor!
@@ -38,7 +37,6 @@ final class TestStartupInteractor: EudiTest {
     self.quickPinInteractor = MockQuickPinInteractor()
     self.keyChainController = MockKeyChainController()
     self.prefsController = MockPrefsController()
-    self.mdvmInteractor = MockMDVMInteractor()
     self.rwscaInteractor = MockRWSCAInteractor()
     self.secureEnclaveController = MockSecureEnclaveController()
     self.pidRevokeInteractor = MockPIDRevokeInteractor()
@@ -48,7 +46,6 @@ final class TestStartupInteractor: EudiTest {
       quickPinInteractor: quickPinInteractor,
       keyChainController: keyChainController,
       prefsController: prefsController,
-      mdvmInteractor: mdvmInteractor,
       rwscaInteractor: rwscaInteractor,
       secureEnclaveController: secureEnclaveController,
       pidRevokeInteractor: pidRevokeInteractor
