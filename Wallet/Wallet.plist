@@ -4,7 +4,6 @@
 <dict>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- Restricts the TLS 1.2 ClientHello to NIAP FCP v2.1 algorithms (drops rsa_pkcs1_sha1 and non-AEAD suites) on iOS 26.4+ -->
 		<key>NSRequiresNIAPTLSPackageVersion</key>
 		<string>FCP_v2.1</string>
 	</dict>
@@ -51,6 +50,16 @@
 	<string>$(BURGERAMT_SERVICE_LINK)</string>
 	<key>PRIVACY_POLICY_LINK</key>
 	<string>$(PRIVACY_POLICY_LINK)</string>
+	<key>ABOUT_LINK</key>
+	<string>$(ABOUT_LINK)</string>
+	<key>ACCESSIBILITY_STATEMENT_LINK</key>
+	<string>$(ACCESSIBILITY_STATEMENT_LINK)</string>
+	<key>REPORT_ISSUE_URL</key>
+	<string>$(REPORT_ISSUE_URL)</string>
+	<key>TERMS_AND_CONDITIONS_LINK</key>
+	<string>$(TERMS_AND_CONDITIONS_LINK)</string>
+	<key>IMPRINT_LINK</key>
+	<string>$(IMPRINT_LINK)</string>
 	<key>CORE_USER_AUTH</key>
 	<string>$(CORE_USER_AUTH)</string>
 	<key>BATCH_COUNT</key>
@@ -59,6 +68,8 @@
 	<string>$(PID_MSO_MDOC_CONFIG_ID)</string>
 	<key>PID_SD_JWT_CONFIG_ID</key>
 	<string>$(PID_SD_JWT_CONFIG_ID)</string>
+	<key>VCI_CLIENT_ID</key>
+	<string>$(VCI_CLIENT_ID)</string>
 	<key>VCI_ISSUER_URL</key>
 	<string>$(VCI_ISSUER_URL)</string>
 	<key>PID_ISSUER_NAME</key>

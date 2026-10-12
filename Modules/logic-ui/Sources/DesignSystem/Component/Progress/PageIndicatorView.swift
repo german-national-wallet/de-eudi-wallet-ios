@@ -11,13 +11,15 @@ public extension DesignSystem.Components {
   struct PageIndicator: View {
     let current: Int
     let total: Int
+    let accessibilityLabel: LocalizableStringKey?
 
     static let dotSize: CGFloat = 8
     static let dotSpacing: CGFloat = DSStyle.Spacers.SPACING_SMALL
 
-    public init(current: Int, total: Int) {
+    public init(current: Int, total: Int, accessibilityLabel: LocalizableStringKey? = nil) {
       self.current = current
       self.total = total
+      self.accessibilityLabel = accessibilityLabel
     }
 
     public var body: some View {
@@ -31,9 +33,9 @@ public extension DesignSystem.Components {
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(
         Text(
-          LocalizableStringKey.headerAccessibilityProgress(
+          (accessibilityLabel ?? LocalizableStringKey.headerAccessibilityProgress(
             ["\(current)", "\(max(total, 1))"]
-          ).toLocalizedStringKey
+          )).toLocalizedStringKey
         )
       )
     }

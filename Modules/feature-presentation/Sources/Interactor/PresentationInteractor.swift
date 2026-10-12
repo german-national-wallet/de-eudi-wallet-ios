@@ -26,6 +26,34 @@ public struct OnlineAuthenticationRequestSuccessModel: Sendable {
   var relyingParty: String
   var dataRequestInfo: String
   var isTrusted: Bool
+  var isOverAsking: Bool = false
+  var supervisoryAuthorityURI: URL?
+  var hasUnreadableRegistration: Bool = false
+}
+
+extension BaseRequestViewModel {
+
+  func refuseIfBlockedByRegistration(
+    _ request: OnlineAuthenticationRequestSuccessModel,
+    interactor: PresentationInteractor
+  ) async -> Bool {
+    let reason: PresentationRejectedUiConfig.Reason
+    if request.hasUnreadableRegistration {
+      reason = .unregisteredRelyingParty
+    } else if request.isOverAsking {
+      reason = .overAsking
+    } else {
+      return false
+    }
+    await onRefusedByPolicy(
+      reason: reason,
+      reportURI: request.supervisoryAuthorityURI
+    ) {
+      await interactor.declinePresentation()
+      interactor.stopPresentation()
+    }
+    return true
+  }
 }
 
 public enum PresentationCoordinatorPartialState: Sendable {
@@ -49,8 +77,10 @@ public protocol PresentationInteractor: Sendable {
     func onDeviceEngagement() async -> Result<OnlineAuthenticationRequestSuccessModel, Error>
     func onResponsePrepare(requestItems: [RequestDataUiModel]) async -> Result<RequestItemConvertible, Error>
     func onSendResponse() async -> RemoteSentResponsePartialState
+    func onRejectRequest() async
     func updatePresentationCoordinator(with coordinator: RemoteSessionCoordinator)
     func storeDynamicIssuancePendingUrl(with url: URL)
+    func declinePresentation() async
     func stopPresentation()
     func isPIDPresentation(documentIDs: [String]) -> Bool
     func getClaimCount(documentID: String) -> Int
@@ -127,12 +157,15 @@ final class PresentationInteractorImpl: PresentationInteractor {
         let response = try await sessionCoordinatorHolder.getActiveRemoteCoordinator().requestReceived()
         return .success(
           .init(
-            requestDataCells: response.items.toUiModels(
+            requestDataCells: (response.itemSets.first ?? []).toUiModels(
               with: self.walletKitController
             ),
             relyingParty: response.relyingParty,
             dataRequestInfo: response.dataRequestInfo,
-            isTrusted: response.isTrusted
+            isTrusted: response.isTrusted,
+            isOverAsking: response.isOverAsking,
+            supervisoryAuthorityURI: response.supervisoryAuthorityURI,
+            hasUnreadableRegistration: response.hasUnreadableRegistration
           )
         )
       } catch {
@@ -180,6 +213,14 @@ final class PresentationInteractorImpl: PresentationInteractor {
     }
   }
 
+  public func onRejectRequest() async {
+    do {
+      try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
+    } catch {
+      logger?.e("presentation rejection failed \(error.logDescriptor)")
+    }
+  }
+
   private func refreshLowCredentialsIfNeeded() async {
     let threshold = walletKitController.batchRefreshThreshold
     let documents = walletKitController.fetchIssuedDocuments()
@@ -217,6 +258,14 @@ final class PresentationInteractorImpl: PresentationInteractor {
 
   public func storeDynamicIssuancePendingUrl(with url: URL) {
     walletKitController.storeDynamicIssuancePendingUrl(with: url)
+  }
+
+  public func declinePresentation() async {
+    do {
+      try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
+    } catch {
+      logger?.e("declinePresentation failed: \(error.logDescriptor)")
+    }
   }
 
   public func stopPresentation() {

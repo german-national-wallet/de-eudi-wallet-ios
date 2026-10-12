@@ -54,6 +54,14 @@ struct ConfigLogicTests {
     #expect(sut.vciIssuerName == "PID_ISSUER_NAME".valueFromBundle)
   }
 
+  @Test
+  func offersSimulatedEIDCard_ThenOnlyTheNonProductionVariantsDoSo() {
+    #expect(AppBuildVariant.DEV.offersSimulatedEIDCard)
+    #expect(AppBuildVariant.SANDBOX.offersSimulatedEIDCard)
+    #expect(AppBuildVariant.STAGING.offersSimulatedEIDCard)
+    #expect(AppBuildVariant.PROD.offersSimulatedEIDCard == false)
+  }
+
   private func makeSUT(overrides: DebugConfigOverrides) -> ConfigLogicImpl {
     ConfigLogicImpl(debugConfigController: DebugConfigControllerStub(overrides: overrides))
   }

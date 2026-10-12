@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "presentation_access_denied.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -9,8 +9,9 @@ import OpenID4VCI
 import Foundation
 import logic_business
 import MdocDataModel18013
+import EudiWalletKit
 
-final class WalletAttestationProviderImpl: WalletAttestationsProviderForWalletAppCompatibility {
+final class WalletAttestationProviderImpl: WalletAttestationsProvider {
   private let wiaIssuanceService: WIAIssuanceService
   private let secureEnclaveController: SecureEnclaveController
 
@@ -31,19 +32,18 @@ final class WalletAttestationProviderImpl: WalletAttestationsProviderForWalletAp
   }
 
   func getKeysAttestation(keys: [any JWK], nonce: String?) async throws -> String {
-    guard let firstKey = keys.first as? ECPublicKey else {
+    guard let keyTag = Self.wteKeyTag(for: keys) else {
       throw SecureAreaError("Key attestation requires at least one EC public key")
     }
-    let keyTag = SecureEnclaveKeys.custom(RemoteWSCAService.wteKeychainTag(forKeyX: firstKey.x))
     guard let wte = secureEnclaveController.retrieveStringFromKeychain(keyTag: keyTag), !wte.isEmpty else {
       throw SecureAreaError("No key attestation (WTE) found for the requested keys")
     }
+    secureEnclaveController.deleteKeychainItem(keyTag: keyTag)
     return wte
   }
 
-  func getKeysAttestation(docType: String) async throws -> String? {
-    let wte = secureEnclaveController.retrieveStringFromKeychain(keyTag: .custom(docType))
-    secureEnclaveController.deleteKeychainItem(keyTag: .custom(docType))
-    return wte
+  private static func wteKeyTag(for keys: [any JWK]) -> SecureEnclaveKeys? {
+    guard let firstKey = keys.first as? ECPublicKey else { return nil }
+    return .custom(RemoteWSCAService.wteKeychainTag(forKeyX: firstKey.x))
   }
 }

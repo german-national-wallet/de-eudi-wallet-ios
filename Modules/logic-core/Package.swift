@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "logic-core",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v17)],
   products: [
     .library(
       name: "logic-core",
@@ -14,7 +14,11 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
-      revision: "01d673c8804be1254b1e29c9cc66cddc822af216"
+      revision: "0a71c5f2d11d01261337f2a3c40f936606314b70"
+    ),
+    .package(
+      url: "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vp-swift.git",
+      exact: "0.42.0"
     ),
     .package(
       name: "logic-resources",
@@ -48,6 +52,10 @@ let package = Package(
         .product(
           name: "EudiWalletKit",
           package: "de-eudi-lib-ios-wallet-kit"
+        ),
+        .product(
+            name: "OpenID4VP",
+            package: "eudi-lib-ios-openid4vp-swift"
         )
       ],
       path: "./Sources"
@@ -63,6 +71,10 @@ let package = Package(
         .product(
           name: "EudiWalletKit",
           package: "de-eudi-lib-ios-wallet-kit"
+        ),
+        .product(
+            name: "OpenID4VP",
+            package: "eudi-lib-ios-openid4vp-swift"
         )
       ],
       path: "./Tests"

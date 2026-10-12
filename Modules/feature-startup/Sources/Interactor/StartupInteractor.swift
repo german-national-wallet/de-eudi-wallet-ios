@@ -19,6 +19,7 @@ import feature_common
 import logic_core
 import logic_business
 import logic_api
+import push_notification_service
 
 public protocol StartupInteractor {
   func initialize(with splashAnimationDuration: TimeInterval) async -> AppRoute
@@ -29,6 +30,16 @@ public protocol StartupInteractor {
   func markRevocationCodeSeen()
   func hasSeenAppIntro() -> Bool
   func markAppIntroSeen()
+  func isAppSetupPending() -> Bool
+  func markAppSetupCompleted()
+  func hasSeenPlatformAuthIntro() -> Bool
+  func markPlatformAuthIntroSeen()
+  func isPlatformAuthenticationEnabled() async -> Bool
+  func hasAcceptedPrivacyPolicy() -> Bool
+  func markPrivacyPolicyAccepted()
+  func hasSeenPushIntro() -> Bool
+  func markPushIntroSeen()
+  func requestPushAuthorization() async -> Bool
 }
 
 final class StartupInteractorImpl: StartupInteractor {
@@ -41,6 +52,9 @@ final class StartupInteractorImpl: StartupInteractor {
   private let remoteWSCA: RemoteWSCAService?
   private let secureEnclaveController: SecureEnclaveController
   private let pidRevokeInteractor: PIDRevokeInteractor
+  private let appBlockingController: AppBlockingController
+  private let pushAuthorizationProvider: PushAuthorizationProvider
+  private let pnsAccountInteractor: PNSAccountInteractor
 
   private var hasDocuments: Bool {
     return !walletKitController.fetchAllDocuments().isEmpty
@@ -54,7 +68,10 @@ final class StartupInteractorImpl: StartupInteractor {
     rwscaInteractor: RWSCAInteractor,
     remoteWSCA: RemoteWSCAService? = nil,
     secureEnclaveController: SecureEnclaveController,
-    pidRevokeInteractor: PIDRevokeInteractor
+    pidRevokeInteractor: PIDRevokeInteractor,
+    appBlockingController: AppBlockingController,
+    pushAuthorizationProvider: PushAuthorizationProvider,
+    pnsAccountInteractor: PNSAccountInteractor
   ) {
     self.walletKitController = walletKitController
     self.quickPinInteractor = quickPinInteractor
@@ -64,6 +81,9 @@ final class StartupInteractorImpl: StartupInteractor {
     self.remoteWSCA = remoteWSCA
     self.secureEnclaveController = secureEnclaveController
     self.pidRevokeInteractor = pidRevokeInteractor
+    self.appBlockingController = appBlockingController
+    self.pushAuthorizationProvider = pushAuthorizationProvider
+    self.pnsAccountInteractor = pnsAccountInteractor
   }
 
   public func initialize(with splashAnimationDuration: TimeInterval) async -> AppRoute {
@@ -111,6 +131,10 @@ final class StartupInteractorImpl: StartupInteractor {
       prefsController.remove(forKey: .isPinInitialized)
       prefsController.remove(forKey: .hasSeenRevocationCode)
       prefsController.remove(forKey: .hasSeenAppIntro)
+      prefsController.remove(forKey: .hasSeenPlatformAuthIntro)
+      prefsController.remove(forKey: .hasAcceptedPrivacyPolicy)
+      prefsController.remove(forKey: .hasSeenPushIntro)
+      prefsController.remove(forKey: .isAppSetupPending)
       prefsController.setValue(true, forKey: .runAtLeastOnce)
     }
   }
@@ -169,6 +193,51 @@ final class StartupInteractorImpl: StartupInteractor {
 
   func markAppIntroSeen() {
     prefsController.setValue(true, forKey: .hasSeenAppIntro)
+    prefsController.setValue(true, forKey: .isAppSetupPending)
+  }
+
+  func isAppSetupPending() -> Bool {
+    prefsController.getBool(forKey: .isAppSetupPending)
+  }
+
+  func markAppSetupCompleted() {
+    prefsController.remove(forKey: .isAppSetupPending)
+  }
+
+  func hasSeenPlatformAuthIntro() -> Bool {
+    prefsController.getBool(forKey: .hasSeenPlatformAuthIntro)
+  }
+
+  func markPlatformAuthIntroSeen() {
+    prefsController.setValue(true, forKey: .hasSeenPlatformAuthIntro)
+  }
+
+  func isPlatformAuthenticationEnabled() async -> Bool {
+    await appBlockingController.blockingState(for: [.platformAuthentication]) == nil
+  }
+
+  func hasAcceptedPrivacyPolicy() -> Bool {
+    prefsController.getBool(forKey: .hasAcceptedPrivacyPolicy)
+  }
+
+  func markPrivacyPolicyAccepted() {
+    prefsController.setValue(true, forKey: .hasAcceptedPrivacyPolicy)
+  }
+
+  func hasSeenPushIntro() -> Bool {
+    prefsController.getBool(forKey: .hasSeenPushIntro)
+  }
+
+  func markPushIntroSeen() {
+    prefsController.setValue(true, forKey: .hasSeenPushIntro)
+  }
+
+  func requestPushAuthorization() async -> Bool {
+    let isGranted = await pushAuthorizationProvider.requestAuthorization()
+    if isGranted {
+      await pnsAccountInteractor.syncAccountIfNeeded()
+    }
+    return isGranted
   }
 }
 

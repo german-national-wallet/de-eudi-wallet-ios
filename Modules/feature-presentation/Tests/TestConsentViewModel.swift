@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import Cuckoo
 
 import feature_common
 import logic_analytics
@@ -19,17 +20,23 @@ final class TestConsentViewModel: XCTestCase {
   fileprivate var recordingRouter: RecordingRouterHost!
   var pinSessionInteractor: PinSessionInteractorStub!
   var analyticsController: AnalyticsControllerStub!
+  var errorHandler: MockPresentationErrorHandler!
 
   override func setUp() {
     stubInteractor = ConsentPresentationInteractorStub()
     pinSessionInteractor = PinSessionInteractorStub()
     analyticsController = AnalyticsControllerStub()
+    errorHandler = MockPresentationErrorHandler()
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture(traceId: "trace-id")))
+    }
     recordingRouter = RecordingRouterHost()
   }
 
   override func tearDown() {
     stubInteractor = nil
     analyticsController = nil
+    errorHandler = nil
     recordingRouter = nil
     super.tearDown()
   }
@@ -51,14 +58,7 @@ final class TestConsentViewModel: XCTestCase {
     )
     stubInteractor.deviceEngagementResult = .success(success)
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "Fallback RP"
-    )
+    let viewModel = makeViewModel()
 
     await viewModel.doWork()
 
@@ -88,14 +88,7 @@ final class TestConsentViewModel: XCTestCase {
     )
     stubInteractor.deviceEngagementResult = .success(success)
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "Fallback RP"
-    )
+    let viewModel = makeViewModel()
 
     await viewModel.doWork()
 
@@ -106,42 +99,36 @@ final class TestConsentViewModel: XCTestCase {
     XCTAssertNotEqual(viewModel.consentItems.first?.description.lowercased(), "nationality")
   }
 
-  func testDoWork_WhenEngagementFails_ThenClearsItems() async {
+  func testDoWork_WhenEngagementFails_ThenShowsErrorDialogFromHandler() async {
     stubInteractor.deviceEngagementResult = .failure(TestNSError.generic)
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
-    )
+    let viewModel = makeViewModel()
 
     await viewModel.doWork()
 
-    XCTAssertTrue(viewModel.consentItemGroups.isEmpty)
     XCTAssertTrue(viewModel.consentItems.isEmpty)
-    XCTAssertTrue(viewModel.viewState.items.isEmpty)
-    XCTAssertFalse(viewModel.viewState.isLoading)
-    XCTAssertTrue(viewModel.viewState.initialized)
+    XCTAssertEqual(viewModel.errorDialog?.traceId, "trace-id")
+    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    XCTAssertFalse(recordingRouter.didPush)
   }
 
-  func testOnDecline_ThenShowsConfirmationPopup() {
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
-    )
+  func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRoute() async {
+    stubInteractor.deviceEngagementResult = .failure(TestNSError.generic)
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+    }
 
-    viewModel.onDecline()
+    let viewModel = makeViewModel()
 
-    XCTAssertTrue(viewModel.isConfirmationPopupVisible)
-    XCTAssertFalse(viewModel.confirmationPopupViewModel.title.isEmpty)
-    XCTAssertFalse(viewModel.confirmationPopupViewModel.detail.isEmpty)
+    await viewModel.doWork()
+
+    XCTAssertNil(viewModel.errorDialog)
+    XCTAssertTrue(recordingRouter.didPush)
+    if case .featurePresentationModule(.presentationErrorNotice) = recordingRouter.lastPushedRoute {
+      XCTAssertTrue(true)
+    } else {
+      XCTFail("Expected presentationErrorNotice, got \(String(describing: recordingRouter.lastPushedRoute))")
+    }
   }
 
   func testOnShare_WhenNonPIDAndPrepareSucceeds_ThenPushesPresentationLoader() async throws {
@@ -167,14 +154,7 @@ final class TestConsentViewModel: XCTestCase {
       )
     )
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
-    )
+    let viewModel = makeViewModel()
     await viewModel.doWork()
 
     viewModel.onShare()
@@ -215,14 +195,7 @@ final class TestConsentViewModel: XCTestCase {
       )
     )
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
-    )
+    let viewModel = makeViewModel()
     await viewModel.doWork()
 
     viewModel.onShare()
@@ -269,6 +242,7 @@ final class TestConsentViewModel: XCTestCase {
       interactor: stubInteractor,
       pinSessionInteractor: pinSessionInteractor,
       analyticsController: analyticsController,
+      errorHandler: errorHandler,
       originator: .featureDashboardModule(.dashboard),
       relyingParty: "RP"
     )
@@ -279,10 +253,10 @@ final class TestConsentViewModel: XCTestCase {
 
     XCTAssertEqual(pinSessionInteractor.clearCallCount, 1)
     XCTAssertFalse(recordingRouter.didPush)
-    XCTAssertNotNil(viewModel.viewState.error)
+    XCTAssertNotNil(viewModel.errorDialog)
   }
 
-  func testOnShare_WhenPrepareFails_ThenSetsErrorState() async throws {
+  func testOnShare_WhenPrepareFails_ThenShowsErrorDialog() async throws {
     stubInteractor.coordinatorState = .success(
       RemoteSessionCoordinatorStub(session: Constants.mockPresentationSession)
     )
@@ -306,21 +280,52 @@ final class TestConsentViewModel: XCTestCase {
       )
     )
 
-    let viewModel = ConsentViewModel(
-      router: recordingRouter,
-      interactor: stubInteractor,
-      pinSessionInteractor: pinSessionInteractor,
-      analyticsController: analyticsController,
-      originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
-    )
+    let viewModel = makeViewModel()
     await viewModel.doWork()
 
     viewModel.onShare()
     try await Task.sleep(nanoseconds: 300_000_000)
 
     XCTAssertFalse(recordingRouter.didPush)
-    XCTAssertNotNil(viewModel.viewState.error)
+    XCTAssertEqual(viewModel.errorDialog?.traceId, "trace-id")
+    verify(errorHandler).handle(any(), originator: any())
+  }
+
+  func testOnDecline_ThenSendsNothingBeforeConfirmation() async {
+    let viewModel = makeViewModel()
+
+    viewModel.onDecline()
+    await Task.yield()
+
+    XCTAssertTrue(viewModel.isConfirmationPopupVisible)
+    XCTAssertEqual(stubInteractor.rejectRequestCallCount, 0)
+    XCTAssertNil(recordingRouter.lastPoppedToRoute)
+  }
+
+  func testOnDecline_WhenUserConfirmsRejection_ThenSendsAccessDeniedAndPopsToOriginator() async {
+    let rejectionSent = expectation(description: "access_denied sent")
+    stubInteractor.onRejectRequestCalled = { rejectionSent.fulfill() }
+    let viewModel = makeViewModel()
+
+    viewModel.onDecline()
+    viewModel.confirmDecline()
+    await fulfillment(of: [rejectionSent], timeout: 1)
+
+    XCTAssertEqual(stubInteractor.rejectRequestCallCount, 1)
+    XCTAssertEqual(recordingRouter.lastPoppedToRoute, .featureDashboardModule(.dashboard))
+    XCTAssertFalse(viewModel.isConfirmationPopupVisible)
+  }
+
+  func testOnDecline_WhenUserGoesBack_ThenSendsNothing() async {
+    let viewModel = makeViewModel()
+
+    viewModel.onDecline()
+    viewModel.onErrorDialogAction(.dismiss)
+    await Task.yield()
+
+    XCTAssertFalse(viewModel.isConfirmationPopupVisible)
+    XCTAssertEqual(stubInteractor.rejectRequestCallCount, 0)
+    XCTAssertNil(recordingRouter.lastPoppedToRoute)
   }
 
   private static func makeRequestDataUiModel(
@@ -356,6 +361,18 @@ final class TestConsentViewModel: XCTestCase {
         title: credentialTitle,
         listItems: [listItem]
       )
+    )
+  }
+
+  private func makeViewModel() -> ConsentViewModel<RecordingRouterHost> {
+    ConsentViewModel(
+      router: recordingRouter,
+      interactor: stubInteractor,
+      pinSessionInteractor: pinSessionInteractor,
+      analyticsController: analyticsController,
+      errorHandler: errorHandler,
+      originator: .featureDashboardModule(.dashboard),
+      relyingParty: "RP"
     )
   }
 
@@ -416,6 +433,8 @@ private final class ConsentPresentationInteractorStub: PresentationInteractor, @
   var responsePrepareResult: Result<RequestItemConvertible, Error> = .success(RequestItemsWrapper())
   var coordinatorState: PresentationCoordinatorPartialState = .failure(TestNSError.generic)
   var pidPresentation: Bool = false
+  private(set) var rejectRequestCallCount = 0
+  var onRejectRequestCalled: (() -> Void)?
 
   func getSessionStatePublisher() -> RemotePublisherPartialState {
     .failure(TestNSError.generic)
@@ -441,6 +460,8 @@ private final class ConsentPresentationInteractorStub: PresentationInteractor, @
 
   func storeDynamicIssuancePendingUrl(with url: URL) {}
 
+  func declinePresentation() async {}
+
   func stopPresentation() {}
 
   func isPIDPresentation(documentIDs: [String]) -> Bool {
@@ -449,6 +470,11 @@ private final class ConsentPresentationInteractorStub: PresentationInteractor, @
 
   func getClaimCount(documentID: String) -> Int {
     0
+  }
+
+  func onRejectRequest() async {
+    rejectRequestCallCount += 1
+    onRejectRequestCalled?()
   }
 }
 
@@ -467,6 +493,7 @@ private final class RecordingRouterHost: RouterHost {
 
   private(set) var didPush = false
   private(set) var lastPushedRoute: AppRoute?
+  private(set) var lastPoppedToRoute: AppRoute?
 
   func push(with route: AppRoute) {
     didPush = true
@@ -477,7 +504,9 @@ private final class RecordingRouterHost: RouterHost {
 
   func popTo(with route: AppRoute, inclusive: Bool) {}
 
-  func popTo(with route: AppRoute) {}
+  func popTo(with route: AppRoute) {
+    lastPoppedToRoute = route
+  }
 
   func pop(animated: Bool) {}
 

@@ -14,12 +14,13 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   @Published var isVerifiedEntityModalShowing: Bool = false
   @Published var itemsChanged: Bool = false
   @Published var viewDetail = false
+  @Published var errorDialog: PresentationErrorDialogConfig?
   @Published var isConfirmationPopupVisible = false
-  
-  let confirmationPopupViewModel = ConfirmationPopupViewModel()
-  
+  @Published var reportURL: URL?
+    
   private let interactor: PresentationInteractor
   private let analyticsController: AnalyticsController
+  private let errorHandler: PresentationErrorHandler
   private let logger: Logging?
 
   public init(
@@ -27,14 +28,25 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     interactor: PresentationInteractor,
     originator: AppRoute,
     analyticsController: AnalyticsController,
+    errorHandler: PresentationErrorHandler,
     logger: Logging?
   ) {
     self.interactor = interactor
     self.analyticsController = analyticsController
+    self.errorHandler = errorHandler
     self.logger = logger
     super.init(router: router, originator: originator)
   }
-  
+
+  private func onRejectedByPolicy(reason: PresentationRejectedUiConfig.Reason, reportURI: URL? = nil) async {
+    await onRefusedByPolicy(reason: reason, reportURI: reportURI) { [interactor] in
+      if reason == .overAsking {
+        await interactor.declinePresentation()
+      }
+      interactor.stopPresentation()
+    }
+  }
+
   override func doWork() async {
     self.onStartLoading()
     analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
@@ -45,13 +57,20 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     switch result {
     case .success(let authenticationRequest):
       logger?.d("Relying Party is \(authenticationRequest.isTrusted ? "trusted": "not trusted")")
+      reportURL = authenticationRequest.supervisoryAuthorityURI
+
+      if await refuseIfBlockedByRegistration(authenticationRequest, interactor: interactor) {
+        logger?.d("presentation refused: request not covered by the relying party's registration certificate")
+        return
+      }
+
       self.onReceivedItems(
         with: authenticationRequest.requestDataCells,
         title: .requestDataTitle(
           [authenticationRequest.relyingParty]
         ),
         relyingParty: .custom(authenticationRequest.relyingParty),
-        isTrusted: authenticationRequest.isTrusted
+        isTrusted: authenticationRequest.isTrusted,
       )
       setState {
         $0.copy(
@@ -71,47 +90,11 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         )
       }
     case .failure(let error):
-      logger?.d("error: \(error.logDescriptor)")
-
-      let analyticsTraceID = analyticsController.endTrace(
-        finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.failure],
-        errorDescription: String(describing: error)
-      ) ?? ""
-      switch (error as? EudiWalletKit.WalletError)?.code {
-      case .credentialNotFound, .noDocumentsAvailable:
-        router.push(
-          with: .featurePresentationModule(
-            .credentialNotFoundInstructionsView(
-              config: UIConfig.InstructionsViewConfig(
-                mainTitle: .pidPresentationCredentialNotFoundTitle,
-                message: .pidPresentationCredentialNotFoundParagraph,
-                image: Theme.shared.image.credentialNotFound, 
-                illustrationWidthFactor: 0.5,
-                primaryButtonTitle: .pidPresentationCredentialNotFoundPrimButton,
-                primaryRoute: .featureDashboardModule(.dashboard)
-              )
-            )
-          )
-        )
-      default:
-        confirmationPopupViewModel.configure(
-          title: LocalizableStringKey.pidPresentationMalformedPresentationTitle.toString,
-          detail: LocalizableStringKey.pidPresentationMalformedPresentationParagraph.toString,
-          traceId: analyticsTraceID,
-          titleIcon: Theme.shared.image.errorIndicator,
-          primaryButtontitle: LocalizableStringKey.pidPresentationMalformedPresentationPrimButton.toString,
-          primaryAction: {
-            self.router.pop()
-          },
-          secondaryAction: nil
-        )
-        isConfirmationPopupVisible.toggle()
-      }
+      presentError(errorHandler.handle(error, originator: getOriginator()))
     }
   }
 
   override func onShare() {
-    
   }
 
   func onContinue() {
@@ -129,32 +112,50 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     case .failure(let error):
       logger?.e("unable to get coordinator \(error)")
     }
-    
+
   }
-  
+
   func onDecline() {
-    confirmationPopupViewModel.configure(
-      title: LocalizableStringKey.confirmItendificationRefusal.toString,
-      detail: LocalizableStringKey.confirmItendificationRefusalMessage.toString,
-      primaryButtontitle: LocalizableStringKey.back.toString,
-      secondaryButtontitle: LocalizableStringKey.yesReject.toString,
-        primaryAction: {
-          self.isConfirmationPopupVisible = false
-        },
-        secondaryAction: {
-          self.analyticsController.endTrace(
-            finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
-            errorDescription: nil
-          )
-          self.router.pop()
-          self.isConfirmationPopupVisible = false
-        }
-    )
     isConfirmationPopupVisible = true
   }
-  
+
+  func confirmDecline() {
+    analyticsController.endTrace(
+      finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
+      errorDescription: nil
+    )
+    Task { await self.interactor.onRejectRequest() }
+    router.pop()
+  }
+
+  func reportSuspicion() {
+    guard let reportURL else { return }
+    UIApplication.shared.open(reportURL)
+  }
+
   func onViewDetails() {
     isRequestInfoModalShowing = true
   }
-  
+
+  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
+    errorDialog = nil
+    switch action {
+    case .popTo(let route):
+      router.popTo(with: route)
+    case .addDigitalIDAgain:
+      router.popTo(with: getOriginator())
+    case .dismiss:
+      isConfirmationPopupVisible = false
+    }
+  }
+
+  private func presentError(_ presentation: PresentationErrorPresentation) {
+    setState { $0.copy(initialized: true) }
+    switch presentation {
+    case .notice(let config):
+      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
+    case .dialog(let config):
+      errorDialog = config
+    }
+  }
 }

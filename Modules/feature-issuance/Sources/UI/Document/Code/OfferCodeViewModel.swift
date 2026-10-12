@@ -150,9 +150,9 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
             navigationCancelType: config.navigationCancelType,
             txCodeValue: codeInput
           ),
-          onFailure: { [weak self] in
+          onFailure: { [weak self] error in
             Task { @MainActor in
-              self?.onIssuanceFailed()
+              self?.onIssuanceFailed(error)
             }
           }
         )
@@ -160,8 +160,19 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
     )
   }
 
-  private func onIssuanceFailed() {
-    errorMessage = LocalizableStringKey.eaaOfferTxCodeInvalidEntry.toString
+  private func onIssuanceFailed(_ error: Error) {
+    if error.isGrantRejection {
+      errorMessage = LocalizableStringKey.eaaOfferTxCodeInvalidEntry.toString
+    } else {
+      setState {
+        $0.copy(
+          error: .init(
+            description: .custom(error.localizedDescription),
+            cancelAction: self.setState { $0.copy(error: nil) }
+          )
+        )
+      }
+    }
   }
 
   func primaryButtonAction() {

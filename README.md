@@ -123,8 +123,11 @@ it.
 
 Unlike the above, the trust anchors in `Wallet/Certificates/` are published
 **unchanged**, because they are public CA certificates and the pin set is part
-of the security model: PID issuer CAs, the German registrar, and the D-Trust
-and Let's Encrypt roots the app pins. They contain no private key material, and
+of the security model: the per-variant verifier CAs in
+`Wallet/Certificates/<variant>/` (Netlight EUDI Hub sandbox and production,
+Common Codes sandbox registrar), and the D-Trust and Let's Encrypt roots the
+app pins in
+`Wallet/Certificates/Pinning/`. They contain no private key material, and
 publishing them is what lets a reader see which CAs the wallet actually trusts.
 The published set is pinned exactly by the sync pipeline, so a new certificate
 cannot ride along unnoticed.

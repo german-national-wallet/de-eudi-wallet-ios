@@ -52,11 +52,22 @@ class BaseUITest: XCTestCase {
     try tap("pinSubmitPrimaryButton", timeout: timeout)
   }
 
+  /// Navigates past the device-lock, privacy-policy and notification consent screens shown
+  /// once after the app intro. Notifications are declined so no system prompt appears.
+  func passAppSetupSteps(timeout: TimeInterval = 60) throws {
+    try tap("paSuccessPrimaryButton", timeout: timeout)
+    try tap("paImportantSheetButton")
+    try tap("policyConsentCheckbox")
+    try tap("policyPrimaryButton")
+    try tap("pushSecondaryButton")
+  }
+
   /// Navigates past the wallet-revocation onboarding shown once after a fresh
   /// registration: the intro screen, then the save-key screen (which requires
   /// ticking the "saved elsewhere" checkbox before continuing).
   /// A `--reset-wallet` launch re-shows these, so this runs after every `openApp()`.
   func passRevocationOnboarding(timeout: TimeInterval = 60) throws {
+    try passAppSetupSteps(timeout: timeout)
     try tap("revocationIntroPrimaryButton", timeout: timeout)
     try tap("revocationSavedElsewhereCheckbox")
     try tap("revocationSaveKeyPrimaryButton")

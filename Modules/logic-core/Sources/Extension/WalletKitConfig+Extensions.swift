@@ -19,4 +19,8 @@ extension WalletKitConfig {
   func getBundleValue(key: String) -> String {
     return key.valueFromBundle
   }
+
+  func getBundleNullableValue(key: String) -> String? {
+    return key.optionalValueFromBundle
+  }
 }

@@ -106,7 +106,7 @@ private struct MockDocClaimsDecodable: DocClaimsDecodable {
   var docDataFormat: DocDataFormat = .sdjwt
   var validFrom: Date? = Date()
   var validUntil: Date? = Calendar.current.date(byAdding: .year, value: 1, to: Date())
-  var statusIdentifier: MdocDataModel18013.StatusIdentifier?
+  var statusList: MdocDataModel18013.StatusList?
   var secureAreaName: String?
   var credentialsUsageCounts: MdocDataModel18013.CredentialsUsageCounts?
   var credentialPolicy: MdocDataModel18013.CredentialPolicy = .oneTimeUse

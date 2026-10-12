@@ -29,17 +29,6 @@ public final class FeatureDashboardAssembly: Assembly {
         )
       }
       .inObjectScope(ObjectScope.transient)
-      
-      container.register(DocumentSignInteractor.self) { r in
-        DocumentSignInteractorImpl(configLogic: r.force(ConfigLogic.self))
-      }
-
-      container.register(SideMenuInteractor.self) { r in
-        SideMenuInteractorImpl(
-          walletController: r.force(WalletKitController.self),
-          configLogic: r.force(ConfigLogic.self)
-        )
-      }
 
       container.register(DebugConfigInteractor.self) { r in
         DebugConfigInteractorImpl(
@@ -50,29 +39,12 @@ public final class FeatureDashboardAssembly: Assembly {
         )
       }
       .inObjectScope(ObjectScope.transient)
-
-      container.register(TransactionTabInteractor.self) { _ in
-        TransactionTabInteractorImpl()
-      }
-
-      container.register(DocumentTabInteractor.self) { r in
-        DocumentTabInteractorImpl(
-          walletKitController: r.force(WalletKitController.self),
-          filterValidator: r.force(FilterValidator.self)
-        )
-      }
-
-      container.register(HomeTabInteractor.self) { r in
-        HomeTabInteractorImpl(
-          walletKitController: r.force(WalletKitController.self),
-          reachabilityController: r.force(ReachabilityController.self)
-        )
-      }
       
       container.register(SettingsTabInteractor.self) { r in
         SettingsTabInteractorImpl(
           walletController: r.force(WalletKitController.self),
-          configLogic: r.force(ConfigLogic.self)
+          configLogic: r.force(ConfigLogic.self),
+          secureEnclaveController: r.force(SecureEnclaveController.self)
         )
       }
     }

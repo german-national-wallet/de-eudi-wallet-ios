@@ -60,8 +60,8 @@ struct CertificatePinningTests {
     #expect(sut.isPinCertificateFileName("le-tls-pin-isrg-root-ye.der"))
     #expect(sut.isPinCertificateFileName("le-tls-pin-isrg-root-yr.der"))
 
-    #expect(!sut.isPinCertificateFileName("pidissuerca02_de.der"))
-    #expect(!sut.isPinCertificateFileName("german_registrar.der"))
+    #expect(!sut.isPinCertificateFileName("common_codes_sandbox_registrar_01.der"))
+    #expect(!sut.isPinCertificateFileName("common_codes_sandbox_registrar_02.der"))
     #expect(!sut.isPinCertificateFileName("le-tls-pin-isrg-root-x1.cer"))
     #expect(!sut.isPinCertificateFileName("isrg-root-x1.der"))
   }

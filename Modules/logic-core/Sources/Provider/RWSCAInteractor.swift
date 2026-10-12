@@ -19,20 +19,20 @@ public protocol RWSCAInteractor: Sendable {
 
 public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
   private let rwscaRepository: RWSCARepository
-  private let mdvmRepository: MDVMRepository
+  private let mdvmInteractor: MDVMInteractor
   private let secureEnclaveController: SecureEnclaveController
   private let prefsController: PrefsController
   private let walletPinRepository: WalletPinRepository
 
   init(
     rwscaRepository: RWSCARepository,
-    mdvmRepository: MDVMRepository,
+    mdvmInteractor: MDVMInteractor,
     secureEnclaveController: SecureEnclaveController,
     prefsController: PrefsController,
     walletPinRepository: WalletPinRepository
   ) {
     self.rwscaRepository = rwscaRepository
-    self.mdvmRepository = mdvmRepository
+    self.mdvmInteractor = mdvmInteractor
     self.secureEnclaveController = secureEnclaveController
     self.prefsController = prefsController
     self.walletPinRepository = walletPinRepository
@@ -53,7 +53,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
   }
 
   public func deleteAccount() async throws {
-    let mdvmToken = try getMDVMStoredRegistration().mdvmToken
+    let mdvmToken = try await getMDVMStoredRegistration().mdvmToken
     let rwscaID = try getRegisteredRWSCAID()
 
     guard let mdvmPrivateKey = secureEnclaveController.retrievePrivateKey(with: .wiMdvmAuthPrivateKey) else {
@@ -142,7 +142,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
   }
 
   private func preparePinSessionContext(pin: String) async throws -> PinSessionContext {
-    guard let mdvmStoredRegistration = mdvmRepository.getStoredRegistration() else {
+    guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw RWSCARepositoryError.notRegistered
     }
     guard let rwscaID = rwscaRepository.getRWSCAID(), !rwscaID.isEmpty else {
@@ -163,8 +163,8 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
     )
   }
 
-  private func getMDVMStoredRegistration() throws -> MDVMStoredRegistration {
-    guard let mdvmStoredRegistration = mdvmRepository.getStoredRegistration() else {
+  private func getMDVMStoredRegistration() async throws -> MDVMStoredRegistration {
+    guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw RWSCARepositoryError.notRegistered
     }
     return mdvmStoredRegistration

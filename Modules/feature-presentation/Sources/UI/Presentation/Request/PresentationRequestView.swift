@@ -30,6 +30,11 @@ struct PresentationRequestView<Router: RouterHost>: View {
       with: viewModel.router,
       viewModel: viewModel
     )
+    .overlay {
+      if let dialog = viewModel.errorDialog {
+        PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
+      }
+    }
     .onReceive(
       NotificationCenter.default.publisher(
         for: NSNotification.PresentationVC

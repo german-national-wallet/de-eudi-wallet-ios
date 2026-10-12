@@ -105,8 +105,8 @@ open class BaseLoadingViewModel<Router: RouterHost, RequestItem: Sendable>: View
     }
   }
 
-  public func onError(with error: Error) {
-  }
+   public func onError(with error: Error) {
+    }
 
   public func toolbarContent() -> ToolBarContent {
     .init(

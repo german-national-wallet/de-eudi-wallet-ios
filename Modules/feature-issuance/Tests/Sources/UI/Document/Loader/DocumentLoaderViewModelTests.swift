@@ -174,15 +174,14 @@ final class DocumentLoaderViewModelTests: XCTestCase {
 
     verify(router).push(with: equal(to: .featureDashboardModule(.dashboard)))
   }
-
+    
   private func makeSut() -> DocumentLoaderViewModel<MockRouterHost> {
-    .init(
+    let failureRecorder = self.failureRecorder!
+    return .init(
       router: router,
       config: makeConfig(),
       interactor: interactor,
-      onFailure: { [failureRecorder] in
-        failureRecorder?.record()
-      }
+      onFailure: { _ in failureRecorder.record() }
     )
   }
 

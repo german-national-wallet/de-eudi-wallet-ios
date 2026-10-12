@@ -60,6 +60,15 @@ struct AppBlockingControllerTests {
   }
 
   @Test
+  func blockingState_WhenUITesting_IgnoresPlatformAuthentication() async {
+    let sut = makeSUT(isUITesting: true)
+
+    let state = await sut.blockingState(for: [.platformAuthentication])
+
+    #expect(state == nil)
+  }
+
+  @Test
   func refreshFeatureFlagsIfNeeded_AsksRepositoryToRefresh() async {
     let repository = AppBlockingFeatureFlagRepositorySpy()
     let sut = makeSUT(featureFlagRepository: repository)
@@ -72,14 +81,16 @@ struct AppBlockingControllerTests {
   private func makeSUT(
     appVersion: String = "1.0.0",
     minimumAppVersion: String = "0.0.0",
-    featureFlagRepository: AppBlockingFeatureFlagRepositorySpy? = nil
+    featureFlagRepository: AppBlockingFeatureFlagRepositorySpy? = nil,
+    isUITesting: Bool = false
   ) -> AppBlockingControllerImpl {
     let repository = featureFlagRepository ?? AppBlockingFeatureFlagRepositorySpy()
     repository.minimumAppVersion = minimumAppVersion
     return AppBlockingControllerImpl(
       configLogic: AppBlockingConfigLogicStub(appVersion: appVersion),
       featureFlagRepository: repository,
-      prefsController: PrefsControllerImpl()
+      prefsController: PrefsControllerImpl(),
+      isUITesting: isUITesting
     )
   }
 }
@@ -101,6 +112,9 @@ private final class AppBlockingConfigLogicStub: ConfigLogic, @unchecked Sendable
   var walletOTLPURL: String { "" }
   var pidMsoMdocConfigId: String { "pid-mso-mdoc" }
   var pidSdJwtConfigId: String { "pid-sd-jwt" }
+  var keyChainConfig: KeyChainConfig {
+    KeyChainConfig(documentStorageServiceName: "")
+  }
 }
 
 private final class AppBlockingFeatureFlagRepositorySpy: FeatureFlagRepository, @unchecked Sendable {

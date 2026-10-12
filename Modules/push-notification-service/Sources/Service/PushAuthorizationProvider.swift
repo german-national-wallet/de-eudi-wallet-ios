@@ -3,6 +3,7 @@
 //  push-notification-service
 //
 
+import UIKit
 import UserNotifications
 
 /// Push notifications are strictly opt-in: they introduce a dependency on Google/Apple
@@ -10,6 +11,7 @@ import UserNotifications
 /// authorization is the opt-in signal, so without it the WI must not register at the PNS.
 public protocol PushAuthorizationProvider: Sendable {
   func isAuthorized() async -> Bool
+  func requestAuthorization() async -> Bool
 }
 
 struct UserNotificationAuthorizationProvider: PushAuthorizationProvider {
@@ -24,5 +26,16 @@ struct UserNotificationAuthorizationProvider: PushAuthorizationProvider {
     @unknown default:
       return false
     }
+  }
+
+  func requestAuthorization() async -> Bool {
+    let isGranted = (try? await UNUserNotificationCenter.current().requestAuthorization(
+      options: [.alert, .badge, .sound]
+    )) ?? false
+    guard isGranted else { return false }
+    await MainActor.run {
+      UIApplication.shared.registerForRemoteNotifications()
+    }
+    return true
   }
 }

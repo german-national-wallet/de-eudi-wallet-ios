@@ -56,6 +56,7 @@ public protocol WalletKitController: Sendable {
   func clearAllDocuments() async
   func clearDocuments(status: DocumentStatus) async throws
   func deleteDocument(with id: String, status: DocumentStatus) async throws
+  func deletePopKeys() async
   func loadDocuments() async throws
   
   func issueDocuments(issuerId: String, identifier: String, docTypeIdentifier: DocumentTypeIdentifier) async throws -> [WalletStorage.Document]
@@ -87,17 +88,19 @@ public protocol WalletKitController: Sendable {
 
 final class WalletKitControllerImpl: WalletKitController {
   let wallet: EudiWallet
-  var batchRefreshThreshold: Int { configLogic.batchRefreshThreshold }
+  var batchRefreshThreshold: Int { walletKitConfig.batchRefreshThreshold }
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
   private let secureAreas: [any SecureArea]
-  private let configLogic: WalletKitConfig
+  private let walletKitConfig: WalletKitConfig
+  private let configLogic: ConfigLogic
   private let keyChainController: KeyChainController
   private let featureFlagRepository: FeatureFlagRepository
   private let logger: Logging?
   private var wia: IssuerDPoPConstructorParam?
 
   init(
-    configLogic: WalletKitConfig,
+    walletKitConfig: WalletKitConfig,
+    configLogic: ConfigLogic,
     keyChainController: KeyChainController,
     featureFlagRepository: FeatureFlagRepository,
     sessionCoordinatorHolder: SessionCoordinatorHolder,
@@ -105,6 +108,7 @@ final class WalletKitControllerImpl: WalletKitController {
     networking: any NetworkingProtocol,
     logger: Logging? = nil
   ) {
+    self.walletKitConfig = walletKitConfig
     self.configLogic = configLogic
     self.keyChainController = keyChainController
     self.featureFlagRepository = featureFlagRepository
@@ -112,25 +116,21 @@ final class WalletKitControllerImpl: WalletKitController {
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
     self.secureAreas = secureAreas
 
-    let storageService = KeyChainStorageService(serviceName: configLogic.documentStorageServiceName)
-
     // TODO: Switch to `.hardFail` to enforce reader-cert CRL revocation once a
     // reliable reader-cert CRL endpoint is available. Using `.warning` (optional) for now.
     let crlRevocationPolicy: RevocationPolicy = .warning
-    let eudiWalletConfig = EudiWalletConfiguration(
-      serviceName: configLogic.documentStorageServiceName,
-      userAuthenticationRequired: configLogic.userAuthenticationRequired,
-      trustedReaderRootCertificates: configLogic.readerConfig.trustedRootCertificates,
-      uiCulture: Locale.current.systemLanguageCode,
-      logFileName: configLogic.logFileName,
-      crlRevocationPolicy: crlRevocationPolicy
-    )
 
     guard let walletKit = try? EudiWallet(
-      eudiWalletConfig: eudiWalletConfig,
-      storageService: storageService,
-      openID4VpConfig: configLogic.vpConfig,
-      openID4VciConfigurations: configLogic.vciConfig,
+      eudiWalletConfig: EudiWalletConfiguration(
+        serviceName: configLogic.keyChainConfig.documentStorageServiceName,
+        userAuthenticationRequired: walletKitConfig.userAuthenticationRequired,
+        deviceAuthMethod: .deviceSignature,
+        uiCulture: Locale.current.systemLanguageCode,
+        logFileName: walletKitConfig.logFileName
+      ),
+      trustConfig: walletKitConfig.trustConfiguration,
+      openID4VpConfig: walletKitConfig.vpConfig,
+      openID4VciConfigurations: walletKitConfig.issuersConfig.mapValues { $0.config },
       networking: networking,
       secureAreas: secureAreas
     ) else {
@@ -141,8 +141,19 @@ final class WalletKitControllerImpl: WalletKitController {
   }
 
   func resolveOfferUrlDocTypes(offerUri: String) async throws -> OfferedIssuanceModel {
-    let authFlowRedirectionURI = configLogic.getBundleValue(key: "VCI_REDIRECT_URI")
-    return try await wallet.resolveOfferUrlDocTypes(offerUri: offerUri, authFlowRedirectionURI: URL(string: authFlowRedirectionURI))
+    let authFlowRedirectionURI = walletKitConfig.getBundleValue(key: "VCI_REDIRECT_URI")
+    return try await mapIssuerMetadataFailure {
+      try await wallet.resolveOfferUrlDocTypes(offerUri: offerUri, authFlowRedirectionURI: URL(string: authFlowRedirectionURI))
+    }
+  }
+
+  private func mapIssuerMetadataFailure<T>(_ operation: () async throws -> T) async throws -> T {
+    do {
+      return try await operation()
+    } catch where error.isIssuerMetadataVerificationFailure {
+      logger?.e("issuance: issuer metadata verification failed: \(error.diagnosticDescriptor)")
+      throw WalletCoreError.issuerMetadataNotVerified
+    }
   }
   
   func issueDocumentsByOfferUrl(
@@ -151,7 +162,7 @@ final class WalletKitControllerImpl: WalletKitController {
     txCodeValue: String?
   ) async throws -> [WalletStorage.Document] {
     let docTypes = docTypes.map { docType in
-      let rule = configLogic.documentIssuanceConfig.rule(for: docType.documentTypeIdentifier)
+      let rule = walletKitConfig.documentIssuanceConfig.rule(for: docType.documentTypeIdentifier)
       let credentialOptions: CredentialOptions = .init(
         credentialPolicy: rule.policy,
         batchSize: rule.numberOfCredentials
@@ -164,14 +175,15 @@ final class WalletKitControllerImpl: WalletKitController {
       return docType.copy(credentialOptions: credentialOptions, keyOptions: keyOptions)
     }
 
-    return try await wallet.issueDocumentsByOfferUrl(
-      offerUri: offerUri,
-      docTypes: docTypes,
-      txCodeValue: txCodeValue
-    )
+    return try await mapIssuerMetadataFailure {
+      try await wallet.issueDocumentsByOfferUrl(
+        offerUri: offerUri,
+        docTypes: docTypes,
+        txCodeValue: txCodeValue
+      ).documents
+    }
   }
   
-  /// This function handles the logic of returning name of the secure area on based of the doc type identifier.
   private func getSecureAreaName(for docTypeIdentifier: DocumentTypeIdentifier) -> String {
     if docTypeIdentifier == .mDocPid || docTypeIdentifier == .sdJwtPid {
       return RemoteWSCAService.name
@@ -188,6 +200,10 @@ final class WalletKitControllerImpl: WalletKitController {
     for status in DocumentStatus.allCases {
       try? await wallet.deleteDocuments(status: status)
     }
+  }
+
+  func deletePopKeys() async {
+    await wallet.deletePopKeys(secureAreaName: RemoteWSCAService.name)
   }
   
   func clearDocuments(status: DocumentStatus) async throws {
@@ -265,15 +281,17 @@ final class WalletKitControllerImpl: WalletKitController {
   }
   
   func issueDocuments(issuerId: String, identifier: String, docTypeIdentifier: DocumentTypeIdentifier) async throws -> [WalletStorage.Document] {
-    let rule = configLogic.documentIssuanceConfig.rule(for: docTypeIdentifier)
-    return try await wallet.issueDocuments(
-      issuerName: issuerId,
-      docTypeIdentifiers: [.identifier(identifier)],
-      credentialOptions: .init(
-        credentialPolicy: rule.policy,
-        batchSize: rule.numberOfCredentials
-      )
-    )
+    let rule = walletKitConfig.documentIssuanceConfig.rule(for: docTypeIdentifier)
+    return try await mapIssuerMetadataFailure {
+      try await wallet.issueDocuments(
+        issuerName: issuerId,
+        docTypeIdentifiers: [.identifier(identifier)],
+        credentialOptions: .init(
+          credentialPolicy: rule.policy,
+          batchSize: rule.numberOfCredentials
+        )
+      ).documents
+    }
   }
   
   func requestDeferredIssuance(with doc: WalletStorage.Document) async throws -> DocClaimsDecodable {
@@ -282,15 +300,17 @@ final class WalletKitControllerImpl: WalletKitController {
     else {
       throw WalletCoreError.missingMetadata
     }
-    let rule = configLogic.documentIssuanceConfig.rule(for: doc.documentTypeIdentifier)
-    let result = try await wallet.requestDeferredIssuance(
-      issuerName: metadata.credentialIssuerIdentifier,
-      deferredDoc: doc,
-      credentialOptions: .init(
-        credentialPolicy: rule.policy,
-        batchSize: rule.numberOfCredentials
+    let rule = walletKitConfig.documentIssuanceConfig.rule(for: doc.documentTypeIdentifier)
+    let result = try await mapIssuerMetadataFailure {
+      try await wallet.requestDeferredIssuance(
+        issuerName: metadata.credentialIssuerIdentifier,
+        deferredDoc: doc,
+        credentialOptions: .init(
+          credentialPolicy: rule.policy,
+          batchSize: rule.numberOfCredentials
+        )
       )
-    )
+    }
     if result.isDeferred {
       return result.transformToDeferredDecodable()
     } else if let doc = fetchDocument(with: result.id) {
@@ -302,7 +322,7 @@ final class WalletKitControllerImpl: WalletKitController {
   
   func retrieveLogFileUrl() -> URL? {
     guard
-      let logFileName = configLogic.logFileName,
+      let logFileName = walletKitConfig.logFileName,
       let url = try? EudiWallet.getLogFileURL(logFileName)
     else {
       return nil
@@ -316,18 +336,30 @@ final class WalletKitControllerImpl: WalletKitController {
     else {
       throw WalletCoreError.missingMetadata
     }
-    let rule = configLogic.documentIssuanceConfig.rule(for: pendingDoc.documentTypeIdentifier)
-    return try await wallet.resumePendingIssuance(
-      issuerName: metadata.credentialIssuerIdentifier,
-      pendingDoc: pendingDoc,
-      webUrl: webUrl,
-      credentialOptions: .init(
-        credentialPolicy: rule.policy,
-        batchSize: rule.numberOfCredentials
+    let rule = walletKitConfig.documentIssuanceConfig.rule(for: pendingDoc.documentTypeIdentifier)
+    await deleteStaleKeyBatch(for: pendingDoc.id)
+    return try await mapIssuerMetadataFailure {
+      try await wallet.resumePendingIssuance(
+        issuerName: metadata.credentialIssuerIdentifier,
+        pendingDoc: pendingDoc,
+        webUrl: webUrl,
+        credentialOptions: .init(
+          credentialPolicy: rule.policy,
+          batchSize: rule.numberOfCredentials
+        )
       )
-    )
+    }
   }
-  
+
+  private func deleteStaleKeyBatch(for id: String) async {
+    for secureArea in secureAreas {
+      guard let keyBatchInfo = try? await secureArea.getKeyBatchInfo(id: id) else { continue }
+      logger?.d("resume: deleting stale key batch (\(keyBatchInfo.usedCounts.count) key(s)) in \(type(of: secureArea).name)")
+      try? await secureArea.deleteKeyBatch(id: id, startIndex: 0, batchSize: keyBatchInfo.usedCounts.count)
+      try? await secureArea.deleteKeyInfo(id: id)
+    }
+  }
+
   func storeDynamicIssuancePendingUrl(with url: URL) {
     keyChainController.storeValue(
       key: KeyIdentifier.dynamicIssuancePendingUrl,
@@ -356,13 +388,15 @@ final class WalletKitControllerImpl: WalletKitController {
   }
   
   func getScopedDocuments() async throws -> [ScopedDocument] {
-    guard let vciConfig = configLogic.vciConfig else {
+    guard let vciConfig = walletKitConfig.vciConfig else {
       throw NSError(domain: "unable to get vciConfig", code: 1, userInfo: nil)
     }
     return try await withThrowingTaskGroup(of: [ScopedDocument].self) { group in
       for issuerName in vciConfig.keys {
         group.addTask {
-          let metadata = try await self.wallet.getIssuerMetadata(issuerName: issuerName)
+          let metadata = try await self.mapIssuerMetadataFailure {
+            try await self.wallet.getIssuerMetadata(issuerName: issuerName)
+          }
           return metadata.credentialsSupported.compactMap { credential in
             switch credential.value {
             case .msoMdoc(let config):
@@ -402,7 +436,7 @@ final class WalletKitControllerImpl: WalletKitController {
   }
   
   func getDocumentCategories() -> DocumentCategories {
-    let sorted = configLogic.documentsCategories.sorted { $0.key.order < $1.key.order }
+    let sorted = walletKitConfig.documentsCategories.sorted { $0.key.order < $1.key.order }
     return DocumentCategories(uniqueKeysWithValues: sorted)
   }
 }
@@ -542,29 +576,33 @@ extension WalletKitControllerImpl {
   }
 
   public func issuePAR() async throws -> WalletStorage.Document? {
-    let rule = configLogic.documentIssuanceConfig.rule(for: .mDocPid)
+    let rule = walletKitConfig.documentIssuanceConfig.rule(for: .mDocPid)
     let credentialOptions = CredentialOptions(credentialPolicy: rule.policy, batchSize: rule.numberOfCredentials)
     let mdocConfigId = await resolvePidMsoMdocConfigId()
-    return try await wallet.issuePAR(issuerName: configLogic.pidIssuerName, docTypeIdentifier: DocTypeIdentifier.identifier(mdocConfigId), credentialOptions: credentialOptions)
+    return try await mapIssuerMetadataFailure {
+      try await wallet.issuePAR(issuerName: walletKitConfig.pidIssuerName, docTypeIdentifier: DocTypeIdentifier.identifier(mdocConfigId), credentialOptions: credentialOptions)
+    }
   }
 
   public func issuePendingDocument(documentTypeIdentifiers: [DocumentTypeIdentifier], authorizationCode: String, nonce: String?) async throws -> WalletStorage.Document? {
-    let rule = configLogic.documentIssuanceConfig.rule(for: documentTypeIdentifiers.first)
+    let rule = walletKitConfig.documentIssuanceConfig.rule(for: documentTypeIdentifiers.first)
     let keyOptions = KeyOptions(
-      curve: .P256, secureAreaName: RemoteWSCAService.name, accessControl: .requireUserPresence
+      curve: .P256, secureAreaName: RemoteWSCAService.name, accessControl: .empty
     )
     let credentialOptions = CredentialOptions(credentialPolicy: rule.policy, batchSize: rule.numberOfCredentials)
     let identifiers = [DocTypeIdentifier.identifier(await resolvePidMsoMdocConfigId()), DocTypeIdentifier.identifier(await resolvePidSdJwtConfigId())]
     if let pendingDoc = wallet.storage.pendingDocuments.last {
-      let issuedDoc = try await wallet.resumePendingIssuanceDocuments(
-        issuerName: configLogic.pidIssuerName,
-        pendingDoc: pendingDoc,
-        authorizationCode: authorizationCode,
-        nonce: nonce,
-        docTypeIdentifiers: identifiers,
-        credentialOptions: credentialOptions,
-        keyOptions: keyOptions
-      )
+      let issuedDoc = try await mapIssuerMetadataFailure {
+        try await wallet.resumePendingIssuanceDocuments(
+          issuerName: walletKitConfig.pidIssuerName,
+          pendingDoc: pendingDoc,
+          authorizationCode: authorizationCode,
+          nonce: nonce,
+          docTypeIdentifiers: identifiers,
+          credentialOptions: credentialOptions,
+          keyOptions: keyOptions
+        )
+      }
       return issuedDoc.first
     }
     throw WalletCoreError.unableToIssueAndStore
@@ -590,14 +628,14 @@ extension WalletKitControllerImpl {
         logger?.e("RefreshToken: aborting, no stored authorized request params (refresh token) for docId=\(anchor.document.id); returning empty")
         return []
       }
-      let rule = configLogic.documentIssuanceConfig.rule(for: DocumentTypeIdentifier(rawValue: anchor.document.docType))
+      let rule = walletKitConfig.documentIssuanceConfig.rule(for: DocumentTypeIdentifier(rawValue: anchor.document.docType))
       let credentialOptions = CredentialOptions(credentialPolicy: rule.policy, batchSize: rule.numberOfCredentials)
       let keyOptions = KeyOptions(
-        curve: .P256, secureAreaName: RemoteWSCAService.name, accessControl: .requireUserPresence
+        curve: .P256, secureAreaName: RemoteWSCAService.name, accessControl: .empty
       )
-      logger?.d("RefreshToken: requesting new credentials from issuer=\(configLogic.pidIssuerName) for \(matched.count) doc(s), batchSize=\(rule.numberOfCredentials)")
+      logger?.d("RefreshToken: requesting new credentials from issuer=\(walletKitConfig.pidIssuerName) for \(matched.count) doc(s), batchSize=\(rule.numberOfCredentials)")
       let (newDocuments, _) = try await wallet.getCredentialsWithRefreshToken(
-        issuerName: configLogic.pidIssuerName,
+        issuerName: walletKitConfig.pidIssuerName,
         docTypeIdentifiers: matched.map { DocTypeIdentifier.identifier($0.type.identifier) },
         authorizedRequestParams: authorizedRequestParams,
         issuerDPopConstructorParam: issuerDPopConstructorParam,

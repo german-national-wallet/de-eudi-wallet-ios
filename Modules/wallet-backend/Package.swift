@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
   name: "wallet-backend",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v17)],
   products: [
     .library(
       name: "wallet-backend",

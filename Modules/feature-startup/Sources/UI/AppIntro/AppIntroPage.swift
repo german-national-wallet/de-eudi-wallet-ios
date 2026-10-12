@@ -60,6 +60,14 @@ enum AppIntroPage: Int, CaseIterable, Equatable, Sendable {
     }
   }
 
+  var paginationAccessibilityLabel: LocalizableStringKey {
+    switch self {
+    case .digitalWallet: .appOnboardingOnboarding1Pagination13A11y
+    case .benefits: .appOnboardingOnboarding2Pagination23A11y
+    case .trust: .appOnboardingOnboarding3Pagination33A11y
+    }
+  }
+
   var showsBackButton: Bool { self != .digitalWallet }
 
   var primaryButtonHasArrow: Bool { isLast }

@@ -16,6 +16,7 @@
 import SwiftUI
 import logic_ui
 import feature_common
+import logic_business
 import logic_resources
 import logic_core
 
@@ -93,6 +94,7 @@ public struct AddDocumentView<Router: RouterHost>: View {
 private struct Content: View {
   
   @ObservedObject var appState = AppState.shared
+  private let showsSimulatedEIDCardToggle = AppBuildVariant.current.offersSimulatedEIDCard
   let viewState: AddDocumentViewState
   let action: () -> Void
   
@@ -131,28 +133,27 @@ private struct Content: View {
               .border(DSColor.outlineVariant, width: 1)
           }
         }
-        .background {
-          RoundedRectangle(cornerRadius: 12)
-            .fill(DSColor.backgroundPIDLight)
-            .overlay(
-              RoundedRectangle(cornerRadius: 12)
-                .stroke(DSColor.outlineVariant, lineWidth: 1)
-            )
-        }
 
-        Toggle(isOn: $appState.useSimulatedEIDCard) {
-          Text(.pidInspectionInitialDashboardTempLabel1)
-            .foregroundStyle(DSColor.onSurface)
-            .font(DSTypography.Body.medium)
-            .bold()
+        if showsSimulatedEIDCardToggle {
+          Toggle(isOn: $appState.useSimulatedEIDCard) {
+            Text(.pidInspectionInitialDashboardTempLabel1)
+              .foregroundStyle(DSColor.onSurface)
+              .font(DSTypography.Body.medium)
+              .bold()
+          }
+          .toggleStyle(DSToggle.TintedToggleStyle())
+          .padding()
         }
-        .toggleStyle(DSToggle.TintedToggleStyle())
-        .padding()
       }
-      .overlay(
+      .background {
+        RoundedRectangle(cornerRadius: 12)
+          .fill(DSColor.backgroundPIDLight)
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+      .overlay {
         RoundedRectangle(cornerRadius: 12)
           .stroke(DSColor.outlineVariant, lineWidth: 1)
-      )
+      }
       .padding(.horizontal, Theme.shared.dimension.padding)
       .padding(.bottom)
       .padding(.top)

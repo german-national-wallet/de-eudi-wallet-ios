@@ -5,6 +5,7 @@
 
 import SwiftUI
 import logic_ui
+import logic_resources
 import feature_common
 
 struct InvalidPinRetryMessageView<Router: RouterHost>: View {
@@ -16,57 +17,15 @@ struct InvalidPinRetryMessageView<Router: RouterHost>: View {
 
   var body: some View {
     ZStack {
-      ContentScreenView(padding: 0) {
-        GeometryReader { geometry in
-          VStack {
-            ScrollView(.vertical, showsIndicators: false) {
-              HeaderContentView()
-              VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
-                
-                Text(viewModel.viewState.config.mainTitle)
-                  .font(DSStyle.Typography.Title.large)
-                  .foregroundStyle(DSColor.primary)
-                  .padding(.top, DSStyle.Spacers.SPACING_LARGE)
-                  .fontWeight(DSStyle.FontWeight.medium_500)
-                  .accessibilityIdentifier("invalidWalletPin")
-                
-                VStack(spacing: DSStyle.Spacers.SPACING_LARGE) {
-                  HStack {
-                    Spacer()
-                    viewModel.warningImage
-                      .resizable()
-                      .frame(width: 95, height: 91)
-                    Spacer()
-                  }
-                  if viewModel.showCounterView {
-                    counterView
-                      .padding(.top, DSStyle.Spacers.SPACING_LARGE)
-                  }
-                }
-                .padding(.top, DSStyle.Spacers.SPACING_EXTRA_LARGE)
-                
-                Spacer()
-              }
-              
-            }
-            if viewModel.showWarningMessageView {
-              warningMessage
-            }
-            if viewModel.showBlockedUserButtons {
-              blockedUserButtons
-            } else {
-              resetPINButton
-            }
-          }
-          .frame(minHeight: geometry.size.height)
-          .padding(.horizontal, DSStyle.Spacers.SPACING_LARGE_MEDIUM)
-          .padding(.bottom, DSStyle.Spacers.SPACING_SMALL)
-        }
+      if viewModel.isBlocked {
+        blockedContent
+      } else {
+        countdownContent
       }
       if viewModel.showForgotPinPopup {
         ConfirmationPopupView(viewModel: viewModel.confirmationPopupViewModel)
-        .transition(.opacity)
-        .zIndex(1)
+          .transition(.opacity)
+          .zIndex(1)
       }
     }
     .animation(.easeInOut, value: viewModel.showForgotPinPopup)
@@ -74,6 +33,66 @@ struct InvalidPinRetryMessageView<Router: RouterHost>: View {
       forgotPinBottomSheet
     }
     .background(DSColor.background)
+  }
+
+  private var countdownContent: some View {
+    ContentScreenView(padding: 0) {
+      GeometryReader { geometry in
+        VStack {
+          ScrollView(.vertical, showsIndicators: false) {
+            HeaderContentView()
+            VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
+
+              Text(viewModel.titleKey)
+                .font(DSStyle.Typography.Title.large)
+                .foregroundStyle(DSColor.primary)
+                .padding(.top, DSStyle.Spacers.SPACING_LARGE)
+                .fontWeight(DSStyle.FontWeight.medium_500)
+                .accessibilityIdentifier("invalidWalletPin")
+
+              VStack(spacing: DSStyle.Spacers.SPACING_LARGE) {
+                HStack {
+                  Spacer()
+                  viewModel.warningImage
+                    .resizable()
+                    .frame(width: 95, height: 91)
+                  Spacer()
+                }
+                if viewModel.showCounterView {
+                  counterView
+                    .padding(.top, DSStyle.Spacers.SPACING_LARGE)
+                }
+              }
+              .padding(.top, DSStyle.Spacers.SPACING_EXTRA_LARGE)
+
+              Spacer()
+            }
+          }
+          if viewModel.showWarningMessageView {
+            warningMessage
+          }
+          resetPINButton
+        }
+        .frame(minHeight: geometry.size.height)
+        .padding(.horizontal, DSStyle.Spacers.SPACING_LARGE_MEDIUM)
+        .padding(.bottom, DSStyle.Spacers.SPACING_SMALL)
+      }
+    }
+  }
+
+  private var blockedContent: some View {
+    PresentationErrorNoticeContent(
+      illustration: Theme.shared.image.presentationWrongPinErrorInfo,
+      title: .pidPresentationRetryCounterLockedTitle,
+      message: .pidPresentationRetryCounterBlockedParagraph,
+      primary: .init(title: .pidPresentationRetryCounterLockedPrimButton) {
+        viewModel.showForgotPinPopup = true
+      },
+      secondary: .init(title: .pidPresentationRetryCounterLockedSecButton) {
+        viewModel.sendUserToDashboard()
+      },
+      onClose: nil
+    )
   }
 
   private var counterView: some View {
@@ -119,14 +138,11 @@ struct InvalidPinRetryMessageView<Router: RouterHost>: View {
 
   private var blockedUserButtons: some View {
     VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_SMALL) {
-      DSPrimaryButton(title: LocalizableStringKey.walletResetNow.toString) {
-        Task {
-          await viewModel.resetWallet()
-        }
+      DSPrimaryButton(title: LocalizableStringKey.pidPresentationRetryCounterLockedPrimButton.toString) {
+          viewModel.sendUserToDashboard()
       }
-      .accessibilityIdentifier("resetWalletNow")
-      DSSecondaryButton(title: LocalizableStringKey.toWallet.toString) {
-        viewModel.sendUserToDashboard()
+      DSSecondaryButton(title: LocalizableStringKey.pidPresentationRetryCounterLockedSecButton.toString) {
+          viewModel.sendUserToDashboard()
       }
     }
   }

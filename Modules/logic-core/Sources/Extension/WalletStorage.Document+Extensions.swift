@@ -14,7 +14,6 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
-import EudiWalletKit
 
 extension Array where Element == WalletStorage.Document {
   func transformToDeferredDecodables() -> [any DocClaimsDecodable] {
@@ -28,10 +27,11 @@ extension WalletStorage.Document {
   func transformToDeferredDecodable() -> DeferrredDocument {
     let metadata = DocMetadata(from: self.metadata)
     return DeferrredDocument(
-      credentialPolicy: .oneTimeUse, id: self.id,
+      id: self.id,
+      statusList: nil,
       createdAt: self.createdAt,
       displayName: metadata?.getDisplayName(Locale.current.systemLanguageCode),
-      docType: self.docType,
+      docType: "",
       docClaims: [],
       docDataFormat: self.docDataFormat,
       ageOverXX: [:],
@@ -40,7 +40,9 @@ extension WalletStorage.Document {
       credentialIssuerIdentifier: metadata?.credentialIssuerIdentifier,
       configurationIdentifier: metadata?.configurationIdentifier,
       validFrom: nil,
-      validUntil: nil
+      validUntil: nil,
+      credentialsUsageCounts: nil,
+      credentialPolicy: .oneTimeUse
     )
   }
 }

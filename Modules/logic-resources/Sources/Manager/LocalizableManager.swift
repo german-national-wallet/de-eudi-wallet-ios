@@ -660,6 +660,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: mapKey("unable_to_issue_and_store_documents"))
       case .missingMetadata:
         bundle.localizedString(forKey: "missing_metadata")
+      case .issuerMetadataNotVerified:
+        bundle.localizedString(forKey: "issuance.dialog_issuer_not_verified.paragraph")
       case .issueButton:
         bundle.localizedString(forKey: mapKey("issue_button"))
       case .cancelIssueSheetTitle:
@@ -892,6 +894,22 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_presentation.malformed_presentation.paragraph")
       case .pidPresentationMalformedPresentationPrimButton:
         bundle.localizedString(forKey: "pid_presentation.malformed_presentation.prim_button")
+      case .pidPresentationOverAskingTitle:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.title")
+      case .pidPresentationOverAskingParagraph:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.paragraph_overasking")
+      case .pidPresentationOverAskingPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.prim_button")
+      case .pidPresentationOverAskingSecButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.sec_button")
+      case .pidPresentationRpUnregisteredTitle:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.title")
+      case .pidPresentationRpUnregisteredParagraph:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.paragraph_cert_failed")
+      case .pidPresentationRpUnregisteredPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.prim_button")
+      case .pidPresentationRpUnregisteredSecButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.sec_button")
       case .pidPresentationCredentialNotFoundTitle:
         bundle.localizedString(forKey: "eaa_issuance.no_valid_credential.title")
       case .pidPresentationCredentialNotFoundParagraph:
@@ -1515,6 +1533,88 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_presentation.retry_counter.reset_overlay_paragraph")
       case .pidPresentationRetryCounterResetOverlayButton:
         bundle.localizedString(forKey: "pid_presentation.retry_counter.reset_overlay_button")
+
+      case .globalTraceIdTitle:
+        bundle.localizedString(forKey: "global.trace_id_title")
+      case .globalErrorCodeTitle:
+        bundle.localizedString(forKey: "global.error_code_title")
+      case .globalToOverviewButton:
+          bundle.localizedString(forKey: "global.to_overview_button")
+      case .pidPresentationDialogRpUnkownTitle:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.title")
+      case .pidPresentationDialogRpUnkownParagraphCertFailed:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.paragraph_cert_failed")
+      case .pidPresentationDialogRpUnkownPrimButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.prim_button")
+      case .pidPresentationDialogRpUnkownSecButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_unkown.sec_button")
+      case .pidPresentationDialogRpOveraskingTitle:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.title")
+      case .pidPresentationDialogRpOveraskingParagraphOverasking:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.paragraph_overasking")
+      case .pidPresentationDialogRpOveraskingPrimButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.prim_button")
+      case .pidPresentationDialogRpOveraskingSecButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_overasking.sec_button")
+      case .pidPresentationDialogRpRejectionTitle:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_rejection.title")
+      case .pidPresentationDialogRpRejectionParagraph:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_rejection.paragraph")
+      case .pidPresentationDialogRpRejectionPrimButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_rejection.prim_button")
+      case .pidPresentationDialogRpRejectionSecButton:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_rejection.sec_button")
+      case .pidPresentationDialogRpRejectionSecButton2:
+          bundle.localizedString(forKey: "pid_presentation.dialog_rp_rejection.sec_button_2")
+      case .pidPresentationNoIssuedPidTitle:
+        bundle.localizedString(forKey: "pid_presentation.no_issued_pid.title")
+      case .pidPresentationNoIssuedPidParagraph:
+        bundle.localizedString(forKey: "pid_presentation.no_issued_pid.paragraph")
+      case .pidPresentationNoIssuedPidPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.no_issued_pid.prim_button")
+      case .eaaPresentationCredentialNotFoundTitle:
+        bundle.localizedString(forKey: "eaa_presentation.credential_not_found.title")
+      case .pidPresentationRetryCounterLockedTitle:
+        bundle.localizedString(forKey: "pid_presentation.retry_counter.locked_title")
+      case .pidPresentationRetryCounterBlockedParagraph:
+        bundle.localizedString(forKey: "pid_presentation.retry_counter.blocked_paragraph")
+      case .pidPresentationRetryCounterLockedPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.retry_counter.locked_prim_button")
+      case .pidPresentationRetryCounterLockedSecButton:
+        bundle.localizedString(forKey: "pid_presentation.retry_counter.locked_sec_button")
+      case .pidPresentationRwscdAccountUnknownTitle:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_account_unknown.title")
+      case .pidPresentationRwscdAccountUnknownParagraph:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_account_unknown.paragraph")
+      case .pidPresentationRwscdAccountUnknownPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_account_unknown.prim_button")
+      case .pidPresentationRwscdAccountUnknownSecButton:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_account_unknown.sec_button")
+      case .pidPresentationRwscdAuthVerificationFailedTitle:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_auth_verification_failed.title")
+      case .pidPresentationRwscdAuthVerificationFailedParagraph:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_auth_verification_failed.paragraph")
+      case .pidPresentationRwscdAuthVerificationFailedPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.rwscd_auth_verification_failed.prim_button")
+      case .eaaPresentationCredentialNotFoundParagraphCredentalNotAvailable:
+          bundle.localizedString(forKey: "eaa_presentation.credential_not_found.paragraph_credental_not_available")
+      case .globalGenericPresentationErrorTitle:
+        bundle.localizedString(forKey: "global.generic_presentation_error.title")
+      case .globalGenericPresentationErrorParagraph:
+        bundle.localizedString(forKey: "global.generic_presentation_error.paragraph")
+      case .globalGenericPresentationErrorPrimButton:
+        bundle.localizedString(forKey: "global.generic_presentation_error.prim_button")
+      case .globalNoInternetErrorTitle:
+        bundle.localizedString(forKey: "global.no_internet_error.title")
+      case .globalNoInternetErrorParagraph:
+        bundle.localizedString(forKey: "global.no_internet_error.paragraph")
+      case .globalNoInternetErrorPrimButton:
+        bundle.localizedString(forKey: "global.no_internet_error.prim_button")
+      case .settingsRevocationKeyButtonInital:
+          bundle.localizedString(forKey: "settings.revocation_key.button_inital")
+      case .settingsRevocationKeyButtonActivated:
+          bundle.localizedString(forKey: "settings.revocation_key.button_activated")
+
       case .globalMenuItemSettings:
         bundle.localizedString(forKey: "global.menu_item.settings")
       case .globalRetrieveLogs:
@@ -1588,7 +1688,7 @@ final class LocalizableManager: LocalizableManagerType {
       case .eaaIssuanceFailureSubTitle:
         bundle.localizedString(forKey: "eaa_issuance.credential_not_loaded_ext.paragraph")
       case .buttonViewData:
-        bundle.localizedString(forKey: "button_view_data")
+        bundle.localizedString(forKey: "eaa_issuance.eaa_info.button_view_data")
       case .eaaOfferViewLoadingText:
         bundle.localizedString(forKey: "eaa.offer_view.loading.text")
       case .eaaOfferViewTxCodeFlowInstruction:
@@ -1638,17 +1738,81 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "app_onboarding.onboarding_4.paragraph")
       case .appOnboardingOnboarding4PrimButton:
         bundle.localizedString(forKey: "app_onboarding.onboarding_4.prim_button")
-      case .appOnboardingAnimationPauseA11y:
-        bundle.localizedString(forKey: "app_onboarding.animation.pause_a11y")
-      case .appOnboardingAnimationPlayA11y:
-        bundle.localizedString(forKey: "app_onboarding.animation.play_a11y")
+      case .appOnboardingOnboarding1A11yAnimationPause:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.a11y_animation_pause")
+      case .appOnboardingOnboarding1A11yAnimationPlay:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.a11y_animation_play")
+      case .appOnboardingOnboarding1Pagination13A11y:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_1.pagination_1_3_a11y")
+      case .appOnboardingOnboarding2Pagination23A11y:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_2.pagination_2_3_a11y")
+      case .appOnboardingOnboarding3Pagination33A11y:
+        bundle.localizedString(forKey: "app_onboarding.onboarding_3.pagination_3_3_a11y")
+      case .appOnboardingPaSetSuccessSheetTitle:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success_sheet.title")
+      case .appOnboardingPaSetSuccessSheetParagraph:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success_sheet.paragraph")
+      case .appOnboardingPaSetSuccessSheetPrimButton:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success_sheet.prim_button")
+      case .appOnboardingPolicyIntroCheckboxLabelDev:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.checkbox_label_dev")
+
+      case .appOnboardingPaSetIntroTitleLoading:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_intro.title_loading")
+      case .appOnboardingPaSetSuccessTitle:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success.title")
+      case .appOnboardingPaSetSuccessParagraph:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success.paragraph")
+      case .appOnboardingPaSetSuccessPrimButton:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_success.prim_button")
+      case .appOnboardingPaSetErrorTitle:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_error.title")
+      case .appOnboardingPaSetErrorParagraph:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_error.paragraph")
+      case .appOnboardingPaSetErrorParagraphIos:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_error.paragraph_ios")
+      case .appOnboardingPaSetErrorPrimButton:
+        bundle.localizedString(forKey: "app_onboarding.pa_set_error.prim_button")
+
+      case .appOnboardingPolicyIntroTitle:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.title")
+      case .appOnboardingPolicyIntroParagraph:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.paragraph")
+      case .appOnboardingPolicyIntroList1:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.list_1")
+      case .appOnboardingPolicyIntroList2:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.list_2")
+      case .appOnboardingPolicyIntroList3:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.list_3")
+      case .appOnboardingPolicyIntroCheckboxLabel:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.checkbox_label")
+      case .appOnboardingPolicyIntroPrimButton:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.prim_button")
+      case .appOnboardingPolicyIntroTertiaryButton:
+        bundle.localizedString(forKey: "app_onboarding.policy_intro.tertiary_button")
+
+      case .appOnboardingPushIntroTitle:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.title")
+      case .appOnboardingPushIntroParagraph:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.paragraph")
+      case .appOnboardingPushIntroList1:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.list_1")
+      case .appOnboardingPushIntroList2:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.list_2")
+      case .appOnboardingPushIntroPrimButton:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.prim_button")
+      case .appOnboardingPushIntroSecButton:
+        bundle.localizedString(forKey: "app_onboarding.push_intro.sec_button")
+
+      case .appOnboardingSetupSuccessTitle:
+        bundle.localizedString(forKey: "app_onboarding.success.title")
 
       case .appOnboardingWalletRevocationIntroTitle:
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.title")
-      case .appOnboardingWalletRevocationIntroPara1:
-        bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.para.1")
-      case .appOnboardingWalletRevocationIntroPara2:
-        bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.para.2")
+      case .appOnboardingWalletRevocationIntroList1:
+        bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.list_1")
+      case .appOnboardingWalletRevocationIntroList2:
+        bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.list_2")
       case .appOnboardingWalletRevocationIntroPrimButton:
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_intro.prim_button")
       case .appOnboardingWalletRevocationSaveKeyTitle:
@@ -1665,6 +1829,42 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_save_key.checkbox_label")
       case .appOnboardingWalletRevocationSaveKeyPrimButton:
         bundle.localizedString(forKey: "app_onboarding.wallet_revocation_save_key.prim_button")
+      case .settingsOverviewTitle:
+        bundle.localizedString(forKey: "settings.overview.title")
+      case .settingsOverviewListSupport:
+        bundle.localizedString(forKey: "settings.overview.list_support")
+      case .settingsOverviewHeadlineSettings:
+        bundle.localizedString(forKey: "settings.overview.headline_settings")
+      case .settingsOverviewListRevocation:
+        bundle.localizedString(forKey: "settings.overview.list_revocation")
+      case .settingsOverviewListNotification:
+        bundle.localizedString(forKey: "settings.overview.list_notification")
+      case .settingsOverviewHeadlineLegal:
+        bundle.localizedString(forKey: "settings.overview.headline_legal")
+      case .settingsOverviewListAboutEudi:
+        bundle.localizedString(forKey: "settings.overview.list_about_EUDI")
+      case .settingsOverviewListAccessibility:
+        bundle.localizedString(forKey: "settings.overview.list_accessibility")
+      case .settingsOverviewListPrivacyPolicy:
+        bundle.localizedString(forKey: "settings.overview.list_privacy_policy")
+      case .settingsOverviewListTermsAndConditions:
+        bundle.localizedString(forKey: "settings.overview.list_terms_and_conditions")
+      case .settingsOverviewListImpress:
+        bundle.localizedString(forKey: "settings.overview.list_impress")
+      case .settingsRevocationKeyTitle:
+        bundle.localizedString(forKey: "settings.revocation_key.title")
+      case .settingsRevocationSetupParagraph:
+        bundle.localizedString(forKey: "settings.revocation_setup.paragraph")
+      case .settingsRevocationKeyBanner:
+        bundle.localizedString(forKey: "settings.revocation_key.banner")
+      case .settingsRevocationKeyHeadlineKey:
+        bundle.localizedString(forKey: "settings.revocation_key.headline_key")
+      case .settingsRevocationKeyCopyButton:
+        bundle.localizedString(forKey: "settings.revocation_key.button_inital")
+      case .settingsRevocationKeyCopiedButton:
+        bundle.localizedString(forKey: "settings.revocation_key.button_activated")
+      case .menuRevocationKeyShareButton:
+        bundle.localizedString(forKey: "menu.revocation_key.sec_button")
       case .eaaIssuerInfoTitle:
         bundle.localizedString(forKey: "eaa_issuance.eaa_info_issuer.title")
         

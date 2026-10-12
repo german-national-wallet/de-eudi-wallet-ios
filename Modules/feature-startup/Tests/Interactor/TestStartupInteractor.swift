@@ -31,6 +31,9 @@ final class TestStartupInteractor: EudiTest {
   var rwscaInteractor: MockRWSCAInteractor!
   var secureEnclaveController: MockSecureEnclaveController!
   var pidRevokeInteractor: MockPIDRevokeInteractor!
+  var appBlockingController: MockAppBlockingController!
+  var pushAuthorizationProvider: MockPushAuthorizationProvider!
+  var pnsAccountInteractor: MockPNSAccountInteractor!
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
@@ -40,6 +43,9 @@ final class TestStartupInteractor: EudiTest {
     self.rwscaInteractor = MockRWSCAInteractor()
     self.secureEnclaveController = MockSecureEnclaveController()
     self.pidRevokeInteractor = MockPIDRevokeInteractor()
+    self.appBlockingController = MockAppBlockingController()
+    self.pushAuthorizationProvider = MockPushAuthorizationProvider()
+    self.pnsAccountInteractor = MockPNSAccountInteractor()
 
     self.interactor = StartupInteractorImpl(
       walletKitController: walletKitController,
@@ -48,7 +54,10 @@ final class TestStartupInteractor: EudiTest {
       prefsController: prefsController,
       rwscaInteractor: rwscaInteractor,
       secureEnclaveController: secureEnclaveController,
-      pidRevokeInteractor: pidRevokeInteractor
+      pidRevokeInteractor: pidRevokeInteractor,
+      appBlockingController: appBlockingController,
+      pushAuthorizationProvider: pushAuthorizationProvider,
+      pnsAccountInteractor: pnsAccountInteractor
     )
 
     stubPrefsControllerSetValue()
@@ -136,6 +145,10 @@ final class TestStartupInteractor: EudiTest {
       when(mock.remove(forKey: equal(to: .isPinInitialized))).thenDoNothing()
       when(mock.remove(forKey: equal(to: .hasSeenRevocationCode))).thenDoNothing()
       when(mock.remove(forKey: equal(to: .hasSeenAppIntro))).thenDoNothing()
+      when(mock.remove(forKey: equal(to: .hasSeenPlatformAuthIntro))).thenDoNothing()
+      when(mock.remove(forKey: equal(to: .hasAcceptedPrivacyPolicy))).thenDoNothing()
+      when(mock.remove(forKey: equal(to: .hasSeenPushIntro))).thenDoNothing()
+      when(mock.remove(forKey: equal(to: .isAppSetupPending))).thenDoNothing()
     }
     let route = await interactor.initialize(with: .zero)
 

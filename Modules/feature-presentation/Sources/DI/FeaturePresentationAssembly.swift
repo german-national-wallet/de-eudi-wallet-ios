@@ -16,6 +16,7 @@
 import Swinject
 import logic_core
 import logic_business
+import logic_analytics
 import feature_issuance
 
 public final class FeaturePresentationAssembly: Assembly {
@@ -38,6 +39,15 @@ public final class FeaturePresentationAssembly: Assembly {
             also: r.force(SessionCoordinatorHolder.self),
             logger: r.force(Logging.self)
         )
+    }
+    .inObjectScope(ObjectScope.transient)
+
+    container.register(PresentationErrorHandler.self) { r in
+      PresentationErrorHandlerImpl(
+        classifier: r.force(PresentationErrorClassifier.self),
+        analyticsController: r.force(AnalyticsController.self),
+        walletKitController: r.force(WalletKitController.self)
+      )
     }
     .inObjectScope(ObjectScope.transient)
   }

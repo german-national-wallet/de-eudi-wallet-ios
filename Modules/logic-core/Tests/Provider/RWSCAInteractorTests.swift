@@ -19,21 +19,21 @@ import CryptoKit
 struct RWSCAInteractorTests {
   private var sut: RWSCAInteractorImpl!
   private var rwscaRepository: MockRWSCARepository!
-  private var mdvmRepository: MockMDVMRepository!
+  private var mdvmInteractor: MockMDVMInteractor!
   private var secureEnclaveController: MockSecureEnclaveController!
   private var prefsController: MockPrefsController
   private var walletPinRepository: MockWalletPinRepository
 
   init() {
     rwscaRepository = MockRWSCARepository()
-    mdvmRepository = MockMDVMRepository()
+    mdvmInteractor = MockMDVMInteractor()
     secureEnclaveController = MockSecureEnclaveController()
     prefsController = MockPrefsController()
     walletPinRepository = MockWalletPinRepository()
 
     sut = RWSCAInteractorImpl(
       rwscaRepository: rwscaRepository,
-      mdvmRepository: mdvmRepository,
+      mdvmInteractor: mdvmInteractor,
       secureEnclaveController: secureEnclaveController,
       prefsController: prefsController,
       walletPinRepository: walletPinRepository
@@ -46,8 +46,9 @@ struct RWSCAInteractorTests {
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.getRWSCAID()).thenReturn(nil)
     }
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration()).thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     let privKey = makePrivateKey()
     stub(secureEnclaveController) { mock in
@@ -81,8 +82,9 @@ struct RWSCAInteractorTests {
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.getRWSCAID()).thenReturn(nil)
     }
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration()).thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     let privKey = makePrivateKey()
     stub(secureEnclaveController) { mock in
@@ -114,8 +116,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Success_Initialize() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -146,8 +148,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPINSession_WhenPINIsAlreadyInitialized_ThenStartsPINSessionWithoutSavingPrefs() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -195,8 +197,9 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_MDVMNotRegistered() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration()).thenReturn(nil)
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(nil)
     }
     stub(prefsController) { mock in
       when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(false)
@@ -214,8 +217,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_RWSCANotRegistered() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -233,8 +236,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_ChallengeNotReceived() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -257,8 +260,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_PinKeyDerivationFailed() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -287,8 +290,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_InitializeRepositoryThrows_DoesNotSavePrefs() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -320,8 +323,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_Fails_ResumeRepositoryThrows() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -356,8 +359,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_WhenInitReturnsPinAlreadyInitialized_ThenResumesAndSavesPrefs() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -398,8 +401,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func startPinSession_WhenResumeReturnsPinNotInitialized_ThenInitializesAndSavesPrefs() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -440,8 +443,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func createKeys_Success() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -474,8 +477,9 @@ struct RWSCAInteractorTests {
   }
 
   @Test func createKeys_Fails_NotRegistered() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration()).thenReturn(nil)
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(nil)
     }
 
     await #expect(throws: RWSCARepositoryError.notRegistered) {
@@ -488,8 +492,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func createKeys_Fails_RepositoryThrows() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -510,8 +514,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func deleteAccount_Success() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -543,8 +547,9 @@ struct RWSCAInteractorTests {
   }
 
   @Test func deleteAccount_Fails_NotRegistered() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration()).thenReturn(nil)
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(nil)
     }
 
     await #expect(throws: RWSCARepositoryError.notRegistered) {
@@ -561,8 +566,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func deleteAccount_Fails_RepositoryThrows() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -585,8 +590,8 @@ struct RWSCAInteractorTests {
   }
 
   @Test func deleteAccount_Fails_MissingRegistrationPrivateKey() async throws {
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -613,8 +618,8 @@ struct RWSCAInteractorTests {
     let keyBindingData = Data("binding-data".utf8)
     let keyBindingDataHash = Data(SHA256.hash(data: keyBindingData)).base64EncodedString()
 
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -654,8 +659,8 @@ struct RWSCAInteractorTests {
   @Test func signData_Fails_ChallengeNotReceived() async throws {
     let keyBindingData = Data("binding-data".utf8)
 
-    stub(mdvmRepository) { mock in
-      when(mock.getStoredRegistration())
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
         .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
     }
     stub(rwscaRepository) { mock in
@@ -674,6 +679,118 @@ struct RWSCAInteractorTests {
     verify(rwscaRepository, never()).signData(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
       pinSessionToken: any(), mdvmPrivateKey: any(), payload: any()
+    )
+  }
+
+  @Test func startPinSession_UsesTokenReturnedByEnsureFreshMDVMToken() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "renewed_token"))
+    }
+    stub(rwscaRepository) { mock in
+      when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchChallenge()).thenReturn("mock_challenge")
+      when(mock.startPinSession(
+        mdvmToken: any(), challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+      )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
+    }
+    stub(secureEnclaveController) { mock in
+      when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
+    }
+    stub(walletPinRepository) { mock in
+      when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
+    }
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(true)
+    }
+
+    _ = try await sut.startPinSession(pin: "123456")
+
+    verify(mdvmInteractor).ensureFreshMDVMToken()
+    verify(rwscaRepository).startPinSession(
+      mdvmToken: "renewed_token", challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+    )
+  }
+
+  @Test func startPinSession_Fails_WhenTokenRenewalThrows() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken()).thenThrow(MDVMRepositoryError.invalidResponse)
+    }
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(false)
+    }
+
+    await #expect(throws: MDVMRepositoryError.invalidResponse) {
+      try await sut.startPinSession(pin: "123456")
+    }
+
+    verify(rwscaRepository, never()).fetchChallenge()
+  }
+
+  @Test func createKeys_Fails_WhenTokenRenewalThrows() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken()).thenThrow(MDVMRepositoryError.invalidResponse)
+    }
+
+    await #expect(throws: MDVMRepositoryError.invalidResponse) {
+      try await sut.createKeys(numberOfKeys: 2, ppCNonce: "issuer-nonce")
+    }
+
+    verify(rwscaRepository, never()).createKeys(
+      mdvmToken: any(), challenge: any(), rwscaID: any(), mdvmPrivateKey: any(), payload: any()
+    )
+  }
+
+  @Test func signData_Fails_WhenTokenRenewalThrows() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken()).thenThrow(MDVMRepositoryError.invalidResponse)
+    }
+
+    await #expect(throws: MDVMRepositoryError.invalidResponse) {
+      try await sut.signData(
+        wrappedPrivateKey: "wrapped-prvk", keyBindingData: Data(), pinSessionToken: "pin-session-token"
+      )
+    }
+
+    verify(rwscaRepository, never()).fetchChallenge()
+  }
+
+  @Test func deleteAccount_UsesTokenReturnedByEnsureFreshMDVMToken() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "renewed_token"))
+    }
+    stub(rwscaRepository) { mock in
+      when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchChallenge()).thenReturn("mock_challenge")
+      when(mock.deleteAccount(mdvmToken: any(), challenge: any(), rwscaID: any(), mdvmPrivateKey: any()))
+        .thenDoNothing()
+    }
+    stub(secureEnclaveController) { mock in
+      when(mock.retrievePrivateKey(with: equal(to: .wiMdvmAuthPrivateKey))).thenReturn(makePrivateKey())
+    }
+    stub(prefsController) { mock in
+      when(mock.remove(forKey: equal(to: Prefs.Key.isPinInitialized))).thenDoNothing()
+    }
+
+    try await sut.deleteAccount()
+
+    verify(rwscaRepository).deleteAccount(
+      mdvmToken: "renewed_token", challenge: any(), rwscaID: any(), mdvmPrivateKey: any()
+    )
+  }
+
+  @Test func deleteAccount_Fails_WhenTokenRenewalThrows() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken()).thenThrow(MDVMRepositoryError.invalidResponse)
+    }
+
+    await #expect(throws: MDVMRepositoryError.invalidResponse) {
+      try await sut.deleteAccount()
+    }
+
+    verify(rwscaRepository, never()).deleteAccount(
+      mdvmToken: any(), challenge: any(), rwscaID: any(), mdvmPrivateKey: any()
     )
   }
 

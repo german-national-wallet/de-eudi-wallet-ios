@@ -25,30 +25,34 @@ struct ConsentItemGroup {
 final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   @Published var consentItems: [ConsentItem] = []
   @Published var consentItemGroups: [ConsentItemGroup] = []
+  @Published var errorDialog: PresentationErrorDialogConfig?
   @Published var isConfirmationPopupVisible = false
-  
+  @Published var reportURL: URL?
+
   let interactor: PresentationInteractor
   let pinSessionInteractor: PinSessionInteractor
   private let analyticsController: AnalyticsController
+  private let errorHandler: PresentationErrorHandler
 
   private let relyingParty: String
   private let pidDocTypeRawValues: Set<String> = [
     DocumentTypeIdentifier.mDocPid.rawValue,
     DocumentTypeIdentifier.sdJwtPid.rawValue
   ]
-  let confirmationPopupViewModel = ConfirmationPopupViewModel()
-  
+
   init(
     router: Router,
     interactor: PresentationInteractor,
     pinSessionInteractor: PinSessionInteractor,
     analyticsController: AnalyticsController,
+    errorHandler: PresentationErrorHandler,
     originator: AppRoute,
     relyingParty: String
   ) {
     self.interactor = interactor
     self.pinSessionInteractor = pinSessionInteractor
     self.analyticsController = analyticsController
+    self.errorHandler = errorHandler
     self.relyingParty = relyingParty
     super.init(router: router, originator: originator)
   }
@@ -62,6 +66,7 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
 
     switch result {
     case .success(let authenticationRequest):
+      reportURL = authenticationRequest.supervisoryAuthorityURI
       consentItemGroups = authenticationRequest.requestDataCells.map { requestDataCell in
         .init(
           credentialTitle: requestDataCell.section.title,
@@ -99,8 +104,8 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
           )
         )
       }
-    case .failure:
-      self.onEmptyDocuments()
+    case .failure(let error):
+      present(errorHandler.handle(error, originator: getOriginator()))
     }
   }
   
@@ -127,7 +132,7 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         if isPIDRequest {
           pinSessionInteractor.clear()
         }
-        self.onError(with: error)
+        self.present(self.errorHandler.handle(error, originator: self.getOriginator()))
       }
     }
   }
@@ -185,27 +190,43 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   }
   
   func onDecline() {
-    confirmationPopupViewModel.configure(
-      title: LocalizableStringKey.confirmItendificationRefusal.toString,
-      detail: LocalizableStringKey.confirmItendificationRefusalMessage.toString,
-      primaryButtontitle: LocalizableStringKey.back.toString,
-      secondaryButtontitle: LocalizableStringKey.yesReject.toString,
-        primaryAction: {
-          self.isConfirmationPopupVisible = false
-        },
-        secondaryAction: {
-          // The user rejected the request: close the trace as declined, not as a failure.
-          self.analyticsController.endTrace(
-            finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
-            errorDescription: nil
-          )
-          self.isConfirmationPopupVisible = false
-          self.router.popTo(
-            with: self.getPopRoute() ?? .featureDashboardModule(.dashboard)
-          )
-        }
-    )
     isConfirmationPopupVisible = true
+  }
+
+  func confirmDecline() {
+    analyticsController.endTrace(
+      finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
+      errorDescription: nil
+    )
+    Task { await self.interactor.onRejectRequest() }
+    router.popTo(with: getPopRoute() ?? .featureDashboardModule(.dashboard))
+    isConfirmationPopupVisible = false
+  }
+
+  func reportSuspicion() {
+    guard let reportURL else { return }
+    UIApplication.shared.open(reportURL)
+  }
+
+  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
+    errorDialog = nil
+    switch action {
+    case .popTo(let route):
+      router.popTo(with: route)
+    case .addDigitalIDAgain:
+      router.popTo(with: getOriginator())
+    case .dismiss:
+      isConfirmationPopupVisible = false
+    }
+  }
+
+  private func present(_ presentation: PresentationErrorPresentation) {
+    switch presentation {
+    case .notice(let config):
+      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
+    case .dialog(let config):
+      errorDialog = config
+    }
   }
   
   private func getLocalizedFieldName(_ fieldName: String) -> String {

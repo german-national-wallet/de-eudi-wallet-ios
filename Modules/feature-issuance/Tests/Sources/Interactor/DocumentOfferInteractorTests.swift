@@ -100,11 +100,8 @@ final class DocumentOfferInteractorTests: XCTestCase {
   /// `fetchDocuments(with:)`.
   private func makeClaims(id: String, docType: String, issuer: String?) -> DeferrredDocument {
     DeferrredDocument(
-      statusIdentifier: nil,
-      secureAreaName: nil,
-      credentialsUsageCounts: nil,
-      credentialPolicy: .oneTimeUse,
       id: id,
+      statusList: nil,
       createdAt: Date(),
       modifiedAt: nil,
       displayName: id,
@@ -117,7 +114,10 @@ final class DocumentOfferInteractorTests: XCTestCase {
       credentialIssuerIdentifier: issuer,
       configurationIdentifier: nil,
       validFrom: nil,
-      validUntil: nil
+      validUntil: nil,
+      secureAreaName: nil,
+      credentialsUsageCounts: nil,
+      credentialPolicy: .oneTimeUse
     )
   }
 

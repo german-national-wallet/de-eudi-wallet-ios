@@ -16,7 +16,8 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
   }
   var body: some View {
     ContentScreenView(
-      canScroll: true
+      canScroll: true,
+      errorConfig: viewModel.viewState.error
     ) {
       HeaderContentView(onClose: viewModel.closeButtonAction, onHelp: viewModel.onHelp)
 
@@ -283,7 +284,7 @@ private struct ClaimsHeightPreferenceKey: PreferenceKey {
       navigationSuccessType: .popTo(.featureIssuanceModule(.credentialOfferRequest(config: NoConfig()))),
       navigationCancelType: .pop
     ),
-    initialized: true
+    initialized: true, error: nil
   )
 
   ContentScreenView(canScroll: true) {

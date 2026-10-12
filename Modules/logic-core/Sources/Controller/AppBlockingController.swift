@@ -32,6 +32,7 @@ public struct AppBlockingControllerImpl: AppBlockingController {
   private let configLogic: ConfigLogic
   private let featureFlagRepository: FeatureFlagRepository
   private let prefsController: PrefsController
+  private let isUITesting: Bool
 
   public var appUpdateURL: URL? {
     guard
@@ -46,11 +47,13 @@ public struct AppBlockingControllerImpl: AppBlockingController {
   public init(
     configLogic: ConfigLogic,
     featureFlagRepository: FeatureFlagRepository,
-    prefsController: PrefsController
+    prefsController: PrefsController,
+    isUITesting: Bool = false
   ) {
     self.configLogic = configLogic
     self.featureFlagRepository = featureFlagRepository
     self.prefsController = prefsController
+    self.isUITesting = isUITesting
   }
 
   public func blockingState(for rules: Set<AppBlockingRule>) async -> AppBlockingState? {
@@ -75,6 +78,7 @@ public struct AppBlockingControllerImpl: AppBlockingController {
   }
 
   private func isPlatformAuthenticationNotEnabled() -> Bool {
+    if isUITesting { return false }
     let context = LAContext()
     var error: NSError?
 

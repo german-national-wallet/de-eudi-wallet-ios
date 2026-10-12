@@ -90,7 +90,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   private func setupPushNotifications() {
     PushNotificationController.shared.configure()
-    PushNotificationController.shared.requestAuthorizationAndRegister()
+    PushNotificationController.shared.registerIfAuthorized()
   }
 
   private func clearPinSession() {

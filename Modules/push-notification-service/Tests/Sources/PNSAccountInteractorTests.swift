@@ -281,6 +281,8 @@ private struct FakePushAuthorizationProvider: PushAuthorizationProvider {
   let isAuthorizedValue: Bool
 
   func isAuthorized() async -> Bool { isAuthorizedValue }
+
+  func requestAuthorization() async -> Bool { isAuthorizedValue }
 }
 
 private struct FakeFeatureFlagRepository: FeatureFlagRepository {

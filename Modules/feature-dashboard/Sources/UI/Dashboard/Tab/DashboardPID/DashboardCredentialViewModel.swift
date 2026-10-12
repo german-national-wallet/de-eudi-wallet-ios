@@ -112,14 +112,6 @@ final class DashboardCredentialViewModel<Router: RouterHost>: ViewModel<Router, 
     pidIssuer = isPID ? LocalizableStringKey.dashboardCardIssuer.toString : ""
   }
 
-  func onMenuTap() {
-    router.push(
-      with: .featureDashboardModule(
-        .sideMenu
-      )
-    )
-  }
-
   func handleDeepLink() async {
     guard let deepLink = deeplinkController.getPendingDeepLinkAction(),
           deepLink.requiresCoordinator else {

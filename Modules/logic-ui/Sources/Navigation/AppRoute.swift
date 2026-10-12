@@ -24,6 +24,10 @@ public enum FeatureStartupRouteModule: AppRouteModule {
   case appIntro(config: any UIConfigType)
   case revocationOnboarding(config: any UIConfigType)
   case revocationSaveKey(config: any UIConfigType)
+  case platformAuthenticationOnboarding(config: any UIConfigType)
+  case privacyPolicyOnboarding(config: any UIConfigType)
+  case pushNotificationOnboarding(config: any UIConfigType)
+  case setupSuccess(config: any UIConfigType)
 
   public var info: (key: String, arguments: [String: String]) {
     return switch self {
@@ -31,6 +35,14 @@ public enum FeatureStartupRouteModule: AppRouteModule {
       (key: "Startup", arguments: [:])
     case .appIntro(let config):
       (key: "appIntro", arguments: ["config": config.log])
+    case .platformAuthenticationOnboarding(let config):
+      (key: "platformAuthenticationOnboarding", arguments: ["config": config.log])
+    case .privacyPolicyOnboarding(let config):
+      (key: "privacyPolicyOnboarding", arguments: ["config": config.log])
+    case .pushNotificationOnboarding(let config):
+      (key: "pushNotificationOnboarding", arguments: ["config": config.log])
+    case .setupSuccess(let config):
+      (key: "setupSuccess", arguments: ["config": config.log])
     case .revocationOnboarding(let config):
       (key: "revocationOnboarding", arguments: ["config": config.log])
     case .revocationSaveKey(let config):
@@ -70,9 +82,8 @@ public enum FeatureCommonRouteModule: AppRouteModule {
 
 public enum FeatureDashboardRouteModule: AppRouteModule {
   case dashboard
-  case signDocument
-  case sideMenu
   case debugConfig
+  case walletLossProtection
   case credentialDetail(DocClaimsDecodable)
   case personalDetail(DocClaimsDecodable)
 
@@ -80,12 +91,10 @@ public enum FeatureDashboardRouteModule: AppRouteModule {
     return switch self {
     case .dashboard:
       (key: "Dashboard", arguments: [:])
-    case .signDocument:
-      (key: "SignDocument", arguments: [:])
-    case .sideMenu:
-      (key: "SideMenu", arguments: [:])
     case .debugConfig:
       (key: "DebugConfig", arguments: [:])
+    case .walletLossProtection:
+      (key: "WalletLossProtection", arguments: [:])
     case .credentialDetail:
       (key: "UserProfile", arguments: [:])
     case .personalDetail:
@@ -126,6 +135,8 @@ public indirect enum FeaturePresentationRouteModule: AppRouteModule {
   )
   case pinRetryCounterView(config: any UIConfigType)
   case credentialNotFoundInstructionsView(config: any UIConfigType)
+  case presentationErrorNotice(config: any UIConfigType)
+  case presentationRejectedView(config: any UIConfigType)
 
   public var info: (key: String, arguments: [String: String]) {
     return switch self {
@@ -152,6 +163,10 @@ public indirect enum FeaturePresentationRouteModule: AppRouteModule {
       (key: "errorView", arguments: ["config": config.log])
     case .credentialNotFoundInstructionsView(config: let config):
       (key: "credentialNotFoundInstructionsView", arguments: ["config": config.log])
+    case .presentationErrorNotice(config: let config):
+      (key: "presentationErrorNotice", arguments: ["config": config.log])
+    case .presentationRejectedView(config: let config):
+      (key: "presentationRejectedView", arguments: ["config": config.log])
     }
   }
 }
@@ -277,7 +292,7 @@ public enum FeatureIssuanceRouteModule: AppRouteModule {
   case issuanceLoadingView(config: any UIConfigType)
   case consentView(issuanceVerificationInteractor: IssuanceVerificationInteractor?)
   case issuerDetailsView(config: any UIConfigType)
-  case documentLoaderView(config: any UIConfigType, onFailure: (@Sendable () -> Void)? = nil)
+  case documentLoaderView(config: any UIConfigType, onFailure: (@Sendable (Error) -> Void)? = nil)
     
   public var info: (key: String, arguments: [String: String]) {
     return switch self {

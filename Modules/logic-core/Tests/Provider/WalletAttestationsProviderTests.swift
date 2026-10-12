@@ -45,38 +45,56 @@ struct WalletAttestationsProviderTests {
   }
 
   @Test
-  func getKeysAttestation_WhenDocTypeHasStoredWTE_ReturnsThenDeletes() async throws {
+  func getKeysAttestation_WhenKeyHasStoredWTE_ReturnsThenDeletes() async throws {
+    let publicKey = try makeECPublicKey(from: wiaPrivateKey)
+    let keyTag = SecureEnclaveKeys.custom(RemoteWSCAService.wteKeychainTag(forKeyX: publicKey.x))
     let secureEnclaveController = MockSecureEnclaveController()
     stub(secureEnclaveController) { mock in
-      when(mock.retrieveStringFromKeychain(keyTag: equal(to: .custom("docType")))).thenReturn("stored-wte")
-      when(mock.deleteKeychainItem(keyTag: equal(to: .custom("docType")))).thenDoNothing()
+      when(mock.retrieveStringFromKeychain(keyTag: equal(to: keyTag))).thenReturn("stored-wte")
+      when(mock.deleteKeychainItem(keyTag: equal(to: keyTag))).thenDoNothing()
     }
     let sut = WalletAttestationProviderImpl(
       wiaIssuanceService: MockWIAIssuanceService(),
       secureEnclaveController: secureEnclaveController
     )
 
-    let result = try await sut.getKeysAttestation(docType: "docType")
+    let result = try await sut.getKeysAttestation(keys: [publicKey], nonce: nil)
 
     #expect(result == "stored-wte")
-    verify(secureEnclaveController).deleteKeychainItem(keyTag: equal(to: .custom("docType")))
+    verify(secureEnclaveController).deleteKeychainItem(keyTag: equal(to: keyTag))
   }
 
   @Test
-  func getKeysAttestation_WhenDocTypeHasNoStoredWTE_ReturnsNil() async throws {
+  func getKeysAttestation_WhenKeyHasNoStoredWTE_ThrowsError() async throws {
+    let publicKey = try makeECPublicKey(from: wiaPrivateKey)
+    let keyTag = SecureEnclaveKeys.custom(RemoteWSCAService.wteKeychainTag(forKeyX: publicKey.x))
     let secureEnclaveController = MockSecureEnclaveController()
     stub(secureEnclaveController) { mock in
-      when(mock.retrieveStringFromKeychain(keyTag: equal(to: .custom("docType")))).thenReturn(nil)
-      when(mock.deleteKeychainItem(keyTag: equal(to: .custom("docType")))).thenDoNothing()
+      when(mock.retrieveStringFromKeychain(keyTag: equal(to: keyTag))).thenReturn(nil)
     }
     let sut = WalletAttestationProviderImpl(
       wiaIssuanceService: MockWIAIssuanceService(),
       secureEnclaveController: secureEnclaveController
     )
 
-    let result = try await sut.getKeysAttestation(docType: "docType")
+    await #expect(throws: (any Error).self) {
+      _ = try await sut.getKeysAttestation(keys: [publicKey], nonce: nil)
+    }
+    verify(secureEnclaveController, never()).deleteKeychainItem(keyTag: any())
+  }
 
-    #expect(result == nil)
+  @Test
+  func getKeysAttestation_WithNoECPublicKey_ThrowsError() async throws {
+    let secureEnclaveController = MockSecureEnclaveController()
+    let sut = WalletAttestationProviderImpl(
+      wiaIssuanceService: MockWIAIssuanceService(),
+      secureEnclaveController: secureEnclaveController
+    )
+
+    await #expect(throws: (any Error).self) {
+      _ = try await sut.getKeysAttestation(keys: [], nonce: nil)
+    }
+    verify(secureEnclaveController, never()).retrieveStringFromKeychain(keyTag: any())
   }
 
   // MARK: - Helpers
@@ -107,6 +125,10 @@ struct WalletAttestationsProviderTests {
   }
 
   private func makeJWK(from privateKey: SecKey) throws -> any JWK {
+    try makeECPublicKey(from: privateKey)
+  }
+
+  private func makeECPublicKey(from privateKey: SecKey) throws -> ECPublicKey {
     guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
       throw NSError(domain: "TestHelpers", code: -1)
     }

@@ -28,10 +28,10 @@ struct PinnedCertificateNetworkingTests {
     #expect(sut.isPinCertificateFileName("le-tls-pin-isrg-root-x1.der"))
     #expect(sut.isPinCertificateFileName("le-tls-pin-isrg-root-yr.der"))
 
-    #expect(!sut.isPinCertificateFileName("pidissuerca02_de.der"))
-    #expect(!sut.isPinCertificateFileName("german_registrar.der"))
-    #expect(!sut.isPinCertificateFileName("common_codes_eudi_hub_sandbox_access_ca_01.der"))
-    #expect(!sut.isPinCertificateFileName("common_codes_eudi_hub_sandbox_registration_ca_01.der"))
+    #expect(!sut.isPinCertificateFileName("common_codes_sandbox_registrar_01.der"))
+    #expect(!sut.isPinCertificateFileName("common_codes_sandbox_registrar_02.der"))
+    #expect(!sut.isPinCertificateFileName("netlight_eudi_hub_sandbox_access_ca_01.der"))
+    #expect(!sut.isPinCertificateFileName("netlight_eudi_hub_sandbox_registration_ca_01.der"))
     #expect(!sut.isPinCertificateFileName("pidp-tls-pin-d-trust-br-root-ca-2-2023.cer"))
   }
 

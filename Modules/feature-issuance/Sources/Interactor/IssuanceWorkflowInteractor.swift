@@ -385,7 +385,7 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
       }
       controller.startAuthentication(
         withTcTokenUrl: tokenURL,
-        withDeveloperMode: true,
+        withDeveloperMode: AppBuildVariant.current.offersSimulatedEIDCard,
         withUserInfoMessages: Self.userInfoMessages(for: .authentication),
         withStatusMsgEnabled: true
       )

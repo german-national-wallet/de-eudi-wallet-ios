@@ -21,6 +21,7 @@ final class PushNotificationController: NSObject {
 
   private let pnsAccountInteractor: PNSAccountInteractor
   private let walletRevocationInteractor: WalletRevocationInteractor
+  private let pushAuthorizationProvider: PushAuthorizationProvider
 
   private var handlingTask: Task<Void, Never>?
 
@@ -28,6 +29,7 @@ final class PushNotificationController: NSObject {
     self.logger = DIGraph.resolver.force(Logging.self)
     self.pnsAccountInteractor = DIGraph.resolver.force(PNSAccountInteractor.self)
     self.walletRevocationInteractor = DIGraph.resolver.force(WalletRevocationInteractor.self)
+    self.pushAuthorizationProvider = DIGraph.resolver.force(PushAuthorizationProvider.self)
     super.init()
   }
 
@@ -36,16 +38,12 @@ final class PushNotificationController: NSObject {
     Messaging.messaging().delegate = self
   }
 
-  func requestAuthorizationAndRegister() {
-    UNUserNotificationCenter.current().requestAuthorization(
-      options: [.alert, .badge, .sound]
-    ) { granted, error in
-      if let error {
-        self.logger.e("[Push] Authorization request failed: \(error.logDescriptor)")
-      }
-      self.logger.d("[Push] Notification permission granted: \(granted)")
-      guard granted else { return }
-      DispatchQueue.main.async {
+  func registerIfAuthorized() {
+    Task { [pushAuthorizationProvider, logger] in
+      let isAuthorized = await pushAuthorizationProvider.isAuthorized()
+      logger.d("[Push] Notification permission authorized: \(isAuthorized)")
+      guard isAuthorized else { return }
+      await MainActor.run {
         UIApplication.shared.registerForRemoteNotifications()
       }
     }

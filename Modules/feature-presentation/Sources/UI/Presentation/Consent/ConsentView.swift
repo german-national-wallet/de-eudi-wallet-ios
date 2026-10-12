@@ -72,9 +72,10 @@ struct ConsentView<Router: RouterHost>: View {
           .padding(DSStyle.Spacers.SPACING_MEDIUM)
         }
         
-        if viewModel.isConfirmationPopupVisible {
-          ConfirmationPopupView(viewModel: viewModel.confirmationPopupViewModel)
-            .transition(.scale)
+        if let dialog = viewModel.errorDialog {
+          PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
+            .transition(.opacity)
+            .zIndex(1)
         }
       }
       .scrollIndicators(.hidden)
@@ -93,8 +94,31 @@ struct ConsentView<Router: RouterHost>: View {
       isPresented: $isCancelDialogPresented,
       onConfirm: viewModel.closeButtonTapped
     )
+    .centerDialog(
+      isPresented: $viewModel.isConfirmationPopupVisible,
+      icon: Theme.shared.image.infoCircleImage,
+      title: .pidPresentationDialogRpRejectionTitle,
+      subtitle: .pidPresentationDialogRpRejectionParagraph,
+      buttons: declineButtons
+    )
    }
-  
+
+  private var declineButtons: [CustomAlertDialogConfig] {
+      [
+        .init(title: .pidPresentationDialogRpRejectionPrimButton, role: .destructive) { viewModel.confirmDecline() },
+        .init(
+            title: .pidPresentationDialogRpRejectionSecButton,
+            role: .secondary,
+            trailingIcon: Theme.shared.image.externalLink
+        ) {
+            viewModel.reportSuspicion()
+        },
+        .init(title: .pidPresentationDialogRpRejectionSecButton2, role: .secondary) {
+          viewModel.onErrorDialogAction(.dismiss)
+        }
+      ]
+  }
+
   private func consentCardView(group: ConsentItemGroup) -> some View {
     VStack(alignment: .leading) {
       HStack {

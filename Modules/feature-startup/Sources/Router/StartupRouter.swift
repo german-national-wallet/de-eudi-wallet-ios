@@ -51,6 +51,46 @@ public final class StartupRouter {
           )
         )
       ).eraseToAnyView()
+    case .platformAuthenticationOnboarding(let config):
+      PlatformAuthOnboardingView(
+        with: .init(
+          router: host,
+          config: config,
+          interactor: DIGraph.resolver.force(
+            StartupInteractor.self
+          )
+        )
+      ).eraseToAnyView()
+    case .privacyPolicyOnboarding(let config):
+      PrivacyPolicyOnboardingView(
+        with: .init(
+          router: host,
+          config: config,
+          interactor: DIGraph.resolver.force(
+            StartupInteractor.self
+          )
+        )
+      ).eraseToAnyView()
+    case .pushNotificationOnboarding(let config):
+      PushNotificationOnboardingView(
+        with: .init(
+          router: host,
+          config: config,
+          interactor: DIGraph.resolver.force(
+            StartupInteractor.self
+          )
+        )
+      ).eraseToAnyView()
+    case .setupSuccess(let config):
+      SetupSuccessView(
+        with: .init(
+          router: host,
+          config: config,
+          interactor: DIGraph.resolver.force(
+            StartupInteractor.self
+          )
+        )
+      ).eraseToAnyView()
     case .startup:
       StartupView(
         with: .init(

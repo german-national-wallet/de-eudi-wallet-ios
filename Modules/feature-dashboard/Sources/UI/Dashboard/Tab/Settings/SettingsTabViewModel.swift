@@ -14,17 +14,20 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import UIKit
 import logic_ui
 import logic_core
 import logic_business
+import logic_resources
 import feature_common
 
 @Copyable
 struct SettingsTabViewState: ViewState {
-  let items: [SettingsTabItemUIModel]
+  let sections: [SettingsTabSectionUIModel]
   let appVersion: String
   let logsUrl: URL?
   let changelogUrl: URL?
+  let presentedWebLink: SettingsWebLink?
 }
 
 final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, SettingsTabViewState> {
@@ -43,34 +46,131 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
     super.init(
       router: router,
       initialState: .init(
-        items: [],
-        appVersion: interactor.getAppVersion(),
+        sections: [],
+        appVersion: "Version: \(interactor.getAppVersion()) Build: \(interactor.getAppBuildNumber())",
         logsUrl: interactor.retrieveLogFileUrl(),
-        changelogUrl: nil
+        changelogUrl: nil,
+        presentedWebLink: nil
       )
     )
 
     setState {
-      $0.copy(
-        items: [.DEV, .SANDBOX].contains(configLogic.appBuildVariant) ? [
+      $0.copy(sections: makeSections())
+    }
+  }
+
+  private func makeSections() -> [SettingsTabSectionUIModel] {
+    [
+      .init(
+        id: "settingsSupportSection",
+        items: [
           .init(
-            title: .globalRetrieveLogs,
-            showDivider: true,
-            isShareLink: true,
+            id: "settingsSupportItem",
+            title: .settingsOverviewListSupport,
+            leadingIcon: Theme.shared.image.help,
+            showDivider: false,
             action: {}()
+          )
+        ]
+      ),
+      .init(
+        id: "settingsSettingsSection",
+        title: .settingsOverviewHeadlineSettings,
+        items: [
+          .init(
+            id: "settingsWalletLossProtectionItem",
+            title: .settingsOverviewListRevocation,
+            leadingIcon: Theme.shared.image.walletKey,
+            showDivider: false,
+            action: self.openWalletLossProtection()
           ),
           .init(
-            title: .custom("Debug config"),
+            id: "settingsNotificationItem",
+            title: .settingsOverviewListNotification,
+            leadingIcon: Theme.shared.image.notification,
+            trailingIcon: .externalLink,
             showDivider: false,
-            action: self.openDebugConfig()
+            action: self.openNotificationSettings()
           )
-        ] : []
+        ]
+      ),
+      .init(
+        id: "settingsLegalSection",
+        title: .settingsOverviewHeadlineLegal,
+        items: [
+          .init(
+            id: "settingsAboutItem",
+            title: .settingsOverviewListAboutEudi,
+            showDivider: false,
+            action: self.openWebLink(AppEnvironment.aboutLink)
+          ),
+          .init(
+            id: "settingsAccessibilityItem",
+            title: .settingsOverviewListAccessibility,
+            showDivider: false,
+            action: self.openWebLink(AppEnvironment.accessibilityStatementLink)
+          ),
+          .init(
+            id: "settingsPrivacyPolicyItem",
+            title: .settingsOverviewListPrivacyPolicy,
+            showDivider: false,
+            action: self.openWebLink(AppEnvironment.privacyPolicyLink)
+          ),
+          .init(
+            id: "settingsTermsItem",
+            title: .settingsOverviewListTermsAndConditions,
+            showDivider: false,
+            action: self.openWebLink(AppEnvironment.termsAndConditionsLink)
+          ),
+          .init(
+            id: "settingsImprintItem",
+            title: .settingsOverviewListImpress,
+            showDivider: false,
+            action: self.openWebLink(AppEnvironment.imprintLink)
+          )
+        ] + makeDebugItems()
       )
-    }
+    ]
+  }
+
+  private func makeDebugItems() -> [SettingsTabItemUIModel] {
+    guard [.DEV, .SANDBOX].contains(configLogic.appBuildVariant) else { return [] }
+    return [
+      .init(
+        id: "settingsRetrieveLogsItem",
+        title: .globalRetrieveLogs,
+        showDivider: false,
+        isShareLink: true,
+        action: {}()
+      ),
+      .init(
+        id: "settingsDebugConfigItem",
+        title: .custom("Debug config"),
+        showDivider: false,
+        action: self.openDebugConfig()
+      )
+    ]
   }
 
   private func openDebugConfig() {
     router.push(with: .featureDashboardModule(.debugConfig))
+  }
+
+  private func openWalletLossProtection() {
+    router.push(with: .featureDashboardModule(.walletLossProtection))
+  }
+
+  private func openNotificationSettings() {
+    UIApplication.shared.openAppNotificationSettings()
+  }
+
+  private func openWebLink(_ url: URL?) {
+    guard let url else { return }
+    setState { $0.copy(presentedWebLink: SettingsWebLink(url: url)) }
+  }
+
+  func dismissWebLink() {
+    setState { $0.copy(presentedWebLink: nil) }
   }
 
   func updatePin() {

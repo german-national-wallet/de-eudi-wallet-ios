@@ -25,13 +25,21 @@ public enum AppBuildVariant: String, @unchecked Sendable {
   public static var current: AppBuildVariant {
     guard let variant = AppBuildVariant(rawValue: "Build Variant".valueFromBundle) else {
       /// Unknown variants should never expose debug features (debug config, log file, menu items) or disable log redaction
-      return .STAGING
+      return .PROD
     }
     return variant
   }
 
   public var emitsDebugLogs: Bool {
     [.DEV, .SANDBOX].contains(self)
+  }
+
+  public var offersSimulatedEIDCard: Bool {
+    [.DEV, .SANDBOX, .STAGING].contains(self)
+  }
+
+  public var redactsSensitiveLogs: Bool {
+    !emitsDebugLogs
   }
 }
 
@@ -77,6 +85,8 @@ public protocol ConfigLogic: Sendable {
    * Issuer credential-configuration identifier for the SD-JWT PID credential.
    */
   var pidSdJwtConfigId: String { get }
+
+  var keyChainConfig: KeyChainConfig { get }
 }
 
 public struct ConfigLogicImpl: ConfigLogic {
@@ -131,6 +141,10 @@ public struct ConfigLogicImpl: ConfigLogic {
       return nil
     }
     return url
+  }
+
+  public var keyChainConfig: KeyChainConfig {
+    KeyChainConfig(documentStorageServiceName: Bundle.getDocumentStorageServiceName())
   }
 
   public init(debugConfigController: DebugConfigController) {

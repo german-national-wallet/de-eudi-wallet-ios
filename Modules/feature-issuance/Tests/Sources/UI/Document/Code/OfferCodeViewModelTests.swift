@@ -7,6 +7,7 @@
 
 import XCTest
 import Cuckoo
+import OpenID4VCI
 import logic_core
 import logic_resources
 import logic_ui
@@ -77,7 +78,7 @@ final class OfferCodeViewModelTests: XCTestCase {
     )
   }
 
-  func testPrimaryButtonAction_WhenTheLoaderReportsFailure_ThenShowsInvalidTransactionCodeError() async {
+  func testPrimaryButtonAction_WhenTheLoaderReportsAGrantRejection_ThenShowsInvalidTransactionCodeError() async {
     let reported = expectation(description: "Wait for the failure to be reported back")
     sut.codeInput = "123456"
     stub(router) { mock in
@@ -85,16 +86,41 @@ final class OfferCodeViewModelTests: XCTestCase {
     }
 
     sut.primaryButtonAction()
-    capturedLoaderFailureHandler()?()
+    capturedLoaderFailureHandler()?(
+      CredentialIssuanceError.pushedAuthorizationRequestFailed(
+        error: "invalid_grant",
+        errorDescription: nil
+      )
+    )
 
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
       reported.fulfill()
     }
     await fulfillment(of: [reported], timeout: 1)
     XCTAssertEqual(sut.errorMessage, LocalizableStringKey.eaaOfferTxCodeInvalidEntry.toString)
+    XCTAssertNil(sut.viewState.error)
     // The field keeps wanting focus, so the entry view takes the keyboard back when this screen
     // reappears; nothing here raises it while the loader is still on screen.
     XCTAssertTrue(sut.codeIsFocused)
+  }
+
+  func testPrimaryButtonAction_WhenTheLoaderReportsAnotherFailure_ThenShowsGenericError() async {
+    let reported = expectation(description: "Wait for the failure to be reported back")
+    sut.codeInput = "123456"
+    stub(router) { mock in
+      when(mock.push(with: any())).thenDoNothing()
+    }
+
+    sut.primaryButtonAction()
+    capturedLoaderFailureHandler()?(WalletCoreError.unableToIssueAndStore)
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+      reported.fulfill()
+    }
+    await fulfillment(of: [reported], timeout: 1)
+    // Not the user's code being wrong, so the real error is surfaced instead.
+    XCTAssertTrue(sut.errorMessage.isEmpty)
+    XCTAssertNotNil(sut.viewState.error)
   }
 
   private func capturedLoaderRoute() -> FeatureIssuanceRouteModule? {
@@ -113,7 +139,7 @@ final class OfferCodeViewModelTests: XCTestCase {
     return config as? DocumentLoaderUiConfig
   }
 
-  private func capturedLoaderFailureHandler() -> (@Sendable () -> Void)? {
+  private func capturedLoaderFailureHandler() -> (@Sendable (Error) -> Void)? {
     guard case .documentLoaderView(_, let onFailure) = capturedLoaderRoute() else {
       return nil
     }

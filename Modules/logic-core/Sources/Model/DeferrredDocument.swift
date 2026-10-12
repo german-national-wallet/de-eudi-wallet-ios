@@ -16,15 +16,8 @@
 import Foundation
 
 public struct DeferrredDocument: DocClaimsDecodable {
-  public var statusIdentifier: MdocDataModel18013.StatusIdentifier?
-  
-  public var secureAreaName: String?
-  
-  public var credentialsUsageCounts: MdocDataModel18013.CredentialsUsageCounts?
-  
-  public var credentialPolicy: MdocDataModel18013.CredentialPolicy
-  
   public var id: String
+  public var statusList: MdocDataModel18013.StatusList?
   public var createdAt: Date
   public var modifiedAt: Date?
   public var displayName: String?
@@ -38,4 +31,7 @@ public struct DeferrredDocument: DocClaimsDecodable {
   public var configurationIdentifier: String?
   public var validFrom: Date?
   public var validUntil: Date?
+  public var secureAreaName: String?
+  public var credentialsUsageCounts: MdocDataModel18013.CredentialsUsageCounts?
+  public var credentialPolicy: MdocDataModel18013.CredentialPolicy
 }

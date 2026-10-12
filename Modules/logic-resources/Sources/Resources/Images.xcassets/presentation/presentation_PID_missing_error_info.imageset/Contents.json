@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "presentation_PID_missing_error_info.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

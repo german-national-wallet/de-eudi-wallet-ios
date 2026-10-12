@@ -25,6 +25,9 @@ public struct AnalyticsConstants {
     public static let status = "status"
     public static let errorCode = "error_code"
     public static let serverTraceID = "server_trace_id"
+    public static let errorClass = "error_class"
+    public static let errorOrigin = "error_origin"
+    public static let errorDiagnosticCase = "error_diagnostic_case"
   }
 
   public struct TraceStatus {

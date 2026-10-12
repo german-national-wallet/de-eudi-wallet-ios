@@ -6,20 +6,6 @@
 import Foundation
 import logic_ui
 
-struct WalletRevocationUiConfig: UIConfigType {
-  let continueRoute: AppRoute
-
-  var log: String {
-    "WalletRevocationUiConfig continueRoute: \(continueRoute.info.key)"
-  }
-
-  init(continueRoute: AppRoute) {
-    self.continueRoute = continueRoute
-  }
-}
-
-struct WalletRevocationState: ViewState {}
-
 final class WalletRevocationViewModel<Router: RouterHost>: ViewModel<Router, WalletRevocationState> {
 
   private let continueRoute: AppRoute
@@ -34,5 +20,9 @@ final class WalletRevocationViewModel<Router: RouterHost>: ViewModel<Router, Wal
 
   func onPrimaryButtonTapped() {
     router.push(with: continueRoute)
+  }
+
+  func onBackTapped() {
+    router.pop()
   }
 }

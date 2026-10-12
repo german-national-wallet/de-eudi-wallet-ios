@@ -35,4 +35,8 @@ public extension UIApplication {
     guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
     self.open(url, options: [:])
   }
+  func openAppNotificationSettings() {
+    guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+    self.open(url, options: [:])
+  }
 }

@@ -15,6 +15,7 @@
  */
 import SwiftUI
 import logic_ui
+import logic_resources
 import feature_common
 
 struct PresentationLoadingView<Router: RouterHost, RequestItem: Sendable>: View {
@@ -52,9 +53,14 @@ struct PresentationLoadingView<Router: RouterHost, RequestItem: Sendable>: View 
         }
       }
       .overlay {
-        if viewModel.isErrorPopupVisible {
-          ConfirmationPopupView(viewModel: viewModel.errorPopupViewModel)
-        }
+          if let dialog = viewModel.errorDialog {
+              PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
+          }
+      }
+      .sheet(isPresented: $viewModel.showPIDResetConfirmationPopup) {
+        ConfirmationPopupView(viewModel: viewModel.confirmationPopupViewModel)
+          .transition(.opacity)
+          .zIndex(1)
       }
   }
 }

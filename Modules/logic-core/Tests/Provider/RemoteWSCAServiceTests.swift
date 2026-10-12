@@ -175,7 +175,8 @@ struct RemoteWSCAServiceTests {
       index: 0,
       algorithm: .ES256,
       dataToSign: Data("test".utf8),
-      unlockData: "pin-session-token".data(using: .utf8)
+      unlockData: "pin-session-token".data(using: .utf8),
+      authenticationContext: ThreadSafeAuthContext()
     )
 
     #expect(result.count == 64)
@@ -193,7 +194,8 @@ struct RemoteWSCAServiceTests {
         index: 0,
         algorithm: .ES256,
         dataToSign: Data("test".utf8),
-        unlockData: "pin-session-token".data(using: .utf8)
+        unlockData: "pin-session-token".data(using: .utf8),
+        authenticationContext: ThreadSafeAuthContext()
       )
     }
   }
@@ -214,7 +216,8 @@ struct RemoteWSCAServiceTests {
         index: 0,
         algorithm: .ES256,
         dataToSign: Data("test".utf8),
-        unlockData: "pin-session-token".data(using: .utf8)
+        unlockData: "pin-session-token".data(using: .utf8),
+        authenticationContext: ThreadSafeAuthContext()
       )
     }
   }
@@ -235,7 +238,8 @@ struct RemoteWSCAServiceTests {
         index: 0,
         algorithm: .ES256,
         dataToSign: Data("test".utf8),
-        unlockData: "pin-session-token".data(using: .utf8)
+        unlockData: "pin-session-token".data(using: .utf8),
+        authenticationContext: ThreadSafeAuthContext()
       )
     }
   }
@@ -254,7 +258,8 @@ struct RemoteWSCAServiceTests {
         index: 0,
         algorithm: .ES256,
         dataToSign: Data("test".utf8),
-        unlockData: "pin-session-token".data(using: .utf8)
+        unlockData: "pin-session-token".data(using: .utf8),
+        authenticationContext: ThreadSafeAuthContext()
       )
     }
   }
@@ -293,7 +298,8 @@ struct RemoteWSCAServiceTests {
         index: 0,
         algorithm: .ES256,
         dataToSign: Data("test".utf8),
-        unlockData: "pin-session-token".data(using: .utf8)
+        unlockData: "pin-session-token".data(using: .utf8),
+        authenticationContext: ThreadSafeAuthContext()
       )
     }
   }
@@ -319,7 +325,8 @@ struct RemoteWSCAServiceTests {
       index: 0,
       algorithm: .ES256,
       dataToSign: Data("test".utf8),
-      unlockData: expectedToken.data(using: .utf8)
+      unlockData: expectedToken.data(using: .utf8),
+      authenticationContext: ThreadSafeAuthContext()
     )
 
     #expect(capturedToken == expectedToken)
@@ -351,32 +358,6 @@ struct RemoteWSCAServiceTests {
       value: equal(to: "wte"),
       keyTag: equal(to: SecureEnclaveKeys.custom(expectedTag))
     )
-  }
-
-  @Test func createKeyBatch_StoresWTEUnderDocTypeOnly_WhenDocTypeGiven() async throws {
-    stub(rwscaInteractor) { mock in
-      when(mock.createKeys(numberOfKeys: any(), ppCNonce: any())).thenReturn(
-        RWSCACreateKeysResponse(
-          rwscaWIKeys: [
-            RWSCACreateKeysResponse.KeyInfo(rwscdWIPubk: makeValidBase64URLDERPublicKey(), rwscaWIWrappedPrvk: "wrapped-key")
-          ],
-          rwscaWTE: "wte"
-        )
-      )
-    }
-
-    _ = try await sut.createKeyBatch(
-      id: "test-id",
-      credentialOptions: CredentialOptions(credentialPolicy: .oneTimeUse, batchSize: 1),
-      keyOptions: KeyOptions(additionalOptions: Data("eu.europa.ec.eudi.pid.1".utf8))
-    )
-
-    // The credential path consumes the attestation by docType, so the key-derived tag must not be written too.
-    verify(secureEnclaveController).storeStringInKeychain(
-      value: equal(to: "wte"),
-      keyTag: equal(to: SecureEnclaveKeys.custom("eu.europa.ec.eudi.pid.1"))
-    )
-    verify(secureEnclaveController, times(1)).storeStringInKeychain(value: anyString(), keyTag: any())
   }
 
   @Test func createKeyBatch_DoesNotStoreWTE_WhenEmpty() async throws {
@@ -459,7 +440,7 @@ struct RemoteWSCAServiceTests {
   @Test func keyAgreement_AlwaysThrows() async throws {
     let dummyKey = CoseKey(crv: .P256, x963Representation: Data([0x04] + [UInt8](repeating: 0, count: 64)))
     await #expect(throws: (any Error).self) {
-      try await sut.keyAgreement(id: "test-id", index: 0, publicKey: dummyKey, unlockData: nil)
+      try await sut.keyAgreement(id: "test-id", index: 0, publicKey: dummyKey, unlockData: nil, authenticationContext: ThreadSafeAuthContext())
     }
   }
 
@@ -550,7 +531,7 @@ actor StubSecureKeyStorage: SecureKeyStorage {
 
   func readRWSCACreateKeysResponse(id: String) async throws -> [String: Data] { [:] }
 
-  func readKeyData(id: String, index: Int) async throws -> [String: Data] {
+  func readKeyData(id: String, index: Int, authenticationContext: ThreadSafeAuthContext) async throws -> [String: Data] {
     if shouldThrowOnRead { throw SecureAreaError("Stub read error") }
     return keyDataToReturn
   }

@@ -18,9 +18,12 @@ final class PresentationLoadingViewModelTests: XCTestCase {
 
   private var router: MockRouterHost!
   private var interactor: MockPresentationInteractor!
+  private var pidRevokeInteractor: MockPIDRevokeInteractor!
+  private var deeplinkController: MockDeepLinkController!
   private var prefsController: MockPrefsController!
   private var analyticsController: MockAnalyticsController!
   private var pinSessionInteractor: MockPinSessionInteractor!
+  private var errorHandler: MockPresentationErrorHandler!
   private var sut: PresentationLoadingViewModel<MockRouterHost, DocumentElementClaim>!
 
   override func setUp() {
@@ -28,12 +31,17 @@ final class PresentationLoadingViewModelTests: XCTestCase {
 
     router = MockRouterHost()
     interactor = MockPresentationInteractor()
+    pidRevokeInteractor = MockPIDRevokeInteractor()
+    deeplinkController = MockDeepLinkController()
     prefsController = MockPrefsController()
     analyticsController = MockAnalyticsController()
     pinSessionInteractor = MockPinSessionInteractor()
+    errorHandler = MockPresentationErrorHandler()
     sut = PresentationLoadingViewModel(
       router: router,
       interactor: interactor,
+      pidRevokeInteractor: pidRevokeInteractor,
+      deepLinkController: deeplinkController,
       relyingParty: "Verifier",
       relyingPartyIsTrusted: true,
       originator: .featureDashboardModule(.dashboard),
@@ -41,15 +49,19 @@ final class PresentationLoadingViewModelTests: XCTestCase {
       prefsController: prefsController,
       analyticsController: analyticsController,
       pinSessionInteractor: pinSessionInteractor,
+      errorHandler: errorHandler,
       items: nil,
       logger: nil
     )
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture()))
+    }
   }
 
   override func tearDown() {
     sut = nil
+    errorHandler = nil
     analyticsController = nil
-    prefsController = nil
     pinSessionInteractor = nil
     interactor = nil
     router = nil
@@ -61,7 +73,7 @@ final class PresentationLoadingViewModelTests: XCTestCase {
     stub(interactor) { mock in
       when(mock.onSendResponse()).thenReturn(.sent)
       when(mock.isPIDPresentation(documentIDs: any())).thenReturn(true)
-      when(mock.getSessionStatePublisher()).thenReturn(.failure(PresentationSessionError.invalidState))
+      when(mock.getSessionStatePublisher()).thenReturn(.success(Self.finishedStream()))
     }
     stub(analyticsController) { mock in
       when(mock.currentTraceID.get).thenReturn("trace-id")
@@ -78,13 +90,14 @@ final class PresentationLoadingViewModelTests: XCTestCase {
 
     verify(pinSessionInteractor).clear()
     verify(analyticsController).endTrace(finalAttributes: equal(to: ["status": "success"]), errorDescription: isNil())
+    XCTAssertNil(sut.errorDialog)
   }
 
   func testDoWork_WhenNonPIDResponseSent_ThenDoesNotClearPinSession() async {
     stub(interactor) { mock in
       when(mock.onSendResponse()).thenReturn(.sent)
       when(mock.isPIDPresentation(documentIDs: any())).thenReturn(false)
-      when(mock.getSessionStatePublisher()).thenReturn(.failure(PresentationSessionError.invalidState))
+      when(mock.getSessionStatePublisher()).thenReturn(.success(Self.finishedStream()))
     }
     stub(analyticsController) { mock in
       when(mock.currentTraceID.get).thenReturn("trace-id")
@@ -100,15 +113,11 @@ final class PresentationLoadingViewModelTests: XCTestCase {
     verify(analyticsController).endTrace(finalAttributes: equal(to: ["status": "success"]), errorDescription: isNil())
   }
 
-  func testDoWork_WhenGenericErrorOccurs_ThenDefaultErrorPopupCarriesTraceId() async {
+  func testDoWork_WhenSendFails_ThenClearsPinSessionAndShowsDialogFromHandler() async {
     stub(interactor) { mock in
       when(mock.onSendResponse()).thenReturn(.failure(TestNSError.generic))
       when(mock.isPIDPresentation(documentIDs: any())).thenReturn(true)
-      when(mock.getSessionStatePublisher()).thenReturn(.failure(PresentationSessionError.invalidState))
-    }
-    stub(analyticsController) { mock in
-      when(mock.currentTraceID.get).thenReturn("trace-id")
-      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
+      when(mock.getSessionStatePublisher()).thenReturn(.success(Self.finishedStream()))
     }
     stub(pinSessionInteractor) { mock in
       when(mock.clear()).thenDoNothing()
@@ -116,8 +125,79 @@ final class PresentationLoadingViewModelTests: XCTestCase {
 
     await sut.doWork()
 
-    verify(analyticsController).endTrace(finalAttributes: equal(to: ["status": "fails"]), errorDescription: notNil())
-    XCTAssertEqual(sut.errorPopupViewModel.traceId, "trace-id")
+    verify(pinSessionInteractor).clear()
+    XCTAssertEqual(sut.errorDialog?.traceId, "trace-id")
+    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    // The handler owns the failure trace; the loader must not end it a second time.
+    verify(analyticsController, never()).endTrace(finalAttributes: any(), errorDescription: any())
+  }
+
+  func testDoWork_WhenSessionPublishesErrorAndSendFails_ThenHandlesTheFailureOnce() async {
+    let stream = AsyncStream<PresentationState> { continuation in
+      continuation.yield(.error(TestNSError.generic))
+      continuation.finish()
+    }
+    stub(interactor) { mock in
+      when(mock.onSendResponse()).thenReturn(.failure(TestNSError.generic))
+      when(mock.isPIDPresentation(documentIDs: any())).thenReturn(false)
+      when(mock.getSessionStatePublisher()).thenReturn(.success(stream))
+    }
+
+    await sut.doWork()
+    await Task.yield()
+
+    verify(errorHandler, times(1)).handle(any(), originator: any())
+    XCTAssertNotNil(sut.errorDialog)
+  }
+
+  func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRoute() async {
+    var didPushNoticeRoute = false
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+    }
+    stub(interactor) { mock in
+      when(mock.onSendResponse()).thenReturn(.failure(TestNSError.generic))
+      when(mock.isPIDPresentation(documentIDs: any())).thenReturn(false)
+      when(mock.getSessionStatePublisher()).thenReturn(.success(Self.finishedStream()))
+    }
+    stub(router) { mock in
+      when(mock.push(with: any())).then { route in
+        if case .featurePresentationModule(.presentationErrorNotice) = route {
+          didPushNoticeRoute = true
+        }
+      }
+    }
+
+    await sut.doWork()
+
+    XCTAssertTrue(didPushNoticeRoute)
+    XCTAssertNil(sut.errorDialog)
+  }
+
+  func testOnErrorDialogAction_WhenPopTo_ThenHidesDialogAndPopsToRoute() {
+    sut.errorDialog = .fixture()
+    stub(router) { mock in
+      when(mock.popTo(with: any())).thenDoNothing()
+    }
+
+    sut.onErrorDialogAction(.popTo(.featureDashboardModule(.dashboard)))
+
+    XCTAssertNil(sut.errorDialog)
+    verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+  }
+
+  func testOnErrorDialogAction_WhenAddDigitalIDAgain_ThenOnlyHidesDialog() {
+    sut.errorDialog = .fixture(primaryAction: .addDigitalIDAgain)
+    sut.onErrorDialogAction(.addDigitalIDAgain)
+    XCTAssertNil(sut.errorDialog)
+    verify(router, never()).popTo(with: any())
+    verify(router, never()).push(with: any())
+  }
+
+  private static func finishedStream() -> AsyncStream<PresentationState> {
+    AsyncStream { continuation in
+      continuation.finish()
+    }
   }
 }
 

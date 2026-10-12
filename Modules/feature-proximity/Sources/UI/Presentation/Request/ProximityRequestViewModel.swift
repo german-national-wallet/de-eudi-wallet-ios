@@ -57,7 +57,14 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     }.value
 
     switch state {
-    case .success(let items, let relyingParty, _, let isTrusted):
+    case .success(let items, let relyingParty, _, let isTrusted, let isOverAsking, let hasUnreadableRegistration):
+      if hasUnreadableRegistration || isOverAsking {
+        await onRefusedByPolicy(reason: hasUnreadableRegistration ? .unregisteredRelyingParty : .overAsking) { [interactor] in
+          interactor.stopPresentation()
+        }
+        return
+      }
+
       self.onReceivedItems(
         with: items,
         title: .requestDataTitle([relyingParty]),

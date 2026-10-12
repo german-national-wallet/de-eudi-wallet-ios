@@ -7,7 +7,9 @@
 
 import XCTest
 import Cuckoo
-import logic_core
+import logic_analytics
+@testable import logic_core
+@testable import feature_common
 @testable import feature_presentation
 @testable import feature_test
 
@@ -17,21 +19,32 @@ final class RPInfoViewModelTests: XCTestCase {
   private var router: MockRouterHost!
   private var interactor: MockPresentationInteractor!
   private var analyticsController: MockAnalyticsController!
+  private var errorHandler: MockPresentationErrorHandler!
   private var sut: RPInfoViewModel<MockRouterHost>!
-
+  private let declinedTrace = [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined]
+    
   override func setUp() {
     super.setUp()
 
     router = MockRouterHost()
     interactor = MockPresentationInteractor()
     analyticsController = MockAnalyticsController()
+    errorHandler = MockPresentationErrorHandler()
     sut = RPInfoViewModel(
       router: router,
       interactor: interactor,
       originator: .featureDashboardModule(.dashboard),
       analyticsController: analyticsController,
+      errorHandler: errorHandler,
       logger: nil
     )
+    stub(analyticsController) { mock in
+      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
+      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
+    }
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture()))
+    }
   }
 
   override func tearDown() {
@@ -39,6 +52,7 @@ final class RPInfoViewModelTests: XCTestCase {
     analyticsController = nil
     interactor = nil
     router = nil
+    errorHandler = nil
 
     super.tearDown()
   }
@@ -69,102 +83,224 @@ final class RPInfoViewModelTests: XCTestCase {
     verify(router, never()).push(with: any())
   }
 
-  func testDoWork_WhenCredentialNotFound_ThenPushesInstructionsRouteAndKeepsPopupHidden() async {
-    var didPushInstructionsRoute = false
+  func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRouteAndKeepsDialogHidden() async {
+    var didPushNoticeRoute = false
     let credentialNotFound = WalletError(description: "no document", code: .credentialNotFound)
     stub(interactor) { mock in
       when(mock.onDeviceEngagement()).thenReturn(.failure(credentialNotFound))
     }
-    stub(analyticsController) { mock in
-      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
-      when(mock.currentTraceID.get).thenReturn("trace-id")
-      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
     }
     stub(router) { mock in
       when(mock.push(with: any())).then { route in
-        if case .featurePresentationModule(.credentialNotFoundInstructionsView) = route {
-          didPushInstructionsRoute = true
+        if case .featurePresentationModule(.presentationErrorNotice) = route {
+          didPushNoticeRoute = true
         }
       }
     }
 
     await sut.doWork()
 
-    XCTAssertTrue(didPushInstructionsRoute)
-    XCTAssertFalse(sut.isConfirmationPopupVisible)
+    XCTAssertTrue(didPushNoticeRoute)
+    XCTAssertNil(sut.errorDialog)
+    XCTAssertTrue(sut.viewState.initialized, "Must be initialized before presenting the error")
+    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
     verify(interactor).onDeviceEngagement()
-    verify(router).push(with: any())
-    verify(analyticsController).endTrace(finalAttributes: any(), errorDescription: notNil())
+    verify(analyticsController).startTrace(name: any(), initialAttributes: any())
   }
 
-  func testDoWork_WhenNoDocumentsAvailable_ThenPushesInstructionsRouteAndKeepsPopupHidden() async {
-    var didPushInstructionsRoute = false
-    let noDocumentsAvailable = WalletError(description: "no documents", code: .noDocumentsAvailable)
-    stub(interactor) { mock in
-      when(mock.onDeviceEngagement()).thenReturn(.failure(noDocumentsAvailable))
-    }
-    stub(analyticsController) { mock in
-      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
-      when(mock.currentTraceID.get).thenReturn("trace-id")
-      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
-    }
-    stub(router) { mock in
-      when(mock.push(with: any())).then { route in
-        if case .featurePresentationModule(.credentialNotFoundInstructionsView) = route {
-          didPushInstructionsRoute = true
-        }
-      }
-    }
-
-    await sut.doWork()
-
-    XCTAssertTrue(didPushInstructionsRoute)
-    XCTAssertFalse(sut.isConfirmationPopupVisible)
-    verify(interactor).onDeviceEngagement()
-    verify(router).push(with: any())
-  }
-
-  func testDoWork_WhenOtherWalletError_ThenShowsConfirmationPopupAndDoesNotPush() async {
-    let otherError = WalletError(description: "malformed", code: .dcqlQueryNotSatisfied)
+  func testDoWork_WhenHandlerReturnsDialog_ThenShowsDialogAndDoesNotPush() async {
+    let otherError = WalletError(description: "malformed", code: .notSecuredRequest)
     stub(interactor) { mock in
       when(mock.onDeviceEngagement()).thenReturn(.failure(otherError))
     }
-    stub(analyticsController) { mock in
-      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
-      when(mock.currentTraceID.get).thenReturn("trace-id")
-      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
-    }
-    stub(router) { mock in
-      when(mock.push(with: any())).thenDoNothing()
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture(traceId: "trace-id")))
     }
 
     await sut.doWork()
 
-    XCTAssertTrue(sut.isConfirmationPopupVisible)
+    XCTAssertEqual(sut.errorDialog?.traceId, "trace-id")
+    XCTAssertTrue(sut.viewState.initialized, "Must be initialized before presenting the error")
+    verify(errorHandler).handle(any(), originator: any())
     verify(router, never()).push(with: any())
     verify(interactor).onDeviceEngagement()
-    verify(analyticsController).endTrace(finalAttributes: any(), errorDescription: notNil())
-    XCTAssertEqual(sut.confirmationPopupViewModel.traceId, "trace-id")
   }
 
-  func testDoWork_WhenNonWalletError_ThenShowsConfirmationPopupAndDoesNotPush() async {
-    stub(interactor) { mock in
-      when(mock.onDeviceEngagement()).thenReturn(.failure(TestNSError.generic))
-    }
-    stub(analyticsController) { mock in
-      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
-      when(mock.currentTraceID.get).thenReturn("trace-id")
-      when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
-    }
+  func testOnErrorDialogAction_WhenPopTo_ThenClearsDialogAndPopsToRoute() {
     stub(router) { mock in
-      when(mock.push(with: any())).thenDoNothing()
+      when(mock.popTo(with: any())).thenDoNothing()
+    }
+
+    sut.onErrorDialogAction(.popTo(.featureDashboardModule(.dashboard)))
+
+    XCTAssertNil(sut.errorDialog)
+    verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+  }
+
+  func testOnErrorDialogAction_WhenAddDigitalIDAgain_ThenPopsToOriginator() {
+    stub(router) { mock in
+      when(mock.popTo(with: any())).thenDoNothing()
+    }
+
+    sut.onErrorDialogAction(.addDigitalIDAgain)
+
+    XCTAssertNil(sut.errorDialog)
+    verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+  }
+
+  // MARK: - Refusals by registration certificate
+
+  func testDoWork_WhenOverAsking_ThenRefusesWithReportURIAndDeclinesWithoutShowingItems() async {
+    let reportURI = URL(string: "https://www.bfdi.bund.de/EN/Home/home_node.html")
+    let request = makeRequest(isOverAsking: true, supervisoryAuthorityURI: reportURI)
+    stubPresentation(returning: .success(request))
+    var pushedConfig: PresentationRejectedUiConfig?
+    stubRejectedRoute { pushedConfig = $0 }
+
+    await sut.doWork()
+
+    XCTAssertEqual(pushedConfig?.reason, .overAsking)
+    XCTAssertEqual(pushedConfig?.reportURI, reportURI)
+    XCTAssertFalse(sut.viewState.initialized, "Requested items must never be received")
+    XCTAssertFalse(sut.viewState.allowShare)
+    verify(interactor).declinePresentation()
+    verify(interactor).stopPresentation()
+  }
+
+  func testDoWork_WhenRegistrationCertificateIsUnreadable_ThenRefusesAsUnregisteredAndDeclines() async {
+    let request = makeRequest(hasUnreadableRegistration: true)
+    stubPresentation(returning: .success(request))
+    var pushedConfig: PresentationRejectedUiConfig?
+    stubRejectedRoute { pushedConfig = $0 }
+
+    await sut.doWork()
+
+    XCTAssertEqual(pushedConfig?.reason, .unregisteredRelyingParty)
+    XCTAssertNil(pushedConfig?.reportURI)
+    XCTAssertFalse(sut.viewState.initialized, "Requested items must never be received")
+    verify(interactor).declinePresentation()
+    verify(interactor).stopPresentation()
+  }
+
+  func testDoWork_WhenUnreadableAndOverAsking_ThenRefusesAsUnregistered() async {
+    let request = makeRequest(isOverAsking: true, hasUnreadableRegistration: true)
+    stubPresentation(returning: .success(request))
+    var pushedConfig: PresentationRejectedUiConfig?
+    stubRejectedRoute { pushedConfig = $0 }
+
+    await sut.doWork()
+
+    XCTAssertEqual(pushedConfig?.reason, .unregisteredRelyingParty)
+  }
+
+  func testDoWork_WhenAccessCertificateIsNotTrusted_ThenShowsNoticeWithoutDecliningOrStopping() async {
+    let notTrusted = WalletError(description: "Trust evaluation failed", code: .trustError)
+    stubPresentation(returning: .failure(notTrusted))
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+    }
+    var pushedNotice = false
+    stub(router) { mock in
+      when(mock.push(with: any())).then { route in
+        if case .featurePresentationModule(.presentationErrorNotice) = route { pushedNotice = true }
+      }
     }
 
     await sut.doWork()
 
+    XCTAssertTrue(pushedNotice)
+    XCTAssertNil(sut.errorDialog)
+    verify(interactor, never()).declinePresentation()
+  }
+
+  func testDoWork_WhenRequestIsCoveredByRegistration_ThenDoesNotRefuse() async {
+    stubPresentation(returning: .success(makeRequest()))
+    var pushedConfig: PresentationRejectedUiConfig?
+    stubRejectedRoute { pushedConfig = $0 }
+
+    await sut.doWork()
+
+    XCTAssertNil(pushedConfig)
+    verify(interactor, never()).declinePresentation()
+    verify(interactor, never()).stopPresentation()
+  }
+
+  // MARK: - Decline
+
+  func testOnDecline_ThenShowsPopupAndSendsNothing() async {
+    sut.onDecline()
+    await Task.yield()
+
     XCTAssertTrue(sut.isConfirmationPopupVisible)
-    verify(router, never()).push(with: any())
-    verify(interactor).onDeviceEngagement()
+    verify(interactor, never()).onRejectRequest()
+    verify(router, never()).pop()
+  }
+
+  func testConfirmDecline_ThenSendsAccessDeniedEndsTraceAsDeclinedAndPops() async {
+    let rejectionSent = expectation(description: "access_denied sent")
+    stub(interactor) { mock in
+      when(mock.onRejectRequest()).then { rejectionSent.fulfill() }
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    sut.onDecline()
+    sut.confirmDecline()
+    await fulfillment(of: [rejectionSent], timeout: 1)
+
+    verify(interactor).onRejectRequest()
+    verify(router).pop()
+    verify(analyticsController).endTrace(finalAttributes: equal(to: declinedTrace), errorDescription: isNil())
+  }
+
+  func testOnErrorDialogAction_WhenDismiss_ThenClearsDialogAndHidesConfirmationPopup() {
+    sut.onDecline()
+
+    sut.onErrorDialogAction(.dismiss)
+
+    XCTAssertNil(sut.errorDialog)
+    XCTAssertFalse(sut.isConfirmationPopupVisible)
+    verify(router, never()).popTo(with: any())
+  }
+
+  // MARK: - Helpers
+
+  private func makeRequest(
+    isOverAsking: Bool = false,
+    supervisoryAuthorityURI: URL? = nil,
+    hasUnreadableRegistration: Bool = false
+  ) -> OnlineAuthenticationRequestSuccessModel {
+    OnlineAuthenticationRequestSuccessModel(
+      requestDataCells: [],
+      relyingParty: "EUDI Wallet Playground",
+      dataRequestInfo: "Data Request Info",
+      isTrusted: true,
+      isOverAsking: isOverAsking,
+      supervisoryAuthorityURI: supervisoryAuthorityURI,
+      hasUnreadableRegistration: hasUnreadableRegistration
+    )
+  }
+
+  private func stubPresentation(returning result: Result<OnlineAuthenticationRequestSuccessModel, Error>) {
+    stub(interactor) { mock in
+      when(mock.onDeviceEngagement()).thenReturn(result)
+      when(mock.declinePresentation()).thenDoNothing()
+      when(mock.stopPresentation()).thenDoNothing()
+    }
+  }
+
+  private func stubRejectedRoute(_ onRejected: @escaping (PresentationRejectedUiConfig) -> Void) {
+    stub(router) { mock in
+      when(mock.push(with: any())).then { route in
+        if case .featurePresentationModule(.presentationRejectedView(let config)) = route,
+           let config = config as? PresentationRejectedUiConfig {
+          onRejected(config)
+        }
+      }
+    }
   }
 }
 

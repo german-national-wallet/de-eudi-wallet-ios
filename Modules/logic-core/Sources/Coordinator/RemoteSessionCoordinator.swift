@@ -28,6 +28,7 @@ public protocol RemoteSessionCoordinator: Sendable {
   func initialize() async
   func requestReceived() async throws -> PresentationRequest
   func sendResponse(response: RequestItemConvertible) async throws
+  func declineResponse() async throws
 
   func getState() async -> PresentationState
   func getStream() -> AsyncStream<PresentationState>
@@ -50,8 +51,8 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
         guard let self else { return }
         switch status {
         case .error:
-          if let error = session.uiError?.errorDescription {
-            self.sendableCurrentValueSubject.setValue(.error(RuntimeError.customError(error)))
+          if let uiError = session.uiError {
+            self.sendableCurrentValueSubject.setValue(.error(uiError))
           } else {
             self.sendableCurrentValueSubject.setValue(.error(WalletCoreError.unableToPresentAndShare))
           }
@@ -74,7 +75,7 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
 
   public func requestReceived() async throws -> PresentationRequest {
     guard session.disclosedDocumentSets.isEmpty == false else {
-      throw session.uiError ?? .init(description: "Failed to Find known documents to send")
+      throw session.uiError ?? .init(description: "Failed to Find known documents to send", code: .noDocumentsAvailable)
     }
     return createRequest()
   }
@@ -83,6 +84,10 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
     try await session.sendResponse(userAccepted: true, itemsToSend: response.asRequestItems(), onCancel: nil) { url in
       self.sendableCurrentValueSubject.setValue(.responseSent(url))
     }
+  }
+    
+  public func declineResponse() async throws {
+    try await session.sendResponse(userAccepted: false, itemsToSend: [:], onCancel: nil, onSuccess: nil)
   }
 
   public func getState() async -> PresentationState {
@@ -103,11 +108,6 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   private func createRequest() -> PresentationRequest {
-    PresentationRequest(
-      items: session.disclosedDocumentSets.first ?? [],
-      relyingParty: session.readerCertIssuer ?? LocalizableStringKey.unknownVerifier.toString,
-      dataRequestInfo: session.readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
-      isTrusted: session.readerCertIssuerValid == true
-    )
+    session.makePresentationRequest()
   }
 }

@@ -61,7 +61,10 @@ public final class FeatureIssuanceAssembly: Assembly {
     .inObjectScope(ObjectScope.transient)
 
     container.register(DocumentOfferInteractor.self) { r in
-      DocumentOfferInteractorImpl(walletController: r.force(WalletKitController.self))
+      DocumentOfferInteractorImpl(
+        walletController: r.force(WalletKitController.self),
+        logger: r.force(Logging.self)
+      )
     }
     .inObjectScope(ObjectScope.transient)
 

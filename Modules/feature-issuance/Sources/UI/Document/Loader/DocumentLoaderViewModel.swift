@@ -19,7 +19,7 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
   private let successStateTimeout: Duration = .seconds(5)
 
   private let interactor: DocumentOfferInteractor
-  private let onFailure: (@Sendable () -> Void)?
+  private let onFailure: (@Sendable (Error) -> Void)?
   private let logger: Logging?
   private var issuanceStarted = false
   private var hasLeftSuccessState = false
@@ -33,7 +33,7 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
     router: Router,
     config: any UIConfigType,
     interactor: DocumentOfferInteractor,
-    onFailure: (@Sendable () -> Void)?,
+    onFailure: (@Sendable (Error) -> Void)?,
     logger: Logging? = nil
   ) {
     guard let config = config as? DocumentLoaderUiConfig else {
@@ -62,6 +62,7 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
     issuanceStarted = true
 
     let config = viewState.config
+    logger?.d("loader: issuing \(config.docOffers.count) offer(s) from \(config.issuerName)")
 
     let state = await Task.detached { () -> OfferResultPartialState in
       return await self.interactor.issueDocuments(
@@ -87,8 +88,8 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
           )
         )
       )
-    case .failure:
-      reportFailure()
+    case .failure(let error):
+      reportFailure(error)
     }
   }
 
@@ -109,13 +110,15 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
       logger?.d("loader: pending issuance resumed successfully")
       confirmSuccess()
       return true
-    case .failure:
+    case .failure(let error):
       logger?.d("loader: pending issuance resume failed")
-      reportFailure()
+      reportFailure(error)
       return true
     }
   }
 
+  /// Called by `ContentSuccessView` once the success animation completes, and by the watchdog if
+  /// it never does. Guarded so the screen leaves exactly once.
   func successAnimationFinished() {
     guard !hasLeftSuccessState else { return }
     hasLeftSuccessState = true
@@ -147,8 +150,9 @@ final class DocumentLoaderViewModel<Router: RouterHost>: ViewModel<Router, Docum
     }
   }
 
-  private func reportFailure() {
+  private func reportFailure(_ error: Error) {
+    logger?.e("loader: issuance failed: \(error.diagnosticDescriptor)")
     router.pop()
-    onFailure?()
+    onFailure?(error)
   }
 }

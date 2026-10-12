@@ -6,6 +6,7 @@
 import SwiftUI
 import logic_ui
 import logic_resources
+import feature_common
 
 struct WalletRevocationView<Router: RouterHost>: View {
 
@@ -16,55 +17,47 @@ struct WalletRevocationView<Router: RouterHost>: View {
   }
 
   var body: some View {
-    ContentScreenView(
-      canScroll: true,
-      allowBackGesture: false
-    ) {
-      VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE) {
-        ZStack {
-          RoundedRectangle(cornerRadius: 16)
-            .foregroundStyle(DSColor.surfaceContainer)
-            .frame(height: 260)
-            .frame(maxWidth: .infinity)
-            .accessibilityHidden(true)
-          
-          ThemeManager.shared.image.workInProgessLockIcon
-          
-        }
-        Text(.appOnboardingWalletRevocationIntroTitle)
-          .font(DSTypography.Title.large)
-          .fontWeight(DSStyle.FontWeight.medium_500)
-          .foregroundStyle(DSColor.onSurface)
+    VStack(spacing: 0) {
+      HeaderContentView(onBack: viewModel.onBackTapped)
 
+      ScrollView {
         VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-          bulletRow(icon: "key", text: .appOnboardingWalletRevocationIntroPara1)
-          bulletRow(icon: "lock", text: .appOnboardingWalletRevocationIntroPara2)
-        }
+          OnboardingIllustrationView(video: .phoneLost)
 
-        Spacer(minLength: DSStyle.Spacers.SPACING_LARGE)
+          Text(.appOnboardingWalletRevocationIntroTitle)
+            .font(DSTypography.Title.large)
+            .foregroundStyle(DSColor.onBackground)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("revocationIntroTitle")
 
-        DSPrimaryButton(
-          title: LocalizableStringKey.appOnboardingWalletRevocationIntroPrimButton.toString
-        ) {
-          viewModel.onPrimaryButtonTapped()
+          VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_EXTRA_SMALL) {
+            OnboardingBulletRow(
+              icon: Image(systemName: "key"),
+              text: .appOnboardingWalletRevocationIntroList1
+            )
+            OnboardingBulletRow(
+              icon: Image(systemName: "lock"),
+              text: .appOnboardingWalletRevocationIntroList2
+            )
+          }
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityIdentifier("revocationIntroPrimaryButton")
+        .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+        .padding(.top, DSStyle.Spacers.SPACING_MEDIUM_LARGE)
       }
-      .padding()
-      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-  }
 
-  private func bulletRow(icon: String, text: LocalizableStringKey) -> some View {
-    HStack(alignment: .top, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-      Image(systemName: icon)
-        .font(.system(size: 20))
-        .foregroundStyle(DSColor.onSurface)
-      Text(text)
-        .font(DSTypography.Body.large)
-        .foregroundStyle(DSColor.onSurfaceVariant)
-        .frame(maxWidth: .infinity, alignment: .leading)
+      DSPrimaryButton(
+        title: LocalizableStringKey.appOnboardingWalletRevocationIntroPrimButton.toString,
+        trailingIcon: Theme.shared.image.arrowForward
+      ) {
+        viewModel.onPrimaryButtonTapped()
+      }
+      .keyboardShortcut(.defaultAction)
+      .accessibilityIdentifier("revocationIntroPrimaryButton")
+      .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+      .padding(.top, DSStyle.Spacers.SPACING_SMALL)
+      .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
+      .background(DSColor.background.ignoresSafeArea(edges: .bottom))
     }
+    .background(DSColor.background)
   }
 }

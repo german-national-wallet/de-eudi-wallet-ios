@@ -21,32 +21,44 @@ import Combine
 
 public protocol SettingsTabInteractor: Sendable {
   func getAppVersion() -> String
+  func getAppBuildNumber() -> String
   func retrieveLogFileUrl() -> URL?
-  func retrieveChangeLogUrl() -> URL?
+  func retrieveRevocationCode() -> String?
 }
 
 final class SettingsTabInteractorImpl: SettingsTabInteractor {
 
   private let walletController: WalletKitController
   private let configLogic: ConfigLogic
+  private let secureEnclaveController: SecureEnclaveController
 
   init(
     walletController: WalletKitController,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    secureEnclaveController: SecureEnclaveController
   ) {
     self.walletController = walletController
     self.configLogic = configLogic
+    self.secureEnclaveController = secureEnclaveController
   }
 
   public func getAppVersion() -> String {
     return configLogic.appVersion
   }
 
+  func getAppBuildNumber() -> String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+  }
+
   func retrieveLogFileUrl() -> URL? {
     return walletController.retrieveLogFileUrl()
   }
 
-  func retrieveChangeLogUrl() -> URL? {
-    return configLogic.changelogUrl
+  func retrieveRevocationCode() -> String? {
+    guard let code = secureEnclaveController.retrieveDecryptedString(keyTag: .wpbWiRevocationCode),
+          !code.isEmpty else {
+      return nil
+    }
+    return code
   }
 }

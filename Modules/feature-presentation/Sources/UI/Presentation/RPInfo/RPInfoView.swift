@@ -10,13 +10,13 @@ import feature_common
 
 struct RPInfoView<Router: RouterHost>: View {
   @ObservedObject var viewModel: RPInfoViewModel<Router>
-  
+
   public init(
     viewModel: RPInfoViewModel<Router>
   ) {
     self.viewModel = viewModel
   }
-  
+
   var body: some View {
     ContentScreenView {
       ZStack {
@@ -29,23 +29,46 @@ struct RPInfoView<Router: RouterHost>: View {
           showDetailsSheet: $viewModel.isRequestInfoModalShowing
         )
         .shimmer(isLoading: viewModel.viewState.isLoading)
-        
-        if viewModel.isConfirmationPopupVisible {
-          ConfirmationPopupView(viewModel: viewModel.confirmationPopupViewModel)
+
+        if let dialog = viewModel.errorDialog {
+          PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
+            .transition(.opacity)
+            .zIndex(1)
         }
       }
       .ignoresSafeArea(edges: .bottom)
-      .animation(.spring, value: viewModel.isConfirmationPopupVisible)
+      .animation(.spring, value: viewModel.errorDialog)
       .task {
         if !viewModel.viewState.initialized {
           await viewModel.doWork()
         }
       }
     }
+    .centerDialog(
+      isPresented: $viewModel.isConfirmationPopupVisible,
+      icon: Theme.shared.image.infoCircleImage,
+      title: .confirmItendificationRefusal,
+      subtitle: .confirmItendificationRefusalMessage,
+      buttons: declineButtons
+    )
     .navigationBarBackButtonHidden()
     .background(EnableSwipeBackGesture())
   }
-  
+
+  private var declineButtons: [CustomAlertDialogConfig] {
+    [
+      .init(title: .pidPresentationDialogRpRejectionPrimButton, role: .destructive) { viewModel.confirmDecline() },
+      .init(
+        title: .pidPresentationDialogRpRejectionSecButton,
+        role: .secondary,
+        trailingIcon: Theme.shared.image.externalLink
+      ) {
+        viewModel.reportSuspicion()
+      },
+      .init(title: .pidPresentationDialogRpRejectionSecButton2, role: .secondary) {}
+    ]
+  }
+
   @MainActor
   @ViewBuilder
   private func RPInfoViewContent(
@@ -56,18 +79,18 @@ struct RPInfoView<Router: RouterHost>: View {
     viewDetailsAction: @escaping () -> Void,
     showDetailsSheet: Binding<Bool>
   ) -> some View {
-    
+
     VStack {
       HeaderContentView(onClose: {
         self.viewModel.router.pop()
       })
-      
+
       VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
         VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE_MEDIUM) {
           DSTitleLabel(.presentationConfirmationTitle([viewState.relyingParty.toString]))
             .lineLimit(nil)
             .multilineTextAlignment(.leading)
-          
+
           Text(viewState.relyingParty.toString)
             .font(DSTypography.Headline.small)
             .fontWeight(DSStyle.FontWeight.medium_500)
@@ -77,22 +100,22 @@ struct RPInfoView<Router: RouterHost>: View {
             .font(DSTypography.Body.large)
             .fontWeight(DSStyle.FontWeight.regular_400)
             .foregroundColor(DSColor.onSurfaceVariant)
-          
+
           Text(.presentationConfirmationDescription2([""]))
             .font(DSTypography.Body.large)
             .fontWeight(DSStyle.FontWeight.regular_400)
             .foregroundColor(DSColor.onSurfaceVariant)
         }
         Spacer()
-        
+
         HStack {
           DSSecondaryButton(title: LocalizableStringKey.reject.toString, action: declineAction)
           DSPrimaryButton(title: LocalizableStringKey.next.toString, action: continueAction)
             .accessibilityIdentifier("rpInfoNextButton")
         }
-        
+
         DSStyle.Spacers.VSpacer.medium()
-        
+
       }
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
       .padding(.vertical)

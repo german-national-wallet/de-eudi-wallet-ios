@@ -16,30 +16,16 @@
 import Foundation
 import logic_business
 import EudiWalletKit
-import Security
-
-struct VciConfig: Sendable {
-  public let issuerUrl: String
-  public let clientId: String
-  public let redirectUri: URL
-  public let walletProviderUrl: String
-  public let walletOTLPUrl: String
-}
-
-public struct ReaderConfig {
-  public let trustedCerts: [Data]
-
-  var trustedRootCertificates: [x5chain] {
-    trustedCerts.compactMap { certData in
-      guard let cert = SecCertificateCreateWithData(nil, certData as CFData) else {
-        return nil
-      }
-      return [cert]
-    }
-  }
-}
+import EudiEtsi1196x2
+import MdocSecurity18013
+import OpenID4VCI
 
 protocol WalletKitConfig: Sendable {
+
+  /**
+   * VCI Configuration
+   */
+  var issuersConfig: [String: VciConfig] { get }
 
   /**
    * VCI Configuration
@@ -50,10 +36,12 @@ protocol WalletKitConfig: Sendable {
    * VP Configuration
    */
   var vpConfig: OpenId4VpConfiguration { get }
+
   /**
-   * Reader Configuration
+   * Trust configuration: ETSI LoTE (List of Trusted Entities) trust sources,
+   * verification-context mappings and trust policies used for reader / issuer validation.
    */
-  var readerConfig: ReaderConfig { get }
+  var trustConfiguration: TrustConfiguration { get }
 
   /**
    * User authentication required accessing core's secure storage
@@ -82,16 +70,6 @@ protocol WalletKitConfig: Sendable {
 
   var pidIssuerName: String { get }
 
-  /**
-   * Issuer credential-configuration identifier for the mso_mdoc PID credential.
-   */
-  var pidMsoMdocConfigId: String { get }
-
-  /**
-   * Issuer credential-configuration identifier for the SD-JWT PID credential.
-   */
-  var pidSdJwtConfigId: String { get }
-
   var batchRefreshThreshold: Int { get }
 }
 
@@ -115,21 +93,22 @@ struct WalletKitConfigImpl: WalletKitConfig {
     configLogic.vciIssuerName ?? ""
   }
 
-  var pidMsoMdocConfigId: String {
-    configLogic.pidMsoMdocConfigId
-  }
-
-  var pidSdJwtConfigId: String {
-    configLogic.pidSdJwtConfigId
+  var issuersConfig: [String: VciConfig] {
+    (vciConfig ?? [:]).mapValues { config in
+      VciConfig(config: config, order: 0)
+    }
   }
 
   var vciConfig: [String: OpenId4VciConfiguration]? {
     let openId4VciConfigurations: [OpenId4VciConfiguration] = [
       .init(
-        credentialIssuerURL: configLogic.vciIssuerURL,
+        credentialIssuerURL: configLogic.vciIssuerURL.map(\.trimmingTrailingSlash),
+        clientId: getBundleNullableValue(key: "VCI_CLIENT_ID"),
         keyAttestationsConfig: .init(walletAttestationsProvider: walletKitAttestationProvider),
         authFlowRedirectionURI: URL(string: getBundleValue(key: "VCI_REDIRECT_URI"))!,
+        allowPlainJwtProof: true,
         requireDpop: true,
+        issuerMetadataPolicy: .requireSigned(issuerTrust: issuerMetadataTrust),
         cacheIssuerMetadata: true
       )
     ]
@@ -147,18 +126,63 @@ struct WalletKitConfigImpl: WalletKitConfig {
     }
   }
 
+  private var issuerMetadataTrust: IssuerTrust {
+    let trustSource: TrustSource = .staticList(StaticListTrustSource(rootCertificates: staticRootCertificates))
+    let trustManager = EtsiTrustManager(
+      source: trustSource.withContextTypeMappings(nil),
+      defaultVerificationContext: EtsiContextType.wrpac.verificationContext
+    )
+    return .byCertificateChain(certificateChainTrust: IssuerMetadataChainTrust(trustManager: trustManager))
+  }
+
   var vpConfig: OpenId4VpConfiguration {
     .init(
       clientIdSchemes: [.x509SanDns, .x509Hash],
-      preferredResponseMode: .directPostJWT
+      preferredResponseMode: .directPostJWT,
+      validateRegistrationCertificate: true
     )
   }
 
-  var readerConfig: ReaderConfig {
+  var trustConfiguration: TrustConfiguration {
+    let loteLocations = SupportedLists<NSString>(
+      pidProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/PIDProviders.jwt",
+      walletProviders: nil,
+      wrpacProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/WRPACProviders.jwt",
+      wrprcProviders: nil,
+      pubEaaProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/PubEAAProviders.jwt",
+      qeaProviders: nil,
+      eaaProviders: [:]
+    )
+
+    let classifications: EtsiContextTypeMappings = [
+      DocumentTypeIdentifier.mDocPid.rawValue: .pid,
+      DocumentTypeIdentifier.sdJwtPid.rawValue: .pid
+    ]
+
+    return TrustConfiguration(
+      trustSource: .staticList(
+        StaticListTrustSource(rootCertificates: staticRootCertificates)
+      ),
+      fallbackTrustSource: .etsi(
+        EtsiTrustSource(
+          loteLocations: loteLocations,
+          contextTypeMappings: classifications
+        )
+      ),
+      defaultPolicy: .warning,
+      // Applies to credential offers, including EAA issuers; the PID issuer sets the same policy in `vciConfig`
+      requireSignedMetadata: true,
+      statusTrustPolicy: .warning
+    )
+  }
+
+  var staticRootCertificates: [Data] {
     guard let certificateURLs = Bundle.main.urls(forResourcesWithExtension: "der", subdirectory: "Wallet/Certificates") else {
-      return .init(trustedCerts: [])
+      return []
     }
-    return .init(trustedCerts: certificateURLs.compactMap { try? Data(contentsOf: $0) })
+    return certificateURLs
+      .filter { !$0.lastPathComponent.hasPrefix("pidp-tls-pin-") }
+      .compactMap { try? Data(contentsOf: $0) }
   }
 
   var documentStorageServiceName: String {

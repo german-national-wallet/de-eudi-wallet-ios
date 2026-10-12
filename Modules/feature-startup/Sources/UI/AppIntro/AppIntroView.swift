@@ -71,7 +71,7 @@ struct AppIntroView<Router: RouterHost>: View {
       VideoAnimationView(
         asset: page.videoAsset,
         contentMode: .fill,
-        playCount: nil,
+        playCount: 1,
         isPaused: viewModel.viewState.isAnimationPaused
       )
       .frame(width: proxy.size.width, height: proxy.size.width / videoAspectRatio)
@@ -112,8 +112,8 @@ struct AppIntroView<Router: RouterHost>: View {
     .accessibilityLabel(
       Text(
         (isPaused
-         ? LocalizableStringKey.appOnboardingAnimationPlayA11y
-         : LocalizableStringKey.appOnboardingAnimationPauseA11y).toLocalizedStringKey
+         ? LocalizableStringKey.appOnboardingOnboarding1A11yAnimationPlay
+         : LocalizableStringKey.appOnboardingOnboarding1A11yAnimationPause).toLocalizedStringKey
       )
     )
     .accessibilityIdentifier("appIntroAnimationToggle")
@@ -143,7 +143,11 @@ struct AppIntroView<Router: RouterHost>: View {
       Spacer(minLength: DSStyle.Spacers.SPACING_MEDIUM)
 
       VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-        DSPageIndicator(current: page.number, total: AppIntroPage.count)
+        DSPageIndicator(
+          current: page.number,
+          total: AppIntroPage.count,
+          accessibilityLabel: page.paginationAccessibilityLabel
+        )
 
         VStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
           DSPrimaryButton(

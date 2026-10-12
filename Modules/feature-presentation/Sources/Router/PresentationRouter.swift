@@ -39,6 +39,8 @@ public final class PresentationRouter {
             PresentationInteractor.self,
             argument: presentationCoordinator as RemoteSessionCoordinator
           ),
+          pidRevokeInteractor: DIGraph.resolver.force(PIDRevokeInteractor.self),
+          deepLinkController: DIGraph.resolver.force(DeepLinkController.self),
           relyingParty: relyingParty,
           relyingPartyIsTrusted: relyingPartyIsTrusted,
           originator: originator,
@@ -46,8 +48,9 @@ public final class PresentationRouter {
           prefsController: DIGraph.resolver.force(PrefsController.self),
           analyticsController: DIGraph.resolver.force(AnalyticsController.self),
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
+          errorHandler: DIGraph.resolver.force(PresentationErrorHandler.self),
           items: dataUiModels?.compactMap({
-            $0 as? RequestDataUiModel
+              $0 as? RequestDataUiModel
           }),
           logger: DIGraph.resolver.force(Logging.self)
         )
@@ -66,6 +69,8 @@ public final class PresentationRouter {
           pinSessionInteractor: DIGraph.resolver.force(
             PinSessionInteractor.self
           ),
+          analyticsController: DIGraph.resolver.force(AnalyticsController.self),
+          errorHandler: DIGraph.resolver.force(PresentationErrorHandler.self),
           originator: originator
         )
       ).eraseToAnyView()
@@ -95,6 +100,7 @@ public final class PresentationRouter {
                 PinSessionInteractor.self
               ),
               analyticsController: DIGraph.resolver.force(AnalyticsController.self),
+              errorHandler: DIGraph.resolver.force(PresentationErrorHandler.self),
               originator: originator,
               relyingParty: relyingParty
             )
@@ -110,6 +116,7 @@ public final class PresentationRouter {
           ),
           originator: originator,
           analyticsController: DIGraph.resolver.force(AnalyticsController.self),
+          errorHandler: DIGraph.resolver.force(PresentationErrorHandler.self),
           logger: DIGraph.resolver.force(Logging.self)
         )
       ).eraseToAnyView()
@@ -146,6 +153,13 @@ public final class PresentationRouter {
           router: host,
           config: config
         )
+      ).eraseToAnyView()
+    case .presentationErrorNotice(config: let config):
+      PresentationErrorNoticeView(viewModel: .init(router: host, config: config)).eraseToAnyView()
+    case .presentationRejectedView(config: let config):
+      PresentationRejectedView(
+        config: config,
+        onDismiss: { host.popTo(with: .featureDashboardModule(.dashboard)) }
       ).eraseToAnyView()
     }
   }

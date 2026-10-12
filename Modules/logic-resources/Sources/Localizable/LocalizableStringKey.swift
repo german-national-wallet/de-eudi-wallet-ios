@@ -118,6 +118,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case requestCredentialOfferNoDocument
   case unableToIssueAndStore
   case missingMetadata
+  case issuerMetadataNotVerified
   case issueButton
   case cancelIssueSheetTitle
   case cancelIssueSheetCaption
@@ -221,6 +222,14 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidPresentationCredentialNotFoundTitle
   case pidPresentationCredentialNotFoundParagraph
   case pidPresentationCredentialNotFoundPrimButton
+  case pidPresentationOverAskingTitle
+  case pidPresentationOverAskingParagraph
+  case pidPresentationOverAskingPrimButton
+  case pidPresentationOverAskingSecButton
+  case pidPresentationRpUnregisteredTitle
+  case pidPresentationRpUnregisteredParagraph
+  case pidPresentationRpUnregisteredPrimButton
+  case pidPresentationRpUnregisteredSecButton
   case presentationConfirmationTitle([String])
   case presentationConfirmationDescription1([String])
   case presentationConfirmationDescription2([String])
@@ -571,6 +580,50 @@ public enum LocalizableStringKey: Equatable, Sendable {
 
   case pidPresentationRetryCounterRouteToOverview
 
+  case globalTraceIdTitle
+  case globalErrorCodeTitle
+  case globalToOverviewButton
+  case pidPresentationDialogRpUnkownTitle
+  case pidPresentationDialogRpUnkownParagraphCertFailed
+  case pidPresentationDialogRpUnkownPrimButton
+  case pidPresentationDialogRpUnkownSecButton
+  case pidPresentationDialogRpOveraskingTitle
+  case pidPresentationDialogRpOveraskingParagraphOverasking
+  case pidPresentationDialogRpOveraskingPrimButton
+  case pidPresentationDialogRpOveraskingSecButton
+    
+    case pidPresentationDialogRpRejectionTitle
+    case pidPresentationDialogRpRejectionParagraph
+    case pidPresentationDialogRpRejectionPrimButton
+    case pidPresentationDialogRpRejectionSecButton
+    case pidPresentationDialogRpRejectionSecButton2
+    case pidPresentationNoIssuedPidTitle
+    case pidPresentationNoIssuedPidParagraph
+    case pidPresentationNoIssuedPidPrimButton
+    case eaaPresentationCredentialNotFoundTitle
+    
+  case pidPresentationRetryCounterLockedTitle
+  case pidPresentationRetryCounterBlockedParagraph
+  case pidPresentationRetryCounterLockedPrimButton
+  case pidPresentationRetryCounterLockedSecButton
+  case pidPresentationRwscdAccountUnknownTitle
+  case pidPresentationRwscdAccountUnknownParagraph
+  case pidPresentationRwscdAccountUnknownPrimButton
+  case pidPresentationRwscdAccountUnknownSecButton
+  case pidPresentationRwscdAuthVerificationFailedTitle
+  case pidPresentationRwscdAuthVerificationFailedParagraph
+  case pidPresentationRwscdAuthVerificationFailedPrimButton
+  case eaaPresentationCredentialNotFoundParagraphCredentalNotAvailable
+  case globalGenericPresentationErrorTitle
+  case globalGenericPresentationErrorParagraph
+  case globalGenericPresentationErrorPrimButton
+  case globalNoInternetErrorTitle
+  case globalNoInternetErrorParagraph
+  case globalNoInternetErrorPrimButton
+
+  case settingsRevocationKeyButtonInital
+  case settingsRevocationKeyButtonActivated
+
   // MARK: Accessibility keys
   /// Spoken names for icon-only controls, which carry no title of their own. Copy comes from the Figma export.
   case globalBackButtonA11y
@@ -599,13 +652,51 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case appOnboardingOnboarding4Title
   case appOnboardingOnboarding4Paragraph
   case appOnboardingOnboarding4PrimButton
-  case appOnboardingAnimationPauseA11y
-  case appOnboardingAnimationPlayA11y
+  case appOnboardingOnboarding1A11yAnimationPause
+  case appOnboardingOnboarding1A11yAnimationPlay
+  case appOnboardingOnboarding1Pagination13A11y
+  case appOnboardingOnboarding2Pagination23A11y
+  case appOnboardingOnboarding3Pagination33A11y
+  case appOnboardingPaSetSuccessSheetTitle
+  case appOnboardingPaSetSuccessSheetParagraph
+  case appOnboardingPaSetSuccessSheetPrimButton
+  case appOnboardingPolicyIntroCheckboxLabelDev
+
+  // MARK: Platform authentication keys
+  case appOnboardingPaSetIntroTitleLoading
+  case appOnboardingPaSetSuccessTitle
+  case appOnboardingPaSetSuccessParagraph
+  case appOnboardingPaSetSuccessPrimButton
+  case appOnboardingPaSetErrorTitle
+  case appOnboardingPaSetErrorParagraph
+  case appOnboardingPaSetErrorParagraphIos
+  case appOnboardingPaSetErrorPrimButton
+
+  // MARK: Privacy policy keys
+  case appOnboardingPolicyIntroTitle
+  case appOnboardingPolicyIntroParagraph
+  case appOnboardingPolicyIntroList1
+  case appOnboardingPolicyIntroList2
+  case appOnboardingPolicyIntroList3
+  case appOnboardingPolicyIntroCheckboxLabel
+  case appOnboardingPolicyIntroPrimButton
+  case appOnboardingPolicyIntroTertiaryButton
+
+  // MARK: Push notification keys
+  case appOnboardingPushIntroTitle
+  case appOnboardingPushIntroParagraph
+  case appOnboardingPushIntroList1
+  case appOnboardingPushIntroList2
+  case appOnboardingPushIntroPrimButton
+  case appOnboardingPushIntroSecButton
+
+  // MARK: Setup success keys
+  case appOnboardingSetupSuccessTitle
 
   // MARK: Revocation keys
   case appOnboardingWalletRevocationIntroTitle
-  case appOnboardingWalletRevocationIntroPara1
-  case appOnboardingWalletRevocationIntroPara2
+  case appOnboardingWalletRevocationIntroList1
+  case appOnboardingWalletRevocationIntroList2
   case appOnboardingWalletRevocationIntroPrimButton
   case appOnboardingWalletRevocationSaveKeyTitle
   case appOnboardingWalletRevocationSaveKeyHeadline1
@@ -614,6 +705,25 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case appOnboardingWalletRevocationSaveKeyShareButton
   case appOnboardingWalletRevocationSaveKeyCheckboxLabel
   case appOnboardingWalletRevocationSaveKeyPrimButton
+
+  case settingsOverviewTitle
+  case settingsOverviewListSupport
+  case settingsOverviewHeadlineSettings
+  case settingsOverviewListRevocation
+  case settingsOverviewListNotification
+  case settingsOverviewHeadlineLegal
+  case settingsOverviewListAboutEudi
+  case settingsOverviewListAccessibility
+  case settingsOverviewListPrivacyPolicy
+  case settingsOverviewListTermsAndConditions
+  case settingsOverviewListImpress
+  case settingsRevocationKeyTitle
+  case settingsRevocationSetupParagraph
+  case settingsRevocationKeyBanner
+  case settingsRevocationKeyHeadlineKey
+  case settingsRevocationKeyCopyButton
+  case settingsRevocationKeyCopiedButton
+  case menuRevocationKeyShareButton
 
   case eaaIssuerInfoTitle
   

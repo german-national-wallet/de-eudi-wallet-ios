@@ -29,7 +29,7 @@ public actor RemoteKeyStorage: SecureKeyStorage {
     return Dictionary(uniqueKeysWithValues: dicts.first!.compactMap(Self.keyChainDataValue))
   }
 
-  public func readKeyData(id: String, index: Int) throws -> [String: Data] {
+  public func readKeyData(id: String, index: Int, authenticationContext: ThreadSafeAuthContext) throws -> [String: Data] {
     guard let dicts = try loadData(serviceName: serviceName, accessGroup: accessGroup, id: "\(id)_\(index)", status: .issued, dataToLoadType: .key), !dicts.isEmpty else { return [:] }
     return Dictionary(uniqueKeysWithValues: dicts.first!.compactMap(Self.keyChainDataValue))
   }

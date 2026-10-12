@@ -22,14 +22,14 @@ public protocol WPBInteractor {
 public final class WPBInteractorImpl: WPBInteractor {
 
   private let repository: WPBRepository
-  private let mdvmRepository: MDVMRepository
+  private let mdvmInteractor: MDVMInteractor
 
   init(
     repository: WPBRepository,
-    mdvmRepository: MDVMRepository
+    mdvmInteractor: MDVMInteractor
   ) {
     self.repository = repository
-    self.mdvmRepository = mdvmRepository
+    self.mdvmInteractor = mdvmInteractor
   }
 
   public var walletInstanceID: String? {
@@ -52,7 +52,7 @@ public final class WPBInteractorImpl: WPBInteractor {
   }
 
   public func issueAttestation(wiaPrivateKey: SecKey) async throws -> String {
-    guard let mdvmStoredRegistration = mdvmRepository.getStoredRegistration() else {
+    guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw WPBRepositoryError.notRegistered
     }
     guard let wbWIID = walletInstanceID else {
@@ -70,7 +70,7 @@ public final class WPBInteractorImpl: WPBInteractor {
   }
 
   public func deleteAccount() async throws {
-    guard let mdvmStoredRegistration = mdvmRepository.getStoredRegistration() else {
+    guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw WPBRepositoryError.notRegistered
     }
     guard let wbWIID = walletInstanceID else {

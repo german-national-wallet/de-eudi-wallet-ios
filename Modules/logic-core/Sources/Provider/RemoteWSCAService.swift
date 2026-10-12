@@ -61,11 +61,6 @@ public actor RemoteWSCAService: SecureArea {
     )
 
     let wte = createResponse?.rwscaWTE ?? ""
-    let docType = keyOptions?.additionalOptions.flatMap { String(data: $0, encoding: .utf8) }
-
-    if let docType {
-      _ = secureEnclaveController?.storeStringInKeychain(value: wte, keyTag: SecureEnclaveKeys.custom(docType))
-    }
 
     guard let rwscaWIKeys = createResponse?.rwscaWIKeys else {
       throw SecureAreaError("Failed to retrieve response object")
@@ -84,8 +79,8 @@ public actor RemoteWSCAService: SecureArea {
         coseKeys.append(coseKey)
       }
     }
-    if docType == nil, let firstKey = coseKeys.first, !wte.isEmpty {
-      _ = secureEnclaveController?.storeStringInKeychain(value: wte, keyTag: .custom(Self.wteKeychainTag(for: firstKey)))
+    if let firstKey = coseKeys.first, !wte.isEmpty, let tag = Self.wteKeychainTag(for: firstKey) {
+      _ = secureEnclaveController?.storeStringInKeychain(value: wte, keyTag: .custom(tag))
     }
     try await storeKeyMetaData(id: id, keyMetaDatas: keyMetaDataList, keyOptions: keyOptions ?? KeyOptions(), credentialOptions: credentialOptions)
     return coseKeys
@@ -95,8 +90,10 @@ public actor RemoteWSCAService: SecureArea {
     "rwsca_wte_\(x)"
   }
 
-  private static func wteKeychainTag(for key: CoseKey) -> String {
-    wteKeychainTag(forKeyX: Data(key.x).base64URLEncodedString())
+  private static func wteKeychainTag(for key: CoseKey) -> String? {
+    let x963 = key.x963Representation
+    guard x963.count >= 33 else { return nil }
+    return wteKeychainTag(forKeyX: x963.subdata(in: 1..<33).base64URLEncodedString())
   }
 
   public func getPublicKey(id: String, index: Int, curve: MdocDataModel18013.CoseEcCurve) async throws -> MdocDataModel18013.CoseKey {
@@ -108,20 +105,21 @@ public actor RemoteWSCAService: SecureArea {
     try await storage.deleteKeyBatch(id: id, startIndex: startIndex, batchSize: batchSize)
   }
 
+  private func deleteStoredWTEs(id: String, startIndex: Int, batchSize: Int) async {
+    guard batchSize > 0 else { return }
+    for index in startIndex..<(startIndex + batchSize) {
+      guard let publicKey = try? await getKeyMetaData(for: id, index: index).publicKey,
+            let tag = Self.wteKeychainTag(for: publicKey) else { continue }
+      secureEnclaveController?.deleteKeychainItem(keyTag: .custom(tag))
+    }
+  }
+
   public func deleteKeyInfo(id: String) async throws {
     try await storage.deleteKeyInfo(id: id)
   }
 
-  private func deleteStoredWTEs(id: String, startIndex: Int, batchSize: Int) async {
-    guard batchSize > 0 else { return }
-    for index in startIndex..<(startIndex + batchSize) {
-      guard let publicKey = try? await getKeyMetaData(for: id, index: index).publicKey else { continue }
-      secureEnclaveController?.deleteKeychainItem(keyTag: .custom(Self.wteKeychainTag(for: publicKey)))
-    }
-  }
-
-  public func signature(id: String, index: Int, algorithm: MdocDataModel18013.SigningAlgorithm, dataToSign: Data, unlockData: Data?) async throws -> Data {
-    let keyMetaData = try await getKeyMetaData(for: id, index: index)
+  public func signature(id: String, index: Int, algorithm: MdocDataModel18013.SigningAlgorithm, dataToSign: Data, unlockData: Data?, authenticationContext: ThreadSafeAuthContext) async throws -> Data {
+    let keyMetaData = try await getKeyMetaData(for: id, index: index, authenticationContext: authenticationContext)
 
     guard let pinSessionToken = secureEnclaveController?.retrieveStringFromKeychain(keyTag: .pinSessionToken) else {
       throw SecureAreaError("PIN session token is required for signing")
@@ -140,7 +138,7 @@ public actor RemoteWSCAService: SecureArea {
     return rawSignature
   }
 
-  public func keyAgreement(id: String, index: Int, publicKey: MdocDataModel18013.CoseKey, unlockData: Data?) async throws -> SharedSecret {
+  public func keyAgreement(id: String, index: Int, publicKey: MdocDataModel18013.CoseKey, unlockData: Data?, authenticationContext: ThreadSafeAuthContext) async throws -> SharedSecret {
     throw SecureAreaError("Not implemented")
   }
 
@@ -187,8 +185,8 @@ public actor RemoteWSCAService: SecureArea {
     return Data(rBytes + sBytes)
   }
 
-  private func getKeyMetaData(for id: String, index: Int) async throws -> KeyMetaData {
-    let keyDataDict = try await storage.readKeyData(id: id, index: index)
+  private func getKeyMetaData(for id: String, index: Int, authenticationContext: ThreadSafeAuthContext = ThreadSafeAuthContext()) async throws -> KeyMetaData {
+    let keyDataDict = try await storage.readKeyData(id: id, index: index, authenticationContext: authenticationContext)
     guard let jsonData = keyDataDict[kSecValueData as String] else {
       throw SecureAreaError("Key mapping not found")
     }
@@ -220,6 +218,9 @@ public actor RemoteWSCAService: SecureArea {
     keyOptions: KeyOptions,
     credentialOptions: CredentialOptions
   ) async throws {
+    try? await storage.deleteKeyInfo(id: id)
+    try? await storage.deleteKeyBatch(id: id, startIndex: 0, batchSize: credentialOptions.batchSize)
+
     var dicts: [[String: Data]] = []
 
     for keyMetaData in keyMetaDatas {
@@ -237,7 +238,10 @@ public actor RemoteWSCAService: SecureArea {
         kSecValueData as String: jsonData
       ])
     }
-    let kbi = KeyBatchInfo(secureAreaName: Self.name, crv: .P256, usedCounts: Array(repeating: 0, count: credentialOptions.batchSize), credentialPolicy: credentialOptions.credentialPolicy)
+    var batchKeyOptions = keyOptions
+    batchKeyOptions.secureAreaName = Self.name
+    batchKeyOptions.curve = .P256
+    let kbi = KeyBatchInfo(keyOptions: batchKeyOptions, usedCounts: Array(repeating: 0, count: credentialOptions.batchSize), credentialPolicy: credentialOptions.credentialPolicy)
     if let data = kbi.toData() {
       try await storage.writeKeyInfo(id: id, dict: [kSecValueData as String: data, kSecAttrDescription as String: Self.defaultEcCurve.jwkName.data(using: .utf8)!])
     }

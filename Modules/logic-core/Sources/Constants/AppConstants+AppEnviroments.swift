@@ -23,5 +23,25 @@ public enum AppEnvironment {
     URL(string: "PRIVACY_POLICY_LINK".valueFromBundle)
   }
 
+  public static var aboutLink: URL? {
+    URL(string: "ABOUT_LINK".valueFromBundle)
+  }
+
+  public static var accessibilityStatementLink: URL? {
+    URL(string: "ACCESSIBILITY_STATEMENT_LINK".valueFromBundle)
+  }
+
+  public static var termsAndConditionsLink: URL? {
+    URL(string: "TERMS_AND_CONDITIONS_LINK".valueFromBundle)
+  }
+
+  public static var imprintLink: URL? {
+    URL(string: "IMPRINT_LINK".valueFromBundle)
+  }
+
   public static let ausweiseSdkSimulatorIdentifier = "Simulator"
+
+  public static var reportIssueUrl: URL? {
+    URL(string: "REPORT_ISSUE_URL".valueFromBundle)
+  }
 }

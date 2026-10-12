@@ -87,7 +87,7 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
       let qrImage = DeviceEngagement.getQrCodeImage(qrCode: deviceEngagement),
       let qrImageData = qrImage.pngData()
     else {
-      throw session.uiError ?? .init(description: "Failed To Generate QR Code")
+      throw session.uiError ?? .init(description: "Failed To Generate QR Code", code: .internalError)
     }
     self.sendableCurrentValueSubject.setValue(.qrReady(imageData: qrImageData))
     return qrImage
@@ -95,7 +95,7 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
 
   public func requestReceived() async throws -> PresentationRequest {
     guard session.disclosedDocumentSets.isEmpty == false else {
-      throw session.uiError ?? .init(description: "Failed to Find knonw documents to send")
+      throw session.uiError ?? .init(description: "Failed to Find knonw documents to send", code: .noDocumentsAvailable)
     }
     return createRequest()
   }
@@ -122,11 +122,6 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
   }
 
   private func createRequest() -> PresentationRequest {
-    PresentationRequest(
-      items: session.disclosedDocumentSets.first ?? [],
-      relyingParty: session.readerCertIssuer ?? LocalizableStringKey.unknownVerifier.toString,
-      dataRequestInfo: session.readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
-      isTrusted: session.readerCertIssuerValid == true
-    )
+    session.makePresentationRequest()
   }
 }

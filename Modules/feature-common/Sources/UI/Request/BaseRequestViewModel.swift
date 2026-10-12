@@ -143,6 +143,22 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
+  public func onRefusedByPolicy(
+    reason: PresentationRejectedUiConfig.Reason,
+    reportURI: URL? = nil,
+    teardown: () async -> Void
+  ) async {
+    setState { $0.copy(isLoading: false, allowShare: false).copy(error: nil) }
+    await teardown()
+    router.push(
+      with: .featurePresentationModule(
+        .presentationRejectedView(
+          config: PresentationRejectedUiConfig(reason: reason, reportURI: reportURI)
+        )
+      )
+    )
+  }
+
   public func onReceivedItems(
     with items: [RequestDataUiModel],
     title: LocalizableStringKey,

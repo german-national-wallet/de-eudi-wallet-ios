@@ -12,12 +12,6 @@ import logic_business
 
 final class WalletKitConfigTests: XCTestCase {
 
-  func testTrustedRootCertificates_WhenCertificateDataIsInvalid_ThenReturnsEmptyCertificates() {
-    let config = ReaderConfig(trustedCerts: [Data("invalid-certificate".utf8)])
-
-    XCTAssertTrue(config.trustedRootCertificates.isEmpty)
-  }
-
   func testPIDIssuerName_WhenConfigLogicHasIssuerName_ThenReturnsIssuerName() {
     let configLogic = MockConfigLogic()
     stub(configLogic) { mock in

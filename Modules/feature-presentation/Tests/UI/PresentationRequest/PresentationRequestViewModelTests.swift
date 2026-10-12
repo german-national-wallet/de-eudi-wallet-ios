@@ -18,6 +18,8 @@ final class PresentationRequestViewModelTests: XCTestCase {
   private var router: MockRouterHost!
   private var interactor: MockPresentationInteractor!
   private var pinSessionInteractor: MockPinSessionInteractor!
+  private var analyticsController: MockAnalyticsController!
+  private var errorHandler: MockPresentationErrorHandler!
   private var sut: PresentationRequestViewModel<MockRouterHost>!
 
   override func setUp() {
@@ -26,16 +28,28 @@ final class PresentationRequestViewModelTests: XCTestCase {
     router = MockRouterHost()
     interactor = MockPresentationInteractor()
     pinSessionInteractor = MockPinSessionInteractor()
+    analyticsController = MockAnalyticsController()
+    errorHandler = MockPresentationErrorHandler()
     sut = PresentationRequestViewModel(
       router: router,
       interactor: interactor,
       pinSessionInteractor: pinSessionInteractor,
+      analyticsController: analyticsController,
+      errorHandler: errorHandler,
       originator: .featureDashboardModule(.dashboard)
     )
+    stub(analyticsController) { mock in
+      when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
+    }
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture()))
+    }
   }
 
   override func tearDown() {
     sut = nil
+    errorHandler = nil
+    analyticsController = nil
     pinSessionInteractor = nil
     interactor = nil
     router = nil
@@ -66,17 +80,40 @@ final class PresentationRequestViewModelTests: XCTestCase {
     verify(interactor).onDeviceEngagement()
   }
 
-  func testDoWork_WhenDeviceEngagementFails_ThenShowsEmptyRequest() async {
+  func testDoWork_WhenDeviceEngagementFails_ThenShowsErrorDialogFromHandler() async {
     stub(interactor) { mock in
       when(mock.onDeviceEngagement()).thenReturn(.failure(TestNSError.generic))
     }
 
     await sut.doWork()
 
-    XCTAssertFalse(sut.viewState.isLoading)
-    XCTAssertTrue(sut.viewState.initialized)
-    XCTAssertTrue(sut.viewState.items.isEmpty)
+    XCTAssertEqual(sut.errorDialog?.traceId, "trace-id")
+    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
     verify(interactor).onDeviceEngagement()
+    verify(analyticsController).startTrace(name: any(), initialAttributes: any())
+    verify(router, never()).push(with: any())
+  }
+
+  func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRoute() async {
+    var didPushNoticeRoute = false
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+    }
+    stub(interactor) { mock in
+      when(mock.onDeviceEngagement()).thenReturn(.failure(TestNSError.generic))
+    }
+    stub(router) { mock in
+      when(mock.push(with: any())).then { route in
+        if case .featurePresentationModule(.presentationErrorNotice) = route {
+          didPushNoticeRoute = true
+        }
+      }
+    }
+
+    await sut.doWork()
+
+    XCTAssertTrue(didPushNoticeRoute)
+    XCTAssertNil(sut.errorDialog)
   }
 
   func testOnShare_WhenResponsePrepareSucceeds_ThenPushesBiometryRoute() async {

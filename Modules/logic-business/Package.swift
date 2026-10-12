@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "logic-business",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v17)],
   products: [
     .library(
       name: "logic-business",
@@ -40,7 +40,7 @@ let package = Package(
     ),
     .package(
       url: "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
-      revision: "01d673c8804be1254b1e29c9cc66cddc822af216"
+      revision: "0a71c5f2d11d01261337f2a3c40f936606314b70"
     ),
     .package(name: "logic-test", path: "../logic-test")
   ],

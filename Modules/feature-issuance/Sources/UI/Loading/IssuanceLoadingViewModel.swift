@@ -82,7 +82,7 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
   func configureErrorPopupViewModel(error: BackendError, fallbackTraceID: String = "") {
     errorPopupViewModel.configure(backendError: error, analyticsTraceId: fallbackTraceID) {
       self.isErrorPopupVisible = false
-      self.closeButtonTapped()
+      self.cancelToDashboard()
     }
   }
 

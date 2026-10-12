@@ -10,6 +10,7 @@ import Testing
 @testable import wallet_backend
 @testable import logic_api
 @testable import logic_business
+@testable import logic_core
 @testable import logic_test
 
 struct WPBInteractorTests {
@@ -81,9 +82,8 @@ struct WPBInteractorTests {
   @Test
   func issueAttestation_WhenAllDependenciesReady_ReturnsToken() async throws {
     let repository = MockWPBRepository()
-    let mdvmRepo = FakeMDVMRepository()
-    mdvmRepo.storedRegistration = MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token")
-    let sut = makeSUT(repository: repository, mdvmRepository: mdvmRepo)
+    let mdvmInteractor = FakeMDVMInteractor(token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token"))
+    let sut = makeSUT(repository: repository, mdvmInteractor: mdvmInteractor)
 
     stub(repository) { mock in
       when(mock.getStoredWIID()).thenReturn("wi-id-123")
@@ -103,7 +103,7 @@ struct WPBInteractorTests {
 
   @Test
   func issueAttestation_WhenMDVMRegistrationMissing_ThrowsNotRegistered() async {
-    let sut = makeSUT(mdvmRepository: FakeMDVMRepository())
+    let sut = makeSUT(mdvmInteractor: FakeMDVMInteractor())
 
     await #expect(throws: WPBRepositoryError.notRegistered) {
       _ = try await sut.issueAttestation(wiaPrivateKey: wiaPrivateKey)
@@ -113,10 +113,9 @@ struct WPBInteractorTests {
   @Test
   func issueAttestation_WhenWIIDMissing_ThrowsNotRegistered() async {
     let repository = MockWPBRepository()
-    let mdvmRepo = FakeMDVMRepository()
-    mdvmRepo.storedRegistration = MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token")
+    let mdvmInteractor = FakeMDVMInteractor(token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token"))
     stub(repository) { when($0.getStoredWIID()).thenReturn(nil) }
-    let sut = makeSUT(repository: repository, mdvmRepository: mdvmRepo)
+    let sut = makeSUT(repository: repository, mdvmInteractor: mdvmInteractor)
 
     await #expect(throws: WPBRepositoryError.notRegistered) {
       _ = try await sut.issueAttestation(wiaPrivateKey: wiaPrivateKey)
@@ -128,9 +127,8 @@ struct WPBInteractorTests {
   @Test
   func deleteAccount_WhenRegisteredAndWIIDStored_CallsRepoAndDeletesWIID() async throws {
     let repository = MockWPBRepository()
-    let mdvmRepo = FakeMDVMRepository()
-    mdvmRepo.storedRegistration = MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token")
-    let sut = makeSUT(repository: repository, mdvmRepository: mdvmRepo)
+    let mdvmInteractor = FakeMDVMInteractor(token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token"))
+    let sut = makeSUT(repository: repository, mdvmInteractor: mdvmInteractor)
 
     stub(repository) { mock in
       when(mock.getStoredWIID()).thenReturn("wi-id-123")
@@ -152,20 +150,97 @@ struct WPBInteractorTests {
 
   @Test
   func deleteAccount_WhenMDVMRegistrationMissing_ThrowsNotRegistered() async {
-    let sut = makeSUT(mdvmRepository: FakeMDVMRepository())
+    let sut = makeSUT(mdvmInteractor: FakeMDVMInteractor())
 
     await #expect(throws: WPBRepositoryError.notRegistered) {
       try await sut.deleteAccount()
     }
   }
+  
+  @Test
+  func issueAttestation_UsesTokenFromEnsureFreshMDVMToken() async throws {
+    let repository = MockWPBRepository()
+    let mdvmInteractor = FakeMDVMInteractor(
+      token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "renewed-token")
+    )
+    stub(repository) { mock in
+      when(mock.getStoredWIID()).thenReturn("wi-id-123")
+      when(mock.fetchChallenge()).thenReturn("challenge-value")
+      when(mock.issueAttestation(
+        mdvmToken: equal(to: "renewed-token"),
+        authChallenge: equal(to: "challenge-value"),
+        wbWIID: equal(to: "wi-id-123"),
+        wiaPrivateKey: any()
+      )).thenReturn(WPBAttestationResponse(wbWIA: "attestation-token"))
+    }
 
+    let result = try await makeSUT(repository: repository, mdvmInteractor: mdvmInteractor)
+      .issueAttestation(wiaPrivateKey: wiaPrivateKey)
+
+    #expect(result == "attestation-token")
+    #expect(mdvmInteractor.ensureFreshMDVMTokenCallCount == 1)
+  }
+
+  @Test
+  func issueAttestation_WhenTokenRenewalThrows_PropagatesErrorWithoutCallingRepository() async {
+    let repository = MockWPBRepository()
+    let sut = makeSUT(repository: repository, mdvmInteractor: FakeMDVMInteractor(error: StubError()))
+
+    await #expect(throws: StubError()) {
+      _ = try await sut.issueAttestation(wiaPrivateKey: wiaPrivateKey)
+    }
+
+    verify(repository, never()).fetchChallenge()
+    verify(repository, never()).issueAttestation(
+      mdvmToken: any(), authChallenge: any(), wbWIID: any(), wiaPrivateKey: any()
+    )
+  }
+
+  @Test
+  func deleteAccount_UsesTokenFromEnsureFreshMDVMToken() async throws {
+    let repository = MockWPBRepository()
+    let mdvmInteractor = FakeMDVMInteractor(
+      token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "renewed-token")
+    )
+    stub(repository) { mock in
+      when(mock.getStoredWIID()).thenReturn("wi-id-123")
+      when(mock.fetchChallenge()).thenReturn("challenge-value")
+      when(mock.deleteAccount(
+        mdvmToken: equal(to: "renewed-token"),
+        authChallenge: equal(to: "challenge-value"),
+        wbWIID: equal(to: "wi-id-123")
+      )).thenDoNothing()
+      when(mock.deleteWIID()).thenDoNothing()
+      when(mock.deleteRevocationCode()).thenDoNothing()
+    }
+
+    try await makeSUT(repository: repository, mdvmInteractor: mdvmInteractor).deleteAccount()
+
+    #expect(mdvmInteractor.ensureFreshMDVMTokenCallCount == 1)
+    verify(repository).deleteAccount(
+      mdvmToken: equal(to: "renewed-token"), authChallenge: any(), wbWIID: any()
+    )
+  }
+
+  @Test
+  func deleteAccount_WhenTokenRenewalThrows_PropagatesErrorAndKeepsLocalData() async {
+    let repository = MockWPBRepository()
+    let sut = makeSUT(repository: repository, mdvmInteractor: FakeMDVMInteractor(error: StubError()))
+
+    await #expect(throws: StubError()) {
+      try await sut.deleteAccount()
+    }
+
+    verify(repository, never()).deleteWIID()
+    verify(repository, never()).deleteRevocationCode()
+  }
   // MARK: - Helpers
 
   private func makeSUT(
     repository: WPBRepository = MockWPBRepository(),
-    mdvmRepository: MDVMRepository = FakeMDVMRepository()
+    mdvmInteractor: MDVMInteractor = FakeMDVMInteractor()
   ) -> WPBInteractorImpl {
-    WPBInteractorImpl(repository: repository, mdvmRepository: mdvmRepository)
+    WPBInteractorImpl(repository: repository, mdvmInteractor: mdvmInteractor)
   }
 
   private static func makePrivateKey() -> SecKey {
@@ -181,11 +256,18 @@ struct WPBInteractorTests {
   }
 }
 
-private final class FakeMDVMRepository: MDVMRepository {
-  var storedRegistration: MDVMStoredRegistration?
+private final class FakeMDVMInteractor: MDVMInteractor {
+  private let result: Result<MDVMStoredRegistration?, Error>
+  private(set) var ensureFreshMDVMTokenCallCount = 0
 
-  func getStoredRegistration() -> MDVMStoredRegistration? { storedRegistration }
-  func fetchChallenge() async throws -> String { "" }
-  func register(payload: MDVMRegistrationPayload, authChallenge: String, skipIntegrityChecks: Bool, privateKey: SecKey) async throws {}
-  func renew(payload: MDVMRenewalPayload, mdvmWIID: String, authChallenge: String, skipIntegrityChecks: Bool, privateKey: SecKey) async throws {}
+  init(token: MDVMStoredRegistration? = nil, error: Error? = nil) {
+    result = error.map { .failure($0) } ?? .success(token)
+  }
+
+  func ensureFreshMDVMToken() async throws -> MDVMStoredRegistration? {
+    ensureFreshMDVMTokenCallCount += 1
+    return try result.get()
+  }
 }
+
+private struct StubError: Error, Equatable {}

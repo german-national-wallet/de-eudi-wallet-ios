@@ -48,6 +48,7 @@ public protocol ImageManagerProtocol: Sendable {
   var euditext: Image { get }
   var walletVerified: Image { get }
   var bell: Image { get }
+  var sync: Image { get }
   var menuIcon: Image { get }
   var filterMenuIcon: Image { get }
   var bookmarkIcon: Image { get }
@@ -95,12 +96,15 @@ public protocol ImageManagerProtocol: Sendable {
   var demoPids2: Image { get }
   var eidLogo: Image { get }
   var securityCheckIcon: Image { get }
+  var pushNotificationConsent: Image { get }
+  var warningOutline: Image { get }
   var personalausweisLogo: Image { get }
   var transportPinLetter: Image { get }
   var tranportPinEnvelope: Image { get }
   var phoneIPhone: Image { get }
   var phone: Image { get }
   var checkCircle: Image { get }
+  var check: Image { get }
   var orangeRetryError: Image { get }
   var ausweisPinAndCard: Image { get }
   var setupWalletPin: Image { get }
@@ -131,6 +135,8 @@ public protocol ImageManagerProtocol: Sendable {
   var help: Image { get }
   var buildingBlocks: Image { get }
   var externalLink: Image { get }
+  var presentationAccessDenied: Image { get }
+  var closeIcon: Image { get }
   var burgeramtInfo: Image { get }
   var pinCodeAsset: Image { get }
   var pinIllusItem: Image { get }
@@ -138,6 +144,12 @@ public protocol ImageManagerProtocol: Sendable {
   var tabbarActivity: Image { get }
   var tabbarSettings: Image { get }
   var tabbarQRReader: Image { get }
+  var presentationTrustErrorInfo: Image { get }
+  var presentationPIDMissingErrorInfo: Image { get }
+  var presentationCredentialMissingErrorInfo: Image { get }
+  var presentationWrongPinErrorInfo: Image { get }
+  var walletKey: Image { get }
+  var notification: Image { get }
 }
 
 final class ImageManager: ImageManagerProtocol {
@@ -176,6 +188,7 @@ final class ImageManager: ImageManagerProtocol {
     case euditext = "EUDI-text"
     case walletVerified = "wallet-verified"
     case bell
+    case sync = "arrow.triangle.2.circlepath"
     case menuIcon = "line.3.horizontal"
     case filterMenuIcon = "filter-menu-icon"
     case bookmarkIcon = "bookmark"
@@ -220,12 +233,15 @@ final class ImageManager: ImageManagerProtocol {
     case demoPids2 = "demo_pids2"
     case eidLogo = "eid_logo"
     case securityCheckIcon = "security_check_icon"
+    case pushNotificationConsent = "push_notification_consent"
+    case warningOutline = "warning_outline"
     case personalausweisLogo = "personalausweis-logo"
     case tranportPinEnvelope = "ausweis_envelope"
     case tranportPinLetter = "transport_letter_pin"
     case phoneIPhone = "phone-iphone"
     case phone = "phone"
     case checkCircle = "check-circle"
+    case check
     case orangeRetryError = "orange-close"
     case ausweisPinAndCard = "ausweis_pin_and_card"
     case setupWalletPin = "setup_pin_phone_icon"
@@ -255,6 +271,8 @@ final class ImageManager: ImageManagerProtocol {
     case help = "question_icon"
     case buildingBlocks = "building_blocks"
     case externalLink = "external_link"
+    case presentationAccessDenied = "presentation_access_denied"
+    case closeIcon = "icon_close"
     case burgeramtInfo = "burgeramt_info"
     case pinCodeAsset = "pin_code_assets"
     case pinIllusItem = "pin_illus_item"
@@ -262,6 +280,12 @@ final class ImageManager: ImageManagerProtocol {
     case tabbarActivity = "icon-activities"
     case tabbarSettings = "icon-settings"
     case tabbarQRReader = "icon-qr"
+    case presentationTrustErrorInfo = "presentation_trust_error_info"
+    case presentationPIDMissingErrorInfo = "presentation_PID_missing_error_info"
+    case presentationCredentialMissingErrorInfo = "presentation_credential_missing_error_info"
+    case presentationWrongPinErrorInfo = "presentation_wrong_pin_error_info"
+    case walletKey = "key_icon"
+    case notification = "notification_icon"
   }
 
   // MARK: - Properties
@@ -362,6 +386,9 @@ final class ImageManager: ImageManagerProtocol {
   }
   var bell: Image {
     Image(systemName: ImageEnum.bell.rawValue)
+  }
+  var sync: Image {
+    Image(systemName: ImageEnum.sync.rawValue)
   }
   var menuIcon: Image {
     Image(systemName: ImageEnum.menuIcon.rawValue)
@@ -504,6 +531,12 @@ final class ImageManager: ImageManagerProtocol {
   var securityCheckIcon: Image {
       Image(ImageEnum.securityCheckIcon.rawValue, bundle: bundle)
   }
+  var pushNotificationConsent: Image {
+    Image(ImageEnum.pushNotificationConsent.rawValue, bundle: bundle)
+  }
+  var warningOutline: Image {
+    Image(ImageEnum.warningOutline.rawValue, bundle: bundle)
+  }
   var personalausweisLogo: Image {
     Image(ImageEnum.personalausweisLogo.rawValue, bundle: bundle)
   }
@@ -521,6 +554,9 @@ final class ImageManager: ImageManagerProtocol {
   }
   var checkCircle: Image {
     Image(ImageEnum.checkCircle.rawValue, bundle: bundle)
+  }
+  var check: Image {
+    Image(ImageEnum.check.rawValue, bundle: bundle)
   }
   var orangeRetryError: Image {
     Image(ImageEnum.orangeRetryError.rawValue, bundle: bundle)
@@ -612,6 +648,14 @@ final class ImageManager: ImageManagerProtocol {
   var buildingBlocks: Image {
     Image(ImageEnum.buildingBlocks.rawValue, bundle: bundle)
   }
+  var presentationAccessDenied: Image {
+    Image(ImageEnum.presentationAccessDenied.rawValue, bundle: bundle)
+  }
+
+  var closeIcon: Image {
+    Image(ImageEnum.closeIcon.rawValue, bundle: bundle)
+  }
+
   var externalLink: Image {
     Image(ImageEnum.externalLink.rawValue, bundle: bundle)
   }
@@ -635,5 +679,23 @@ final class ImageManager: ImageManagerProtocol {
   }
   var tabbarQRReader: Image {
     Image(ImageEnum.tabbarQRReader.rawValue, bundle: bundle)
+  }
+  var presentationTrustErrorInfo: Image {
+    Image(ImageEnum.presentationTrustErrorInfo.rawValue, bundle: bundle)
+  }
+  var presentationPIDMissingErrorInfo: Image {
+    Image(ImageEnum.presentationPIDMissingErrorInfo.rawValue, bundle: bundle)
+  }
+  var presentationCredentialMissingErrorInfo: Image {
+    Image(ImageEnum.presentationCredentialMissingErrorInfo.rawValue, bundle: bundle)
+  }
+  var presentationWrongPinErrorInfo: Image {
+    Image(ImageEnum.presentationWrongPinErrorInfo.rawValue, bundle: bundle)
+  }
+  var walletKey: Image {
+    Image(ImageEnum.walletKey.rawValue, bundle: bundle)
+  }
+  var notification: Image {
+    Image(ImageEnum.notification.rawValue, bundle: bundle)
   }
 }

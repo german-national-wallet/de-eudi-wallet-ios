@@ -16,27 +16,36 @@
 
 import feature_common
 import logic_core
-import logic_api
 import logic_analytics
+import logic_ui
+import logic_api
 
 final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendable>: BaseLoadingViewModel<Router, RequestItem> {
 
   private let interactor: PresentationInteractor
+  private var pidRevokeInteractor: PIDRevokeInteractor
+  private let deepLinkController: DeepLinkController
   private var publisherTask: Task<Void, Error>?
   private let prefsController: PrefsController
   private let analyticsController: AnalyticsController
   private let pinSessionInteractor: PinSessionInteractor
+  private let errorHandler: PresentationErrorHandler
   private let logger: Logging?
-
-  private let items: [RequestDataUiModel]?
-  @Published var showWebView = false
-  @Published var isErrorPopupVisible = false
-  var url: URL?
-  var errorPopupViewModel = ConfirmationPopupViewModel()
   
+  var confirmationPopupViewModel: ConfirmationPopupViewModel!
+  private let items: [RequestDataUiModel]?
+  private var hasPresentedError = false
+  @Published var showWebView = false
+  @Published var errorDialog: PresentationErrorDialogConfig?
+  @Published var showPIDResetConfirmationPopup: Bool = false
+
+  var url: URL?
+
   init(
     router: Router,
     interactor: PresentationInteractor,
+    pidRevokeInteractor: PIDRevokeInteractor,
+    deepLinkController: DeepLinkController,
     relyingParty: String,
     relyingPartyIsTrusted: Bool,
     originator: AppRoute,
@@ -44,13 +53,17 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
     prefsController: PrefsController,
     analyticsController: AnalyticsController,
     pinSessionInteractor: PinSessionInteractor,
+    errorHandler: PresentationErrorHandler,
     items: [RequestDataUiModel]?,
     logger: Logging?
   ) {
     self.interactor = interactor
+    self.pidRevokeInteractor = pidRevokeInteractor
+    self.deepLinkController = deepLinkController
     self.prefsController = prefsController
     self.analyticsController = analyticsController
     self.pinSessionInteractor = pinSessionInteractor
+    self.errorHandler = errorHandler
     self.items = items
     self.logger = logger
 
@@ -62,6 +75,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       relyingPartyIsTrusted: relyingPartyIsTrusted,
       cancellationTimeout: 5
     )
+    setupConfirmationPopup()
   }
 
   func subscribeToCoordinatorPublisher() async {
@@ -70,7 +84,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       for try await state in publisher {
         switch state {
         case .error(let error):
-          self.onError(with: error)
+          self.presentError(error)
         case .responseSent(let url):
           self.interactor.stopPresentation()
           if self.navigateToDynamicIssuanceOriginator(with: url) {
@@ -91,7 +105,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
         }
       }
     case .failure(let error):
-      self.onError(with: error)
+      self.presentError(error)
     }
   }
 
@@ -123,7 +137,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
         popToScreen: .featureDashboardModule(.dashboard)
       )
     }
-    
+
     return .featurePresentationModule(
       .presentationSuccess(
         config: DocumentSuccessUIConfig(
@@ -195,11 +209,6 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
     case .failure(let error):
       publisherTask?.cancel()
       clearPinSessionIfNeeded()
-
-      let analyticsTraceID = analyticsController.endTrace(
-        finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.failure],
-        errorDescription: String(describing: error)
-      ) ?? ""
       if let presentationError = error as? PresentationError {
         switch presentationError {
         case .invalidPassword(let response):
@@ -213,26 +222,8 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
             router.pop()
           }
         }
-      }
-      if let presentationError = error as? PresentationSessionError {
-        switch presentationError {
-        case .invalidState:
-          logger?.e("invalidState:: presentation session expired")
-        default:
-          logger?.e("PresentationSessionError")
-        }
-      } else if let backendError = error as? BackendError {
-        logger?.e("presentation failed: code=\(backendError.errorCode) traceId=\(backendError.traceId) detail=\(backendError.serverDescription)")
-        errorPopupViewModel.configure(backendError: backendError, analyticsTraceId: analyticsTraceID) {
-          self.router.pop()
-        }
-        isErrorPopupVisible = true
       } else {
-        logger?.d("error:: (\(error.localizedDescription))")
-        errorPopupViewModel.configureDefaultError(traceId: analyticsTraceID) {
-          self.router.pop()
-        }
-        isErrorPopupVisible = true
+        presentError(error)
       }
     }
   }
@@ -244,6 +235,29 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       primaryButtonTitle: .walletPinForgotten,
       invalidPasswordResponse: response
     )
+  }
+
+  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
+    errorDialog = nil
+    switch action {
+    case .popTo(let route):
+      router.popTo(with: route)
+    case .addDigitalIDAgain:
+      showPIDResetConfirmationPopup = true
+    case .dismiss:
+      break
+    }
+  }
+
+  private func presentError(_ error: Error) {
+    guard !hasPresentedError else { return }
+    hasPresentedError = true
+    switch errorHandler.handle(error, originator: getOriginator()) {
+    case .notice(let config):
+      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
+    case .dialog(let config):
+      errorDialog = config
+    }
   }
 
   private func startPublisherTask() {
@@ -263,5 +277,35 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       return
     }
     pinSessionInteractor.clear()
+  }
+
+  private func setupConfirmationPopup() {
+    confirmationPopupViewModel = ConfirmationPopupViewModel()
+    confirmationPopupViewModel.configure(
+      title: LocalizableStringKey.pidPresentationRetryCounterResetOverlayTitle.toString,
+      detail: LocalizableStringKey.pidPresentationRetryCounterResetOverlayParagraph.toString,
+      titleIcon: Theme.shared.image.warningIndicator,
+      confirmButtonBackgroundColor: DSColor.error,
+      primaryButtontitle: LocalizableStringKey.pidPresentationRetryCounterResetOverlayButton.toString,
+      secondaryButtontitle: LocalizableStringKey.pidPresentationDialogRpRejectionSecButton2.toString,
+      primaryAction: {
+        Task {
+          await self.resetWallet()
+        }
+      },
+      secondaryAction: { [weak self] in
+        self?.cancelToDashboard()
+      }
+    )
+  }
+
+  func resetWallet() async {
+    do {
+      try await pidRevokeInteractor.deletePIDFromWallet()
+    } catch {
+      return
+    }
+    await deepLinkController.setDeeplinkFlowFlag(false)
+    cancelToDashboard()
   }
 }

@@ -29,7 +29,7 @@ public enum ProximityResponsePreparationPartialState: Sendable {
 }
 
 public enum ProximityRequestPartialState: Sendable {
-  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool)
+  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool, isOverAsking: Bool, hasUnreadableRegistration: Bool)
   case failure(Error)
 }
 
@@ -111,12 +111,14 @@ final class ProximityInteractorImpl: ProximityInteractor {
     do {
       let response = try await sessionCoordinatorHolder.getActiveProximityCoordinator().requestReceived()
       return .success(
-        response.items.toUiModels(
+        (response.itemSets.first ?? []).toUiModels(
           with: self.walletKitController
         ),
         relyingParty: response.relyingParty,
         dataRequestInfo: response.dataRequestInfo,
-        isTrusted: response.isTrusted
+        isTrusted: response.isTrusted,
+        isOverAsking: response.isOverAsking,
+        hasUnreadableRegistration: response.hasUnreadableRegistration
       )
     } catch {
       return .failure(error)

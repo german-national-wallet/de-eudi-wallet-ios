@@ -45,6 +45,8 @@ final class PIDRevokeInteractorImpl: PIDRevokeInteractor {
         try? await walletKitController.deleteDocument(with: document.id, status: .issued)
       }
 
+      await walletKitController.deletePopKeys()
+
       prefsController.remove(forKey: .isPinInitialized)
       prefsController.remove(forKey: .mdvmInstallationIdentifier)
       secureEnclaveController.deleteKeychainItem(keyTag: .rwscaAccountID)

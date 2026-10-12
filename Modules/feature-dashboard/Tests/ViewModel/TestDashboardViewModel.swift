@@ -20,10 +20,6 @@ import logic_analytics
 final class TestDashboardViewModel: XCTestCase {
 
   private var mockDashboardInteractor: MockDashboardInteractor!
-  private var mockHomeTabInteractor: MockHomeTabInteractor!
-  private var mockDocumentTabInteractor: MockDocumentTabInteractor!
-  private var mockTransactionTabInteractor: MockTransactionTabInteractor!
-  private var mockCredentialsInteractor: MockCredentialsInteractor!
   private var mockSettingsTabInteractor: MockSettingsTabInteractor!
   private var mockSecureEnclaveController: MockSecureEnclaveController!
   private var mockConfigLogic: MockConfigLogic!
@@ -36,10 +32,6 @@ final class TestDashboardViewModel: XCTestCase {
   override func setUp() {
     super.setUp()
     mockDashboardInteractor = MockDashboardInteractor()
-    mockHomeTabInteractor = MockHomeTabInteractor()
-    mockDocumentTabInteractor = MockDocumentTabInteractor()
-    mockTransactionTabInteractor = MockTransactionTabInteractor()
-    mockCredentialsInteractor = MockCredentialsInteractor()
     mockSettingsTabInteractor = MockSettingsTabInteractor()
     mockSecureEnclaveController = MockSecureEnclaveController()
     mockConfigLogic = MockConfigLogic()
@@ -55,10 +47,6 @@ final class TestDashboardViewModel: XCTestCase {
 
   override func tearDown() {
     mockDashboardInteractor = nil
-    mockHomeTabInteractor = nil
-    mockDocumentTabInteractor = nil
-    mockTransactionTabInteractor = nil
-    mockCredentialsInteractor = nil
     mockSettingsTabInteractor = nil
     mockSecureEnclaveController = nil
     mockConfigLogic = nil
@@ -76,9 +64,6 @@ final class TestDashboardViewModel: XCTestCase {
     let viewModel = makeViewModel()
 
     XCTAssertEqual(viewModel.selectedTab, .overview)
-    XCTAssertNotNil(viewModel.viewState.homeTab)
-    XCTAssertNotNil(viewModel.viewState.documentTab)
-    XCTAssertNotNil(viewModel.viewState.transactionTab)
     XCTAssertNotNil(viewModel.viewState.credentialsTab)
     XCTAssertNotNil(viewModel.viewState.addDocumentTab)
     XCTAssertNotNil(viewModel.viewState.activitiesTab)
@@ -91,10 +76,6 @@ final class TestDashboardViewModel: XCTestCase {
     DashboardViewModel(
       router: mockRouter,
       dashboardInteractor: mockDashboardInteractor,
-      homeTabInteractor: mockHomeTabInteractor,
-      documentTabInteractor: mockDocumentTabInteractor,
-      transactionTabInteractor: mockTransactionTabInteractor,
-      credentialsInteractor: mockCredentialsInteractor,
       settingsTabInteractor: mockSettingsTabInteractor,
       secureEnclaveController: mockSecureEnclaveController,
       configLogic: mockConfigLogic,
@@ -115,22 +96,13 @@ final class TestDashboardViewModel: XCTestCase {
   }
 
   private func stubTabDependencies() {
-    let finishedFilterStream = AsyncStream<FiltersPartialState> { continuation in
-      continuation.finish()
-    }
-
     stub(mockDashboardInteractor) { mock in
       when(mock.getPIDDocument()).thenReturn(nil)
       when(mock.hasDocuments.get).thenReturn(true)
     }
-    stub(mockHomeTabInteractor) { mock in
-      when(mock.fetchUsername()).thenReturn("")
-    }
-    stub(mockDocumentTabInteractor) { mock in
-      when(mock.onFilterChangeState()).thenReturn(finishedFilterStream)
-    }
     stub(mockSettingsTabInteractor) { mock in
       when(mock.getAppVersion()).thenReturn("")
+      when(mock.getAppBuildNumber()).thenReturn("")
       when(mock.retrieveLogFileUrl()).thenReturn(nil)
     }
     stub(mockConfigLogic) { mock in

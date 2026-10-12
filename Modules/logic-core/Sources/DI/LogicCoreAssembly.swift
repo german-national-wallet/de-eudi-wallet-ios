@@ -28,7 +28,8 @@ public final class LogicCoreAssembly: Assembly {
       AppBlockingControllerImpl(
         configLogic: r.force(ConfigLogic.self),
         featureFlagRepository: r.force(FeatureFlagRepository.self),
-        prefsController: r.force(PrefsController.self)
+        prefsController: r.force(PrefsController.self),
+        isUITesting: AppEnvironment.isUITesting
       )
     }
     .inObjectScope(ObjectScope.container)
@@ -90,7 +91,8 @@ public final class LogicCoreAssembly: Assembly {
       
       container.register(WalletKitController.self) { r in
         WalletKitControllerImpl(
-          configLogic: r.force(WalletKitConfig.self),
+          walletKitConfig: r.force(WalletKitConfig.self),
+          configLogic: r.force(ConfigLogic.self),
           keyChainController: r.force(KeyChainController.self),
           featureFlagRepository: r.force(FeatureFlagRepository.self),
           sessionCoordinatorHolder: r.force(SessionCoordinatorHolder.self),
@@ -176,12 +178,19 @@ public final class LogicCoreAssembly: Assembly {
     container.register(RWSCAInteractor.self) { r in
       RWSCAInteractorImpl(
         rwscaRepository: r.force(RWSCARepository.self),
-        mdvmRepository: r.force(MDVMRepository.self),
+        mdvmInteractor: r.force(MDVMInteractor.self),
         secureEnclaveController: r.force(SecureEnclaveController.self),
         prefsController: r.force(PrefsController.self),
         walletPinRepository: r.force(WalletPinRepository.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
+      
+    container.register(PresentationErrorClassifier.self) { r in
+        PresentationErrorClassifierImpl(
+            reachabilityController: r.force(ReachabilityController.self)
+        )
+    }
+    .inObjectScope(ObjectScope.container)
   }
 }

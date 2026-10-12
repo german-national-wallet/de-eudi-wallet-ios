@@ -99,8 +99,8 @@ testableImports = [
 	"logic_authentication",
 	"feature_common",
 	"feature_startup",
-	"feature_startup",
 	"feature_issuance",
+	"push_notification_service",
 ]
 sources = [
 	"Modules/logic-core/Sources/**/*.swift",
@@ -111,8 +111,8 @@ sources = [
 	"Modules/logic-authentication/Sources/**/*.swift",
     "Modules/feature-common/Sources/**/*.swift",
     "Modules/feature-startup/Sources/**/*.swift",
-	"Modules/feature-startup/Sources/**/*.swift",
-	"Modules/feature-issuance/Sources/**/*.swift"
+	"Modules/feature-issuance/Sources/**/*.swift",
+	"Modules/push-notification-service/Sources/**/*.swift"
 ]
 
 [modules.FeaturePresentation]

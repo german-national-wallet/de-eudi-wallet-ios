@@ -19,6 +19,7 @@ import logic_business
 import logic_api
 import feature_common
 import feature_issuance
+import push_notification_service
 
 public final class FeatureStartupAssembly: Assembly {
 
@@ -34,7 +35,10 @@ public final class FeatureStartupAssembly: Assembly {
         rwscaInteractor: r.force(RWSCAInteractor.self),
         remoteWSCA: r.force(RemoteWSCAService.self, name: RemoteWSCAService.name),
         secureEnclaveController: r.force(SecureEnclaveController.self),
-        pidRevokeInteractor: r.force(PIDRevokeInteractor.self)
+        pidRevokeInteractor: r.force(PIDRevokeInteractor.self),
+        appBlockingController: r.force(AppBlockingController.self),
+        pushAuthorizationProvider: r.force(PushAuthorizationProvider.self),
+        pnsAccountInteractor: r.force(PNSAccountInteractor.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

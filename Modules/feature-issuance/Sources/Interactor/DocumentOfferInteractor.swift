@@ -42,11 +42,14 @@ public protocol DocumentOfferInteractor: Sendable {
 final class DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   private let walletController: WalletKitController
+  private let logger: Logging?
 
   init(
-    walletController: WalletKitController
+    walletController: WalletKitController,
+    logger: Logging? = nil
   ) {
     self.walletController = walletController
+    self.logger = logger
   }
 
     func processOfferRequest(with uri: String) async -> OfferRequestPartialState {
@@ -79,6 +82,7 @@ final class DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
         return .success(offer.transformToDocumentOfferUi())
       } catch {
+        logger?.e("offer: resolving \(uri) failed: \(error.diagnosticDescriptor)")
         return .failure(error)
       }
     }
@@ -99,6 +103,7 @@ final class DocumentOfferInteractorImpl: DocumentOfferInteractor {
         )
 
         if issuedDocuments.isEmpty {
+          logger?.e("issuance: issuer \(issuerName) returned no documents for \(docOffers.count) offer(s)")
           return .failure(WalletCoreError.unableToIssueAndStore)
         } else if issuedDocuments.first(where: { $0.isDeferred }) != nil {
           return .deferredSuccess(
@@ -143,6 +148,7 @@ final class DocumentOfferInteractorImpl: DocumentOfferInteractor {
         }
 
       } catch {
+        logger?.e("issuance: \(issuerName) failed for \(docOffers.count) offer(s): \(error.diagnosticDescriptor)")
         return .failure(error)
       }
     }
@@ -201,6 +207,7 @@ final class DocumentOfferInteractorImpl: DocumentOfferInteractor {
         }
 
       } catch {
+        logger?.e("issuance: resuming dynamic issuance for \(issuerName) failed: \(error.diagnosticDescriptor)")
         return .failure(WalletCoreError.unableToIssueAndStore)
       }
     }

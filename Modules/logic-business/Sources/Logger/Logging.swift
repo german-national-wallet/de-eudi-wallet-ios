@@ -37,4 +37,9 @@ public extension Error {
     let nsError = self as NSError
     return "\(type(of: self)) [\(nsError.domain)#\(nsError.code)]"
   }
+
+  var diagnosticDescriptor: String {
+    guard AppBuildVariant.current.emitsDebugLogs else { return logDescriptor }
+    return "\(logDescriptor) \(String(describing: self))"
+  }
 }

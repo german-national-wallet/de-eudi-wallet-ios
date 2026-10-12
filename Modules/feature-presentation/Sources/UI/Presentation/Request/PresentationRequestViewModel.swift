@@ -15,27 +15,38 @@
  */
 
 import feature_common
+import logic_analytics
 import logic_core
 import logic_resources
 
 final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
 
+  @Published var errorDialog: PresentationErrorDialogConfig?
+
   private let interactor: PresentationInteractor
   private let pinSessionInteractor: PinSessionInteractor
+  private let analyticsController: AnalyticsController
+  private let errorHandler: PresentationErrorHandler
 
   init(
     router: Router,
     interactor: PresentationInteractor,
     pinSessionInteractor: PinSessionInteractor,
+    analyticsController: AnalyticsController,
+    errorHandler: PresentationErrorHandler,
     originator: AppRoute
   ) {
     self.interactor = interactor
     self.pinSessionInteractor = pinSessionInteractor
+    self.analyticsController = analyticsController
+    self.errorHandler = errorHandler
     super.init(router: router, originator: originator)
   }
 
   override func doWork() async {
     self.onStartLoading()
+    // Force starting presentation trace because no RPInfo in previous flow
+    analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
 
     let result = await Task.detached { () -> Result<OnlineAuthenticationRequestSuccessModel, Error> in
       return await self.interactor.onDeviceEngagement()
@@ -43,6 +54,8 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
 
     switch result {
     case .success(let authenticationRequest):
+      if await refuseIfBlockedByRegistration(authenticationRequest, interactor: interactor) { return }
+
       self.onReceivedItems(
         with: authenticationRequest.requestDataCells,
         title: .requestDataTitle(
@@ -68,8 +81,8 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
           )
         )
       }
-    case .failure:
-      self.onEmptyDocuments()
+    case .failure(let error):
+      present(errorHandler.handle(error, originator: getOriginator()))
     }
   }
 
@@ -97,7 +110,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         if isPIDRequest {
           pinSessionInteractor.clear()
         }
-        self.onError(with: error)
+        self.present(self.errorHandler.handle(error, originator: self.getOriginator()))
       }
     }
   }
@@ -216,5 +229,26 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     resetState()
     interactor.updatePresentationCoordinator(with: session)
     Task { await doWork() }
+  }
+
+  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
+    errorDialog = nil
+    switch action {
+    case .popTo(let route):
+      router.popTo(with: route)
+    case .addDigitalIDAgain:
+      router.popTo(with: getOriginator())
+    case .dismiss:
+      break
+    }
+  }
+
+  private func present(_ presentation: PresentationErrorPresentation) {
+    switch presentation {
+    case .notice(let config):
+      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
+    case .dialog(let config):
+      errorDialog = config
+    }
   }
 }

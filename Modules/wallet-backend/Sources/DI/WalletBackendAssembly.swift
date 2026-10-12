@@ -26,7 +26,7 @@ public final class WalletBackendAssembly: Assembly {
     container.register(WPBInteractor.self) { r in
       WPBInteractorImpl(
         repository: r.force(WPBRepository.self),
-        mdvmRepository: r.force(MDVMRepository.self)
+        mdvmInteractor: r.force(MDVMInteractor.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
@@ -34,7 +34,7 @@ public final class WalletBackendAssembly: Assembly {
     container.register(WIAIssuanceService.self) { r in
       WPBInteractorImpl(
         repository: r.force(WPBRepository.self),
-        mdvmRepository: r.force(MDVMRepository.self)
+        mdvmInteractor: r.force(MDVMInteractor.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
@@ -43,7 +43,8 @@ public final class WalletBackendAssembly: Assembly {
       WalletRegistrationInteractorImpl(
         mdvmInteractor: r.force(MDVMInteractor.self),
         wpbInteractor: r.force(WPBInteractor.self),
-        walletRevocationInteractor: r.force(WalletRevocationInteractor.self)
+        walletRevocationInteractor: r.force(WalletRevocationInteractor.self),
+        secureEnclaveController: r.force(SecureEnclaveController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

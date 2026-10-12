@@ -41,11 +41,8 @@ extension Constants {
   static let claimExpiredAt = Date()
   
   static let isoMdlModel = DeferrredDocument(
-    statusIdentifier: nil,
-    secureAreaName: nil,
-    credentialsUsageCounts: nil,
-    credentialPolicy: .oneTimeUse,
     id: isoMdlModelId,
+    statusList: nil,
     createdAt: documentCreatedAt,
     modifiedAt: nil,
     displayName: isoMdlName,
@@ -74,15 +71,15 @@ extension Constants {
     credentialIssuerIdentifier: nil,
     configurationIdentifier: nil,
     validFrom: nil,
-    validUntil: nil
+    validUntil: nil,
+    secureAreaName: nil,
+    credentialsUsageCounts: nil,
+    credentialPolicy: .oneTimeUse
   )
   
   static let euPidModel = DeferrredDocument(
-    statusIdentifier: nil,
-    secureAreaName: nil,
-    credentialsUsageCounts: nil,
-    credentialPolicy: .oneTimeUse,
     id: euPidModelId,
+    statusList: nil,
     createdAt: documentCreatedAt,
     modifiedAt: nil,
     displayName: euPidName,
@@ -111,7 +108,10 @@ extension Constants {
     credentialIssuerIdentifier: nil,
     configurationIdentifier: nil,
     validFrom: nil,
-    validUntil: nil
+    validUntil: nil,
+    secureAreaName: nil,
+    credentialsUsageCounts: nil,
+    credentialPolicy: .oneTimeUse
   )
 }
 
@@ -121,14 +121,16 @@ extension Constants {
 
 extension Constants {
   struct MockPresentationService: PresentationService {
-    var transactionLog: MdocDataModel18013.TransactionLog {
+    var transactionLogger: (any MdocDataModel18013.TransactionLogger)?
+
+    var transactionLog: MdocDataModel18013.TransactionEntry = .otherTransaction(
       .init(
-        timestamp: Int64(Date().timeIntervalSince1970),
-        status: .failed,
-        type: .issuance,
-        dataFormat: .json
+        transactionIdentifier: UUID().uuidString,
+        time: Date(),
+        transactionResult: .notCompleted,
+        description: ["mock"]
       )
-    }
+    )
 
     func startQrEngagement(secureAreaName: String?, keyOptions: KeyOptions) async throws -> String {
       ""
@@ -146,12 +148,14 @@ extension Constants {
     var flow: EudiWalletKit.FlowType
 
     var zkpDocumentIds: [WalletStorage.Document.ID]? { nil }
+    var wrpVerifierPolicy: WrpRegistrationPolicy? { nil }
+    var wrpVerifierWarnings: [String: [PresentationPolicyViolation]]? { nil }
     
     func startQrEngagement() async throws -> String? { nil }
     
     func receiveRequest() async throws -> [String : Any] { [:] }
     
-    func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
+    func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
 
     func waitForDisconnect() async throws {}
   }
@@ -160,13 +164,15 @@ extension Constants {
     presentationService: MockPresentationService(flow: .other),
     docIdToPresentInfo: [:],
     documentKeyIndexes: [:],
-    userAuthenticationRequired: false
+    userAuthenticationRequired: false,
+    localAuthenticationContext: ThreadSafeAuthContext()
   )
 }
 
 extension Constants {
   static let mockPresentationRequest = PresentationRequest(
-    items: [
+    itemSets: [
+      [
       .msoMdoc(
         .init(
           docId: isoMdlModelId,
@@ -188,9 +194,13 @@ extension Constants {
           ]
         )
       )
+      ]
     ],
     relyingParty: "Relying Party",
     dataRequestInfo: "Data Request Info",
-    isTrusted: true
+    isTrusted: true,
+    policyViolations: [],
+    supervisoryAuthorityURI: nil,
+    hasRegistrationPolicy: true
   )
 }

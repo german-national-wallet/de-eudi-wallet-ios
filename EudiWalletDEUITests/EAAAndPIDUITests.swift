@@ -36,8 +36,7 @@ final class EAAAndPIDUITests: BaseUITest {
         try exists("incorrect", contains: true, timeout: 30)
       }
     }
-    try tap("To Overview")
-    try tap("Delete Digital ID now")
+    try tap("Add Digital ID again")
     try tap("Yes, delete")
 
     // Re-issue PID
@@ -60,8 +59,6 @@ final class EAAAndPIDUITests: BaseUITest {
     try tap("closeWebViewButton")
     try exists("Add")
     try tap("Add")
-    // TODO: Temporarily commented; re-enable once the underlying issuance fix lands
-//    try tap("Continue with entry")
     try tapSystemButton("Continue")
     if elementExists("Sign In", timeout: 30, elementType: .button) {
       try fill("Username or email", value: "Erika")
@@ -103,7 +100,6 @@ final class EAAAndPIDUITests: BaseUITest {
     try exists("FitLife Membership")
 
     // Verification
-//    app.launch()
     try openPlaygroundLink("SportZone")
     try tap("Apply Member Discount", contains: true)
     try tap("Open in Wallet")
@@ -138,7 +134,6 @@ final class EAAAndPIDUITests: BaseUITest {
     try exists("FitLife Membership", timeout: 60)
 
     // Verification
-//    relaunchApp()
     try openPlaygroundLink("SportZone")
     try tap("Apply Member Discount", contains: true)
     try tap("Open in Wallet")
@@ -158,6 +153,7 @@ final class EAAAndPIDUITests: BaseUITest {
   func testRevocationOnboardingShownOnceThenSkipped() throws {
     openApp()
     try passAppIntro()
+    try passAppSetupSteps()
     try exists("revocationIntroPrimaryButton", timeout: 60)
     try tap("revocationIntroPrimaryButton")
     try exists("revocationCodeText")
@@ -179,7 +175,7 @@ final class EAAAndPIDUITests: BaseUITest {
   }
 
   // MARK: - MDL Issuer ui test
-  
+
   func testMDLIssuanceFlow() throws {
     openApp()
     try passAppIntro()
@@ -191,9 +187,8 @@ final class EAAAndPIDUITests: BaseUITest {
     try tap("closeWebViewButton")
     try exists("Add")
     try tap("Add")
-    // TODO: Temporarily commented; re-enable once the underlying issuance fix lands
-//    try tap("Continue with entry")
     try tapSystemButton("Continue")
+    try tap("Open wallet")
     try tap("rpInfoNextButton")
     try tap("rpConsentNextButton")
     try enterWalletPin(timeout: 60)
@@ -201,7 +196,6 @@ final class EAAAndPIDUITests: BaseUITest {
     
     // Deleting EAA
     try deleteEAA("Driving Licence")
-    
   }
   
   // MARK: - helpers

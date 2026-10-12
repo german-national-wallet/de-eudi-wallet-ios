@@ -30,34 +30,27 @@ public final class DashboardRouter {
         with: .init(
           router: host,
           dashboardInteractor: DIGraph.resolver.force(DashboardInteractor.self),
-          homeTabInteractor: DIGraph.resolver.force(HomeTabInteractor.self),
-          documentTabInteractor: DIGraph.resolver.force(DocumentTabInteractor.self),
-          transactionTabInteractor: DIGraph.resolver.force(TransactionTabInteractor.self),
-          credentialsInteractor: DIGraph.resolver.force(CredentialsInteractor.self),
           settingsTabInteractor: DIGraph.resolver.force(SettingsTabInteractor.self),
           secureEnclaveController: DIGraph.resolver.force(SecureEnclaveController.self),
           configLogic: DIGraph.resolver.force(ConfigLogic.self),
           deepLinkController: DIGraph.resolver.force(DeepLinkController.self)
         )
       ).eraseToAnyView()
-    case .signDocument:
-      SignDocumentView(
-        with: .init(
-          router: host,
-          interactor: DIGraph.resolver.force(
-            DocumentSignInteractor.self
-          )
-        )
-      ).eraseToAnyView()
-    case .sideMenu:
-      // NOTE: Sidemenu inactivated
-      EmptyView().eraseToAnyView()
     case .debugConfig:
       DebugConfigView(
         with: .init(
           router: host,
           interactor: DIGraph.resolver.force(
             DebugConfigInteractor.self
+          )
+        )
+      ).eraseToAnyView()
+    case .walletLossProtection:
+      WalletLossProtectionView(
+        with: .init(
+          router: host,
+          interactor: DIGraph.resolver.force(
+            SettingsTabInteractor.self
           )
         )
       ).eraseToAnyView()

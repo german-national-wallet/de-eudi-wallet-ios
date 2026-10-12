@@ -19,7 +19,7 @@ import SwiftUI
 import logic_resources
 
 public struct ExpandableTextView: View {
-  @State private var isExpanded = false
+  @State private var isExpanded: Bool
   var title: LocalizableStringKey
   var content: LocalizableStringKey
   let isloading: Bool

@@ -339,6 +339,8 @@ struct MDVMInteractorTests {
     verify(mockMDVMRepository, never()).renew(payload: any(), mdvmWIID: anyString(), authChallenge: anyString(), skipIntegrityChecks: any(), privateKey: any())
   }
 
+  // MARK: - Helpers
+
   private func makePrivateKey() -> SecKey {
     let attributes: [String: Any] = [
       kSecAttrKeyType as String: kSecAttrKeyTypeEC,

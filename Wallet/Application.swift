@@ -60,6 +60,10 @@ struct Application: App {
         // re-shows the revocation screens, giving UI tests a deterministic state.
         DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenRevocationCode)
         DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenAppIntro)
+        DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenPlatformAuthIntro)
+        DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasAcceptedPrivacyPolicy)
+        DIGraph.resolver.force(PrefsController.self).remove(forKey: .hasSeenPushIntro)
+        DIGraph.resolver.force(PrefsController.self).remove(forKey: .isAppSetupPending)
       }
 
       UIView.setAnimationsEnabled(false)
@@ -288,12 +292,7 @@ struct Application: App {
         action: acknowledgeRevocationAndResetWallet
       )
     case .platformAuthentication:
-      AppBlockingView(
-        title: LocalizableStringKey.securityCheckAlertTile.toString,
-        description: LocalizableStringKey.securityCheckAlertDescription.toString,
-        buttonTitle: LocalizableStringKey.securityCheckButtonTitle.toString,
-        action: openSettings
-      )
+      PlatformAuthenticationBlockingView(action: openSettings)
     case .minimumAppVersion:
       // TODO: add proper localizations
       let isGerman = Locale.preferredLanguages.first?.hasPrefix("de") == true

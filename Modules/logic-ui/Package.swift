@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "logic-ui",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v17)],
   products: [
     .library(
       name: "logic-ui",
@@ -46,6 +46,10 @@ let package = Package(
       from: "3.1.1"
     ),
     .package(
+      url: "https://github.com/airbnb/lottie-spm.git",
+      from: "4.5.0"
+    ),
+    .package(
         name: "logic-test",
         path: "../logic-test"),
     .package(
@@ -72,6 +76,10 @@ let package = Package(
         .product(
           name: "Shimmer",
           package: "SwiftUI-Shimmer"
+        ),
+        .product(
+          name: "Lottie",
+          package: "lottie-spm"
         )
       ],
       path: "./Sources",

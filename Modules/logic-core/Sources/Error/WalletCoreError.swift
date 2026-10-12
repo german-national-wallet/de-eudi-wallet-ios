@@ -26,6 +26,7 @@ public enum WalletCoreError: LocalizedError, Equatable {
   case unableToPresentAndShare
   case unableToFetchTransactionLog
   case parSetupFailed
+  case issuerMetadataNotVerified
 
   public var errorDescription: String? {
       return switch self {
@@ -47,6 +48,8 @@ public enum WalletCoreError: LocalizedError, Equatable {
         LocalizableStringKey.errorFetchTransactionLog.toString
       case .parSetupFailed:
         LocalizableStringKey.parSetupFailed.toString
+      case .issuerMetadataNotVerified:
+        LocalizableStringKey.issuerMetadataNotVerified.toString
       }
     }
 }

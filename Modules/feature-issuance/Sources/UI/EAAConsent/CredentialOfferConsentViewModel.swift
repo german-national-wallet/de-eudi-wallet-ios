@@ -15,6 +15,7 @@ struct CredentialOfferConsentViewState: ViewState {
   let claimNames: [String]
   let config: UIConfig.Generic
   let initialized: Bool
+  let error: ContentErrorView.Config?
 }
 
 final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Router, CredentialOfferConsentViewState> {
@@ -48,7 +49,8 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
         offerUri: offerUri,
         claimNames: [],
         config: config,
-        initialized: false
+        initialized: false,
+        error: nil
       )
     )
   }
@@ -83,7 +85,16 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
         $0
           .copy(
             isLoading: false,
-            initialized: true
+            initialized: true,
+            error: .init(
+              description: .custom(error.localizedDescription),
+              cancelAction: self.cancelIssuance(),
+              action: { [weak self] in
+                guard let self else { return }
+                self.setState { $0.copy(isLoading: true, initialized: false, error: nil) }
+                Task { await self.initialize() }
+              }
+            )
           )
       }
     }
@@ -104,7 +115,8 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
             navigationSuccessType: viewState.config.navigationSuccessType,
             navigationCancelType: viewState.config.navigationCancelType
           ),
-          initialized: false
+          initialized: false,
+          error: nil
         )
     }
     Task {
@@ -133,7 +145,7 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
             successNavigation: viewState.config.navigationSuccessType,
             navigationCancelType: viewState.config.navigationCancelType
           ),
-          onFailure: { [weak self] in
+          onFailure: { [weak self] _ in
             Task { @MainActor in
               self?.showIssuanceFailurePopup = true
             }

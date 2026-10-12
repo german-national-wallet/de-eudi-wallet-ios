@@ -20,4 +20,8 @@ extension String {
   func toBool() -> Bool {
     Bool(self) ?? false
   }
+
+  var trimmingTrailingSlash: String {
+    hasSuffix("/") ? String(dropLast()) : self
+  }
 }

@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
   name: "push-notification-service",
-  platforms: [.iOS(.v16)],
+  platforms: [.iOS(.v17)],
   products: [
     .library(
       name: "push-notification-service",

@@ -97,7 +97,7 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
         await pnsAccountInteractor.syncAccountIfNeeded()
       }
 
-      let destination = introDestination(continueRoute: revocationDestination(continueRoute: route))
+      let destination = onboardingDestination(continueRoute: route)
 
       if await !deepLinkController.isDeeplinkFlowActive() {
         router.push(with: destination)
@@ -121,12 +121,68 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
     }
   }
 
+  func onboardingDestination(continueRoute: AppRoute) -> AppRoute {
+    let successRoute = successDestination(continueRoute: continueRoute)
+    let revocationRoute = revocationDestination(continueRoute: successRoute)
+    let pushRoute = pushDestination(continueRoute: revocationRoute)
+    let policyRoute = policyDestination(continueRoute: pushRoute)
+    let platformAuthRoute = platformAuthDestination(continueRoute: policyRoute)
+    let destination = introDestination(continueRoute: platformAuthRoute)
+    guard destination.info.key != successRoute.info.key else {
+      return continueRoute
+    }
+    return destination
+  }
+
+  private var isAppSetupInProgress: Bool {
+    !interactor.hasSeenAppIntro() || interactor.isAppSetupPending()
+  }
+
   private func introDestination(continueRoute: AppRoute) -> AppRoute {
     guard !interactor.hasSeenAppIntro() else {
       return continueRoute
     }
     return .featureStartupModule(
       .appIntro(config: AppIntroUiConfig(continueRoute: continueRoute))
+    )
+  }
+
+  private func platformAuthDestination(continueRoute: AppRoute) -> AppRoute {
+    guard isAppSetupInProgress, !interactor.hasSeenPlatformAuthIntro() else {
+      return continueRoute
+    }
+    return .featureStartupModule(
+      .platformAuthenticationOnboarding(
+        config: PlatformAuthOnboardingUiConfig(continueRoute: continueRoute)
+      )
+    )
+  }
+
+  private func policyDestination(continueRoute: AppRoute) -> AppRoute {
+    guard isAppSetupInProgress, !interactor.hasAcceptedPrivacyPolicy() else {
+      return continueRoute
+    }
+    return .featureStartupModule(
+      .privacyPolicyOnboarding(
+        config: PrivacyPolicyOnboardingUiConfig(continueRoute: continueRoute)
+      )
+    )
+  }
+
+  private func pushDestination(continueRoute: AppRoute) -> AppRoute {
+    guard isAppSetupInProgress, !interactor.hasSeenPushIntro() else {
+      return continueRoute
+    }
+    return .featureStartupModule(
+      .pushNotificationOnboarding(
+        config: PushNotificationOnboardingUiConfig(continueRoute: continueRoute)
+      )
+    )
+  }
+
+  private func successDestination(continueRoute: AppRoute) -> AppRoute {
+    .featureStartupModule(
+      .setupSuccess(config: SetupSuccessUiConfig(continueRoute: continueRoute))
     )
   }
 

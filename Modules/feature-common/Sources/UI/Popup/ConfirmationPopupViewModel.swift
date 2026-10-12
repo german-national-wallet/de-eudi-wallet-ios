@@ -107,5 +107,4 @@ public final class ConfirmationPopupViewModel: ObservableObject {
       secondaryAction: nil
     )
   }
-
 }

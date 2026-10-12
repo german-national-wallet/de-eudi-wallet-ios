@@ -112,6 +112,10 @@ public extension Prefs {
     case isPinInitialized
     case hasSeenRevocationCode
     case hasSeenAppIntro
+    case hasSeenPlatformAuthIntro
+    case hasAcceptedPrivacyPolicy
+    case hasSeenPushIntro
+    case isAppSetupPending
     case walletRevoked = "wallet_revoked"
   }
 }

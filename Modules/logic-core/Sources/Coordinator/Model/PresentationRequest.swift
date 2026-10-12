@@ -14,9 +14,22 @@
  * governing permissions and limitations under the Licence.
  */
 
+import Foundation
+
 public struct PresentationRequest: Sendable {
-  public let items: [DocElements]
+  public let itemSets: [[DocElements]]
   public let relyingParty: String
   public let dataRequestInfo: String
   public let isTrusted: Bool
+  public let policyViolations: [PresentationPolicyViolation]
+  public let supervisoryAuthorityURI: URL?
+  public let hasRegistrationPolicy: Bool
+
+  public var isOverAsking: Bool {
+    policyViolations.containsOverAskedClaims
+  }
+
+  public var hasUnreadableRegistration: Bool {
+    !hasRegistrationPolicy && !policyViolations.isEmpty
+  }
 }

@@ -88,7 +88,8 @@ public struct NetworkLogger: Sendable {
   }
 
   private func isRedacted(_ key: String) -> Bool {
-    redactedKeys.contains(key.lowercased())
+    guard AppBuildVariant.current.redactsSensitiveLogs else { return false }
+    return redactedKeys.contains(key.lowercased())
   }
 
   private func redactedHeaders(_ headers: [String: String]) -> String {
@@ -141,9 +142,8 @@ public struct NetworkLogger: Sendable {
     guard let encoded = String(data: body, encoding: .utf8), encoded.contains("=") else {
       return nil
     }
-    var components = URLComponents()
-    components.percentEncodedQuery = encoded.replacingOccurrences(of: "+", with: "%20")
-    guard let queryItems = components.queryItems, !queryItems.isEmpty else {
+    guard let components = URLComponents(string: "?" + encoded.replacingOccurrences(of: "+", with: "%20"), encodingInvalidCharacters: false),
+          let queryItems = components.queryItems, !queryItems.isEmpty else {
       return nil
     }
     return queryItems

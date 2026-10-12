@@ -27,6 +27,15 @@ final class InvalidPinRetryMessageViewModel<Router: RouterHost>: ViewModel<Route
   var warningMessage: String?
   var topSpacerHeightFactor = 5.0
 
+  var isBlocked: Bool {
+    viewState.config.invalidPasswordResponse?.isBlocked == true
+    || viewState.config.retryMessage == .walletPinBlockedMessage
+  }
+
+  var titleKey: LocalizableStringKey {
+    isBlocked ? .pidPresentationRetryCounterLockedTitle : viewState.config.mainTitle
+  }
+
   var confirmationPopupViewModel: ConfirmationPopupViewModel!
   var pidRevokeInteractor: PIDRevokeInteractor
   private let prefsController: PrefsController
@@ -84,8 +93,8 @@ final class InvalidPinRetryMessageViewModel<Router: RouterHost>: ViewModel<Route
       return
     }
     if response.isBlocked {
-      warningImage = Theme.shared.image.redWarningIndicator
-      warningMessage = LocalizableStringKey.walletPinBlockedMessage.toString
+      warningImage = Theme.shared.image.setupWalletPin
+      warningMessage = LocalizableStringKey.pidPresentationRetryCounterBlockedParagraph.toString
       showCounterView = false
     } else {
       warningImage = Theme.shared.image.orangeRetryError

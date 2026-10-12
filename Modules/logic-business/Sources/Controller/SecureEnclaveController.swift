@@ -75,8 +75,7 @@ public protocol SecureEnclaveController {
   func generatePublicKey(from privateKey: SecKey) throws -> SecKey
   /// Returns an existing private key for the tag or creates and stores a new one if missing.
   func getOrCreatePrivateKey(with keyTag: SecureEnclaveKeys) throws -> SecKey
-  /// Derives exportable public key representations used by backend registration and signing headers.
-  func getPublicKeyInfo(from privateKey: SecKey) throws -> PublicKeyInfo
+  func getPublicKeyInfo(from privateKey: SecKey) throws -> logic_business.PublicKeyInfo
 }
 
 public final class SecureEnclaveControllerImpl: SecureEnclaveController {

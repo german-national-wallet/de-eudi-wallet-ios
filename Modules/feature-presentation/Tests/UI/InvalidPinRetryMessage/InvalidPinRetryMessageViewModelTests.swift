@@ -52,6 +52,23 @@ final class InvalidPinRetryMessageViewModelTests: XCTestCase {
     XCTAssertFalse(sut.showCounterView)
     XCTAssertTrue(sut.showBlockedUserButtons)
     XCTAssertNotNil(sut.warningMessage)
+    XCTAssertEqual(sut.titleKey, .pidPresentationRetryCounterLockedTitle)
+  }
+
+  func testInit_WhenPINIsNotBlocked_ThenKeepsConfiguredTitle() {
+    let sut = makeSUT(
+      invalidPasswordResponse: .init(
+        code: "WRONG_PIN",
+        message: nil,
+        timestamp: "2026-05-05T10:00:00Z",
+        traceId: "trace-id",
+        tryAllowedAfter: nil,
+        tryCounter: 2
+      )
+    )
+
+    XCTAssertFalse(sut.showBlockedUserButtons)
+    XCTAssertEqual(sut.titleKey, .walletPinMultipleWrongEntry)
   }
 
   func testSendUserToDashboard_WhenCalled_ThenReturnsToStartup() {

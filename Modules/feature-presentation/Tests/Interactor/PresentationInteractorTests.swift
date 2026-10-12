@@ -251,6 +251,26 @@ final class PresentationInteractorTests: XCTestCase {
     verify(walletKitController).fetchDocument(with: equal(to: Constants.euPidModelId))
   }
 
+  func testOnRejectRequest_ThenSendsRejectionThroughCoordinator() async {
+    stub(coordinator) { mock in
+      when(mock.declineResponse()).thenDoNothing()
+    }
+
+    await sut.onRejectRequest()
+
+    verify(coordinator).declineResponse()
+  }
+
+  func testOnRejectRequest_WhenCoordinatorThrows_ThenDoesNotPropagate() async {
+    stub(coordinator) { mock in
+      when(mock.declineResponse()).thenThrow(TestNSError.generic)
+    }
+
+    await sut.onRejectRequest()
+
+    verify(coordinator).declineResponse()
+  }
+
   private func makeSelectedRequestDataUIModel() -> RequestDataUiModel {
     let documentID = "document-id"
     let namespace = "namespace"
@@ -310,4 +330,8 @@ final class PresentationInteractorTests: XCTestCase {
     }
     return try ECPublicKey(publicKey: publicKey, additionalParameters: ["alg": "ES256", "use": "sig", "kid": "test-kid"])
   }
+}
+
+private enum TestNSError {
+  static let generic = NSError(domain: "PresentationInteractorTests", code: 1)
 }

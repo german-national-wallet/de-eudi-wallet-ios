@@ -54,6 +54,7 @@ final class PIDRevokeInteractorTests: XCTestCase {
     stub(walletKitController) { mock in
       when(mock.fetchIssuedDocuments(with: any())).thenReturn([pidDocument])
       when(mock.deleteDocument(with: any(), status: any())).thenDoNothing()
+      when(mock.deletePopKeys()).thenDoNothing()
     }
     stub(secureEnclaveController) { mock in
       when(mock.deleteKeychainItem(keyTag: any())).thenDoNothing()
@@ -78,6 +79,10 @@ final class PIDRevokeInteractorTests: XCTestCase {
 
     // The server-side RWSCA account is deleted before local state.
     verify(rwscaInteractor).deleteAccount()
+
+    // The POP keys are wrapped by the account being deleted, and no document owns them, so the
+    // document deletion above cannot reach them — they have to be purged explicitly.
+    verify(walletKitController).deletePopKeys()
 
     // PID/PIN and RWSCA account keys are torn down.
     verify(secureEnclaveController).deleteKeychainItem(keyTag: equal(to: .rwscaAccountID))
@@ -114,6 +119,7 @@ final class PIDRevokeInteractorTests: XCTestCase {
     // ...so no local state is touched: documents stay, prefs and keychain are untouched.
     verify(walletKitController, times(0)).fetchIssuedDocuments(with: any())
     verify(walletKitController, times(0)).deleteDocument(with: any(), status: any())
+    verify(walletKitController, times(0)).deletePopKeys()
     verify(prefsController, times(0)).remove(forKey: any())
     verify(secureEnclaveController, times(0)).deleteKeychainItem(keyTag: any())
   }
@@ -124,6 +130,7 @@ final class PIDRevokeInteractorTests: XCTestCase {
     stub(walletKitController) { mock in
       when(mock.fetchIssuedDocuments(with: any())).thenReturn([pidDocument])
       when(mock.deleteDocument(with: any(), status: any())).thenDoNothing()
+      when(mock.deletePopKeys()).thenDoNothing()
     }
     stub(secureEnclaveController) { mock in
       when(mock.deleteKeychainItem(keyTag: any())).thenDoNothing()

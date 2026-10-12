@@ -128,7 +128,7 @@ extension DesignSystem.Styles.Colors {
   static let schemesOnSurfaceDark = Color(hex: "#E6E0E9")
 
   // The on surface variant color. (light)
-  static let schemesOnSurfaceVariantLight = Color(hex: "#49454F")
+  static let schemesOnSurfaceVariantLight = Color(hex: "#767676")
   // The on surface variant color. (dark)
   static let schemesOnSurfaceVariantDark = Color(hex: "#CAC4D0")
 
