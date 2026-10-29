@@ -8,7 +8,6 @@ import CryptoKit
 import UIKit
 import logic_api
 import logic_business
-import logic_feature_flags
 
 public protocol MDVMInteractor {
   /// Ensures a valid MDVM token exists by registering, reusing, or renewing as needed.
@@ -16,6 +15,9 @@ public protocol MDVMInteractor {
 }
 
 public final class MDVMInteractorImpl: MDVMInteractor {
+
+  /// The stored token is renewed once it is 10 minutes close to expiring
+  private static let tokenRenewalBufferMinutes = 10
 
   private var isSkipIntegrityChecksEnabled: Bool {
 #if targetEnvironment(simulator)
@@ -31,7 +33,6 @@ public final class MDVMInteractorImpl: MDVMInteractor {
   private let secureEnclaveController: SecureEnclaveController
   private let configLogic: ConfigLogic
   private let prefsController: PrefsController
-  private let featureFlagRepository: FeatureFlagRepository
   private let walletRevocationStore: WalletRevocationStore
   private let logger: Logging?
 
@@ -41,7 +42,6 @@ public final class MDVMInteractorImpl: MDVMInteractor {
     secureEnclaveController: SecureEnclaveController,
     configLogic: ConfigLogic,
     prefsController: PrefsController,
-    featureFlagRepository: FeatureFlagRepository,
     walletRevocationStore: WalletRevocationStore,
     logger: Logging?
   ) {
@@ -50,21 +50,20 @@ public final class MDVMInteractorImpl: MDVMInteractor {
     self.secureEnclaveController = secureEnclaveController
     self.configLogic = configLogic
     self.prefsController = prefsController
-    self.featureFlagRepository = featureFlagRepository
     self.walletRevocationStore = walletRevocationStore
     self.logger = logger
   }
 
   public func ensureFreshMDVMToken() async throws -> MDVMStoredRegistration? {
-    if let storedRegistration = mdvmRepository.getStoredRegistration() {
-      guard await shouldRenewToken(storedRegistration) else {
+    if let storedRegistration = try mdvmRepository.getStoredRegistration() {
+      guard shouldRenewToken(storedRegistration) else {
         return storedRegistration
       }
       try await renew(using: storedRegistration)
     } else {
       try await register()
     }
-    return mdvmRepository.getStoredRegistration()
+    return try mdvmRepository.getStoredRegistration()
   }
 
   private func register() async throws {
@@ -146,14 +145,12 @@ public final class MDVMInteractorImpl: MDVMInteractor {
     }
   }
 
-  private func shouldRenewToken(_ storedRegistration: MDVMStoredRegistration) async -> Bool {
+  private func shouldRenewToken(_ storedRegistration: MDVMStoredRegistration) -> Bool {
     guard let expirationDate = storedRegistration.expirationDate else {
       return true
     }
 
-    let bufferDuration: String = await featureFlagRepository.getFlagValue(.mdvmTokenFreshnessBuffer)
-    let bufferMinutes = bufferDuration.minutesFromISO8601DurationString() ?? 10
-    let bufferSeconds = TimeInterval(max(0, bufferMinutes) * 60)
+    let bufferSeconds = TimeInterval(Self.tokenRenewalBufferMinutes * 60)
     return expirationDate.timeIntervalSinceNow <= bufferSeconds
   }
 
@@ -204,7 +201,7 @@ public final class MDVMInteractorImpl: MDVMInteractor {
 extension MDVMInteractorImpl: MDVMTokenRenewalService {
 
   public func renewMDVMTokenIgnoringFreshness() async throws {
-    guard let storedRegistration = mdvmRepository.getStoredRegistration() else {
+    guard let storedRegistration = try mdvmRepository.getStoredRegistration() else {
       throw MDVMRepositoryError.notRegistered
     }
     try await renew(using: storedRegistration)

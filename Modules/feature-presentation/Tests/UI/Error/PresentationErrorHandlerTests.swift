@@ -243,7 +243,35 @@ final class PresentationErrorHandlerTests: XCTestCase {
         XCTAssertNil(dialog?.errorCode)
         verify(classifier).classify(any())
     }
-    
+
+    // MARK: - Retry
+
+    func testHandle_WhenNetworkUnavailableWithRetry_ThenRetryIsPrimaryAndLeaveIsSecondary() {
+        stubClassifier(.networkUnavailable, code: "invalidQueryResolution")
+        let retry = PresentationErrorDialogConfig.RetryAction(action: {})
+
+        guard case .dialog(let dialog) = sut.handle(TestNSError.generic, originator: originator, retryAction: retry) else {
+            return XCTFail("expected a dialog presentation")
+        }
+
+        XCTAssertEqual(dialog.primary.title, .globalTryAgainButton)
+        XCTAssertEqual(dialog.primary.action, .retry(retry))
+        XCTAssertEqual(dialog.secondary?.title, .globalNoInternetErrorPrimButton)
+        XCTAssertEqual(dialog.secondary?.action, .popTo(originator))
+    }
+
+    func testHandle_WhenNotNetworkUnavailable_ThenRetryActionIsIgnored() {
+        let retry = PresentationErrorDialogConfig.RetryAction(action: {})
+        for errorClass in PresentationErrorClass.allCases where errorClass != .networkUnavailable {
+            stubClassifier(errorClass, code: "any")
+            let presentation = sut.handle(TestNSError.generic, originator: originator, retryAction: retry)
+            if case .dialog(let dialog) = presentation {
+                XCTAssertNotEqual(dialog.primary.action, .retry(retry), "\(errorClass)")
+                XCTAssertNotEqual(dialog.secondary?.action, .retry(retry), "\(errorClass)")
+              }
+        }
+    }
+
     // MARK: - Helpers
     
     private func stubClassifier(

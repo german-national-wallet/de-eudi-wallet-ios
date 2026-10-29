@@ -86,6 +86,7 @@ public enum FeatureDashboardRouteModule: AppRouteModule {
   case walletLossProtection
   case credentialDetail(DocClaimsDecodable)
   case personalDetail(DocClaimsDecodable)
+  case activityDetail(id: String)
 
   public var info: (key: String, arguments: [String: String]) {
     return switch self {
@@ -99,6 +100,8 @@ public enum FeatureDashboardRouteModule: AppRouteModule {
       (key: "UserProfile", arguments: [:])
     case .personalDetail:
       (key: "PersonalDetail", arguments: [:])
+    case .activityDetail:
+      (key: "ActivityDetail", arguments: [:])
     }
   }
 }
@@ -131,7 +134,8 @@ public indirect enum FeaturePresentationRouteModule: AppRouteModule {
     originator: AppRoute
   )
   case showPinView(
-    config: any UIConfigType
+    config: any UIConfigType,
+    presentationCoordinator: RemoteSessionCoordinator? = nil
   )
   case pinRetryCounterView(config: any UIConfigType)
   case credentialNotFoundInstructionsView(config: any UIConfigType)
@@ -157,7 +161,7 @@ public indirect enum FeaturePresentationRouteModule: AppRouteModule {
       (key: "PresentationConsent", arguments: ["originator": originator.info.key, "relyingParty": relyingParty])
     case .presentationRPInfo(presentationCoordinator: let presentationCoordinator, originator: let originator):
       (key: "PresentationRPInfo", arguments: ["originator": originator.info.key])
-    case .showPinView(config: let config):
+    case .showPinView(config: let config, _):
       (key: "showPinView", arguments: ["config": config.log])
     case .pinRetryCounterView(config: let config):
       (key: "errorView", arguments: ["config": config.log])

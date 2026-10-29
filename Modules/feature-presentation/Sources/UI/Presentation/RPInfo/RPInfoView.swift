@@ -10,6 +10,7 @@ import feature_common
 
 struct RPInfoView<Router: RouterHost>: View {
   @ObservedObject var viewModel: RPInfoViewModel<Router>
+  @State private var isCancelDialogPresented = false
 
   public init(
     viewModel: RPInfoViewModel<Router>
@@ -44,6 +45,11 @@ struct RPInfoView<Router: RouterHost>: View {
         }
       }
     }
+    .cancelConfirmationDialog(
+      isPresented: $isCancelDialogPresented,
+      config: .pidPresentation,
+      onConfirm: viewModel.confirmDecline
+    )
     .centerDialog(
       isPresented: $viewModel.isConfirmationPopupVisible,
       icon: Theme.shared.image.infoCircleImage,
@@ -82,7 +88,7 @@ struct RPInfoView<Router: RouterHost>: View {
 
     VStack {
       HeaderContentView(onClose: {
-        self.viewModel.router.pop()
+        isCancelDialogPresented = true
       })
 
       VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {

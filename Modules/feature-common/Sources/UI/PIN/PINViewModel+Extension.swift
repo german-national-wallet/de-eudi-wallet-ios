@@ -121,6 +121,8 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
             )
           } else if error.isIOSAttestationFailure {
             showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
+          } else if error is SecureEnclaveControllerError {
+            showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
           } else {
             showInlinePinError(LocalizableStringKey.walletPinWrongEntry.toString)
           }
@@ -179,6 +181,9 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
         )
       )
     }
+  }
+  func transportPinRetryFlow() {
+    onPinEntered?.onEntered(pinString)
   }
   func setupNewEidPinFlow() {
     router.push(with:
@@ -276,6 +281,8 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
       logger?.e("PINViewModel:: failed to set pin: \(error)")
       setState { $0.copy(isLoading: false) }
       if error.isIOSAttestationFailure {
+        showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
+      } else if error is SecureEnclaveControllerError {
         showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
       } else {
         showInlinePinError(LocalizableStringKey.walletPinWrongEntry.toString)

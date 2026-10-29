@@ -178,7 +178,45 @@ extension IssuanceCardViewModel: IssuanceVerificationInteractorDelegate {
   }
   
   func invalidPinErrorReceived(error: (any Error)?, cardStatusInfo: CardStatusInfo?) {
-    doNavigation(navigationType: .push(getInvalidPinRoute()))
+    switch viewState.eidFlow {
+    case .setEidPin:
+      doNavigation(navigationType: .push(getTransportPinRetryRoute()))
+    case .authentication, .confirmNewPin:
+      doNavigation(navigationType: .push(getInvalidPinRoute()))
+    }
+  }
+
+  func getTransportPinRetryRoute() -> AppRoute {
+    AppRoute.featureIssuanceModule(
+      .pinView(
+        config: UIConfig.Biometry(
+          navigationTitle: .transportPinViewTitle,
+          caption: .setupPinTransportViewSecondaryButtonTitle,
+          quickPinOnlyCaption: .space,
+          navigationSuccessType: .pop,
+          navigationErrorScreen: nil,
+          navigationBackType: .pop,
+          isPreAuthorization: true,
+          shouldInitializeBiometricOnCreate: true,
+          invalidPinTitle: .transportPinWrongEntry,
+          initialErrorMessage: .transportPinWrongEntry,
+          pinScreenType: .transportPinRetryFlow,
+          imageIcon: Theme.shared.image.transportPinLetter,
+          imageSize: CGSize(width: 150, height: 200),
+          quickPinSize: 5
+        ),
+        onPinEntered: PinCallbackWrapper(onEntered: { [weak self] pin in
+          Task { @MainActor in
+            guard let self else { return }
+            self.issuanceVarificationInteractor.setDelegate(self)
+            self.setState { $0.copy(isLoading: true) }
+            self.issuanceVarificationInteractor.setPin(pin)
+            self.router.pop()
+          }
+        }),
+        issuanceVerificationInteractor: nil
+      )
+    )
   }
   
   private func getInvalidPinRoute() -> AppRoute {

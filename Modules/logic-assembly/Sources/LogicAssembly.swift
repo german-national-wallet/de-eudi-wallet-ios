@@ -19,6 +19,7 @@
 @_exported import logic_business
 @_exported import logic_analytics
 @_exported import logic_core
+@_exported import logic_storage
 @_exported import logic_authentication
 @_exported import logic_api
 @_exported import logic_feature_flags

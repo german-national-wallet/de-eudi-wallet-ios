@@ -22,6 +22,7 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   private let analyticsController: AnalyticsController
   private let errorHandler: PresentationErrorHandler
   private let logger: Logging?
+  private let openURL: @MainActor (URL) -> Void
 
   public init(
     router: Router,
@@ -29,12 +30,14 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     originator: AppRoute,
     analyticsController: AnalyticsController,
     errorHandler: PresentationErrorHandler,
-    logger: Logging?
+    logger: Logging?,
+    openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
   ) {
     self.interactor = interactor
     self.analyticsController = analyticsController
     self.errorHandler = errorHandler
     self.logger = logger
+    self.openURL = openURL
     super.init(router: router, originator: originator)
   }
 
@@ -63,7 +66,6 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         logger?.d("presentation refused: request not covered by the relying party's registration certificate")
         return
       }
-
       self.onReceivedItems(
         with: authenticationRequest.requestDataCells,
         title: .requestDataTitle(
@@ -72,25 +74,9 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         relyingParty: .custom(authenticationRequest.relyingParty),
         isTrusted: authenticationRequest.isTrusted,
       )
-      setState {
-        $0.copy(
-          contentHeaderConfig: .init(
-            appIconAndTextData: AppIconAndTextData(
-              appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
-              appText: ThemeManager.shared.image.euditext
-            ),
-            description: .dataSharingTitle,
-            mainText: getTitle(),
-            relyingPartyData: RelyingPartyData(
-              isVerified: viewState.isTrusted,
-              name: getRelyingParty(),
-              description: getCaption()
-            )
-          )
-        )
-      }
+      self.onPresentationDoWorkSuccess()
     case .failure(let error):
-      presentError(errorHandler.handle(error, originator: getOriginator()))
+      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: retryAction))
     }
   }
 
@@ -124,7 +110,11 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
       errorDescription: nil
     )
-    Task { await self.interactor.onRejectRequest() }
+    Task {
+      if let redirectURL = await self.interactor.onRejectRequest() {
+        self.openURL(redirectURL)
+      }
+    }
     router.pop()
   }
 
@@ -146,6 +136,9 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       router.popTo(with: getOriginator())
     case .dismiss:
       isConfirmationPopupVisible = false
+    case .retry(let retryAction):
+      isConfirmationPopupVisible = false
+      retryAction.action()
     }
   }
 

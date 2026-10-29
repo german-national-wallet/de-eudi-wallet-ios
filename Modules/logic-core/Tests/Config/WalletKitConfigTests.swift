@@ -53,13 +53,29 @@ final class WalletKitConfigTests: XCTestCase {
     XCTAssertEqual(config.rule(for: nil).numberOfCredentials, 1)
   }
 
+  func testVciConfig_WhenBuilt_ThenDisablesRSAAndRequiresECResponseEncryption() throws {
+    let configLogic = MockConfigLogic()
+    stub(configLogic) { mock in
+      when(mock.vciIssuerURL.get).thenReturn("https://issuer.example.com")
+    }
+    let config = try XCTUnwrap(makeSUT(configLogic: configLogic).vciConfig?["issuer.example.com"])
+    let encryption = config.encryptionSupportConfig
+
+    XCTAssertNil(encryption.rsaConfig)
+    XCTAssertEqual(encryption.ecConfig?.ecKeyCurve, .P256)
+    guard case .required = encryption.credentialResponseEncryptionPolicy else {
+      return XCTFail("Expected required credential response encryption")
+    }
+  }
+
   private func makeSUT(configLogic: MockConfigLogic = MockConfigLogic()) -> WalletKitConfigImpl {
     WalletKitConfigImpl(
       configLogic: configLogic,
       walletKitAttestationProvider: WalletAttestationProviderImpl(
         wiaIssuanceService: MockWIAIssuanceService(),
         secureEnclaveController: MockSecureEnclaveController()
-      )
+      ),
+      vciRedirectURI: "eudi-openid4ci://authorize"
     )
   }
 }

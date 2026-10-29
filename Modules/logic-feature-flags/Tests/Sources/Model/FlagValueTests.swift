@@ -78,6 +78,41 @@ struct FlagValueTests {
     }
   }
 
+  @Test
+  func decodeAll_SkipsFeatureWithoutValue_AndKeepsTheRest() throws {
+    let values = try FlagValue.decodeAll(from: payloadWithFeatureWithoutValue)
+
+    #expect(values.count == 1)
+    #expect(values["credential_configuration_id_mdoc"] == .string("pid-mso-mdoc_2"))
+    #expect(values["Client_ID"] == nil)
+  }
+
+  @Test
+  func decodeAll_SkipsFeatureWhoseValueDoesNotMatchItsType_AndKeepsTheRest() throws {
+    let features = [
+      feature(id: "1", key: "mismatched_feature", type: "BOOLEAN", value: "\"not a bool\""),
+      feature(id: "2", key: "valid_feature", type: "BOOLEAN", value: "true")
+    ].joined(separator: ",")
+
+    let values = try FlagValue.decodeAll(from: "[\(environment(id: "env-id", features: features))]")
+
+    #expect(values.count == 1)
+    #expect(values["valid_feature"] == .bool(true))
+  }
+
+  @Test
+  func decodeAll_SkipsFeatureWithUnknownType_AndKeepsTheRest() throws {
+    let features = [
+      feature(id: "1", key: "unknown_type_feature", type: "DATE", value: "\"2026-01-01\""),
+      feature(id: "2", key: "valid_feature", type: "STRING", value: "\"wallet\"")
+    ].joined(separator: ",")
+
+    let values = try FlagValue.decodeAll(from: "[\(environment(id: "env-id", features: features))]")
+
+    #expect(values.count == 1)
+    #expect(values["valid_feature"] == .string("wallet"))
+  }
+
   private func environment(id: String, features: String) -> String {
     """
     {
@@ -115,6 +150,23 @@ struct FlagValueTests {
     let first = environment(id: "first-env", features: feature(id: "1", key: "first_feature", type: "BOOLEAN", value: "true"))
     let second = environment(id: "second-env", features: feature(id: "2", key: "second_feature", type: "BOOLEAN", value: "false"))
     return "[\(first),\(second)]"
+  }
+
+  private var payloadWithFeatureWithoutValue: String {
+    let featureWithoutValue = """
+    {
+      "id": "1",
+      "key": "Client_ID",
+      "l": false,
+      "type": "STRING",
+      "version": 0
+    }
+    """
+    let features = [
+      featureWithoutValue,
+      feature(id: "2", key: "credential_configuration_id_mdoc", type: "STRING", value: "\"pid-mso-mdoc_2\"")
+    ].joined(separator: ",")
+    return "[\(environment(id: "env-id", features: features))]"
   }
 
   private var payloadWithDuplicateKey: String {

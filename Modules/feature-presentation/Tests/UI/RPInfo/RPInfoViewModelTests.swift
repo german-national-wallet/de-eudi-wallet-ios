@@ -21,6 +21,7 @@ final class RPInfoViewModelTests: XCTestCase {
   private var analyticsController: MockAnalyticsController!
   private var errorHandler: MockPresentationErrorHandler!
   private var sut: RPInfoViewModel<MockRouterHost>!
+  private var openedURLs: [URL] = []
   private let declinedTrace = [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined]
     
   override func setUp() {
@@ -30,20 +31,22 @@ final class RPInfoViewModelTests: XCTestCase {
     interactor = MockPresentationInteractor()
     analyticsController = MockAnalyticsController()
     errorHandler = MockPresentationErrorHandler()
+    openedURLs = []
     sut = RPInfoViewModel(
       router: router,
       interactor: interactor,
       originator: .featureDashboardModule(.dashboard),
       analyticsController: analyticsController,
       errorHandler: errorHandler,
-      logger: nil
+      logger: nil,
+      openURL: { [weak self] url in self?.openedURLs.append(url) }
     )
     stub(analyticsController) { mock in
       when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
       when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
     }
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.dialog(.fixture()))
     }
   }
 
@@ -90,7 +93,7 @@ final class RPInfoViewModelTests: XCTestCase {
       when(mock.onDeviceEngagement()).thenReturn(.failure(credentialNotFound))
     }
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.notice(.fixture()))
     }
     stub(router) { mock in
       when(mock.push(with: any())).then { route in
@@ -105,7 +108,11 @@ final class RPInfoViewModelTests: XCTestCase {
     XCTAssertTrue(didPushNoticeRoute)
     XCTAssertNil(sut.errorDialog)
     XCTAssertTrue(sut.viewState.initialized, "Must be initialized before presenting the error")
-    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    verify(errorHandler).handle(
+      any(),
+      originator: equal(to: AppRoute.featureDashboardModule(.dashboard)),
+      retryAction: any()
+    )
     verify(interactor).onDeviceEngagement()
     verify(analyticsController).startTrace(name: any(), initialAttributes: any())
   }
@@ -123,7 +130,7 @@ final class RPInfoViewModelTests: XCTestCase {
 
     XCTAssertEqual(sut.errorDialog?.traceId, "trace-id")
     XCTAssertTrue(sut.viewState.initialized, "Must be initialized before presenting the error")
-    verify(errorHandler).handle(any(), originator: any())
+    verify(errorHandler).handle(any(), originator: any(), retryAction: any())
     verify(router, never()).push(with: any())
     verify(interactor).onDeviceEngagement()
   }
@@ -199,7 +206,7 @@ final class RPInfoViewModelTests: XCTestCase {
     let notTrusted = WalletError(description: "Trust evaluation failed", code: .trustError)
     stubPresentation(returning: .failure(notTrusted))
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.notice(.fixture()))
     }
     var pushedNotice = false
     stub(router) { mock in
@@ -241,7 +248,10 @@ final class RPInfoViewModelTests: XCTestCase {
   func testConfirmDecline_ThenSendsAccessDeniedEndsTraceAsDeclinedAndPops() async {
     let rejectionSent = expectation(description: "access_denied sent")
     stub(interactor) { mock in
-      when(mock.onRejectRequest()).then { rejectionSent.fulfill() }
+      when(mock.onRejectRequest()).then {
+        rejectionSent.fulfill()
+        return nil
+      }
     }
     stub(router) { mock in
       when(mock.pop()).thenDoNothing()
@@ -256,6 +266,42 @@ final class RPInfoViewModelTests: XCTestCase {
     verify(analyticsController).endTrace(finalAttributes: equal(to: declinedTrace), errorDescription: isNil())
   }
 
+  func testConfirmDecline_WhenVerifierReturnsRedirectURI_ThenOpensIt() async throws {
+    let redirectURL = try XCTUnwrap(URL(string: "https://verifier.example/cancelled"))
+    stub(interactor) { mock in
+      when(mock.onRejectRequest()).thenReturn(redirectURL)
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    sut.confirmDecline()
+    try await waitUntil { !self.openedURLs.isEmpty }
+
+    XCTAssertEqual(openedURLs, [redirectURL])
+    verify(router).pop()
+  }
+
+  func testConfirmDecline_WhenVerifierReturnsNoRedirectURI_ThenOpensNothing() async throws {
+    let rejectionSent = expectation(description: "access_denied sent")
+    stub(interactor) { mock in
+      when(mock.onRejectRequest()).then {
+        rejectionSent.fulfill()
+        return nil
+      }
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    sut.confirmDecline()
+    await fulfillment(of: [rejectionSent], timeout: 1)
+    await Task.yield()
+
+    XCTAssertTrue(openedURLs.isEmpty)
+    verify(router).pop()
+  }
+
   func testOnErrorDialogAction_WhenDismiss_ThenClearsDialogAndHidesConfirmationPopup() {
     sut.onDecline()
 
@@ -267,6 +313,17 @@ final class RPInfoViewModelTests: XCTestCase {
   }
 
   // MARK: - Helpers
+
+  private func waitUntil(timeout: TimeInterval = 1, _ condition: @escaping () -> Bool) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while !condition() {
+      guard Date() < deadline else {
+        XCTFail("Condition not met within \(timeout)s")
+        return
+      }
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+  }
 
   private func makeRequest(
     isOverAsking: Bool = false,

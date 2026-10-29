@@ -96,6 +96,7 @@ final class WalletKitControllerImpl: WalletKitController {
   private let keyChainController: KeyChainController
   private let featureFlagRepository: FeatureFlagRepository
   private let logger: Logging?
+  private let transactionLogs: TransactionLogController?
   private var wia: IssuerDPoPConstructorParam?
 
   init(
@@ -106,9 +107,12 @@ final class WalletKitControllerImpl: WalletKitController {
     sessionCoordinatorHolder: SessionCoordinatorHolder,
     secureAreas: [SecureArea],
     networking: any NetworkingProtocol,
+    transactionLogger: (any TransactionLogger)? = nil,
+    transactionLogs: TransactionLogController? = nil,
     logger: Logging? = nil
   ) {
     self.walletKitConfig = walletKitConfig
+    self.transactionLogs = transactionLogs
     self.configLogic = configLogic
     self.keyChainController = keyChainController
     self.featureFlagRepository = featureFlagRepository
@@ -132,7 +136,8 @@ final class WalletKitControllerImpl: WalletKitController {
       openID4VpConfig: walletKitConfig.vpConfig,
       openID4VciConfigurations: walletKitConfig.issuersConfig.mapValues { $0.config },
       networking: networking,
-      secureAreas: secureAreas
+      secureAreas: secureAreas,
+      transactionLogger: transactionLogger
     ) else {
       fatalError("Unable to Initialize WalletKit")
     }
@@ -175,12 +180,26 @@ final class WalletKitControllerImpl: WalletKitController {
       return docType.copy(credentialOptions: credentialOptions, keyOptions: keyOptions)
     }
 
-    return try await mapIssuerMetadataFailure {
+    let response = try await mapIssuerMetadataFailure {
       try await wallet.issueDocumentsByOfferUrl(
         offerUri: offerUri,
         docTypes: docTypes,
         txCodeValue: txCodeValue
-      ).documents
+      )
+    }
+    await saveIssuanceSnapshots(for: response.documents, registration: response.wrpIssuerPolicy)
+    return response.documents
+  }
+
+  private func saveIssuanceSnapshots(for documents: [WalletStorage.Document], registration: WrpRegistrationPolicy?) async {
+    guard let transactionLogs else { return }
+    for document in documents {
+      guard let stored = fetchDocument(with: document.id) else { continue }
+      do {
+        try await transactionLogs.saveIssuanceSnapshot(IssuanceSnapshot(document: stored, registration: registration))
+      } catch {
+        logger?.e("issuance: saving the activity snapshot failed: \(error.localizedDescription)")
+      }
     }
   }
   
@@ -199,6 +218,11 @@ final class WalletKitControllerImpl: WalletKitController {
     try? await wallet.deleteAllDocuments()
     for status in DocumentStatus.allCases {
       try? await wallet.deleteDocuments(status: status)
+    }
+    do {
+      try await transactionLogs?.deleteAllTransactionLogs()
+    } catch {
+      logger?.e("WalletKitController: failed to clear the activity log: \(error.localizedDescription)")
     }
   }
 
@@ -579,6 +603,7 @@ extension WalletKitControllerImpl {
     let rule = walletKitConfig.documentIssuanceConfig.rule(for: .mDocPid)
     let credentialOptions = CredentialOptions(credentialPolicy: rule.policy, batchSize: rule.numberOfCredentials)
     let mdocConfigId = await resolvePidMsoMdocConfigId()
+    logger?.d("CredentialRequest: issuePAR credential_configuration_id=\(mdocConfigId)")
     return try await mapIssuerMetadataFailure {
       try await wallet.issuePAR(issuerName: walletKitConfig.pidIssuerName, docTypeIdentifier: DocTypeIdentifier.identifier(mdocConfigId), credentialOptions: credentialOptions)
     }
@@ -590,7 +615,10 @@ extension WalletKitControllerImpl {
       curve: .P256, secureAreaName: RemoteWSCAService.name, accessControl: .empty
     )
     let credentialOptions = CredentialOptions(credentialPolicy: rule.policy, batchSize: rule.numberOfCredentials)
-    let identifiers = [DocTypeIdentifier.identifier(await resolvePidMsoMdocConfigId()), DocTypeIdentifier.identifier(await resolvePidSdJwtConfigId())]
+    let mdocConfigId = await resolvePidMsoMdocConfigId()
+    let sdJwtConfigId = await resolvePidSdJwtConfigId()
+    logger?.d("CredentialRequest: issuePendingDocument credential_configuration_ids=[\(mdocConfigId), \(sdJwtConfigId)]")
+    let identifiers = [DocTypeIdentifier.identifier(mdocConfigId), DocTypeIdentifier.identifier(sdJwtConfigId)]
     if let pendingDoc = wallet.storage.pendingDocuments.last {
       let issuedDoc = try await mapIssuerMetadataFailure {
         try await wallet.resumePendingIssuanceDocuments(
@@ -603,6 +631,7 @@ extension WalletKitControllerImpl {
           keyOptions: keyOptions
         )
       }
+      await saveIssuanceSnapshots(for: issuedDoc, registration: nil)
       return issuedDoc.first
     }
     throw WalletCoreError.unableToIssueAndStore

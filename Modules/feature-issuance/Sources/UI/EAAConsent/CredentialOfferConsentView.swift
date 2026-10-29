@@ -37,7 +37,7 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
     }
     .sheet(isPresented: $showRequestedClaims) {
-      RequestedClaimsSheetView(
+      CredentialClaimsSheetView(
         title: viewModel.documentName,
         issuer: viewModel.viewState.documentOfferUiModel.issuerName,
         issuerImageUrl: viewModel.issuerImageUrl?.absoluteString ?? "",
@@ -178,101 +178,6 @@ private func content(
   }
 }
 
-private struct RequestedClaimsSheetView: View {
-  let title: String
-  let issuer: String
-  let issuerImageUrl: String
-  let claims: [String]
-  let onClose: () -> Void
-
-  @State private var sheetHeight: CGFloat = 320
-  @State private var claimsHeight: CGFloat = 0
-
-  // The claim list hugs its content but scrolls once it would exceed half the screen.
-  private var maxClaimsHeight: CGFloat { UIScreen.main.bounds.height * 0.5 }
-
-  var body: some View {
-    VStack(spacing: 0) {
-      header
-
-      ScrollView {
-        VStack(spacing: 0) {
-          ForEach(claims, id: \.self) { claim in
-            DSBodyLabel(claim)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.vertical, DSStyle.Spacers.SPACING_MEDIUM)
-
-            Divider()
-          }
-        }
-        .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
-        .background(
-          GeometryReader { proxy in
-            Color.clear.preference(key: ClaimsHeightPreferenceKey.self, value: proxy.size.height)
-          }
-        )
-      }
-      .frame(height: min(claimsHeight, maxClaimsHeight))
-      .onPreferenceChange(ClaimsHeightPreferenceKey.self) { claimsHeight = $0 }
-
-      DSSecondaryButton(
-        title: LocalizableStringKey.eaaIssuanceDialogCancelSecButton.toString,
-        action: onClose
-      )
-      .padding(DSStyle.Spacers.SPACING_MEDIUM)
-    }
-    .background(DSColor.surface)
-    .background(
-      GeometryReader { proxy in
-        Color.clear.preference(key: SheetHeightPreferenceKey.self, value: proxy.size.height)
-      }
-    )
-    .onPreferenceChange(SheetHeightPreferenceKey.self) { sheetHeight = $0 }
-    .presentationDetents([.height(sheetHeight)])
-    .presentationDragIndicator(.hidden)
-  }
-
-  private var header: some View {
-    VStack(spacing: 0) {
-      HStack(alignment: .top, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-        VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_EXTRA_SMALL) {
-          DSTitleLabel(title)
-
-          DSBodyLabel(issuer)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, DSStyle.Spacers.SPACING_MEDIUM)
-        .padding(.vertical, DSStyle.Spacers.SPACING_LARGE_MEDIUM)
-
-        RemoteImageView(urlString: issuerImageUrl)
-          .frame(width: Self.logoWidth)
-          .frame(maxHeight: .infinity)
-          .clipped()
-      }
-      .fixedSize(horizontal: false, vertical: true)
-      Divider()
-    }
-  }
-
-  /// Width of the issuer logo in the header. `RemoteImageView` fills whatever it is given, so the
-  /// frame alone decides how large the logo appears.
-  private static let logoWidth: CGFloat = 96
-}
-
-private struct SheetHeightPreferenceKey: PreferenceKey {
-  static var defaultValue: CGFloat { 0 }
-  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-    value = max(value, nextValue())
-  }
-}
-
-private struct ClaimsHeightPreferenceKey: PreferenceKey {
-  static var defaultValue: CGFloat { 0 }
-  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-    value = max(value, nextValue())
-  }
-}
-
 #Preview {
   let state = CredentialOfferConsentViewState(
     isLoading: false,
@@ -310,7 +215,7 @@ private struct ClaimsHeightPreferenceKey: PreferenceKey {
   VStack {
     Spacer()
 
-    RequestedClaimsSheetView(
+    CredentialClaimsSheetView(
       title: "Document Name",
       issuer: LocalizableStringKey.unknownIssuer.toString,
       issuerImageUrl: "https://eudiplo.eudi-wallet.org/storage/f5ec0db5-38e3-4f42-822b-b3c0b638c478",

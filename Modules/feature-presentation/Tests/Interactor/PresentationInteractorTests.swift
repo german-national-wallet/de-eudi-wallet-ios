@@ -253,20 +253,53 @@ final class PresentationInteractorTests: XCTestCase {
 
   func testOnRejectRequest_ThenSendsRejectionThroughCoordinator() async {
     stub(coordinator) { mock in
-      when(mock.declineResponse()).thenDoNothing()
+      when(mock.declineResponse()).thenReturn(nil)
     }
 
-    await sut.onRejectRequest()
+    _ = await sut.onRejectRequest()
 
     verify(coordinator).declineResponse()
   }
 
-  func testOnRejectRequest_WhenCoordinatorThrows_ThenDoesNotPropagate() async {
+  func testOnRejectRequest_WhenVerifierReturnsRedirectURI_ThenReturnsIt() async throws {
+    let redirectURL = try XCTUnwrap(URL(string: "https://verifier.example/cancelled"))
+    stub(coordinator) { mock in
+      when(mock.declineResponse()).thenReturn(redirectURL)
+    }
+
+    let result = await sut.onRejectRequest()
+
+    XCTAssertEqual(result, redirectURL)
+  }
+
+  func testOnRejectRequest_WhenVerifierReturnsNoRedirectURI_ThenReturnsNil() async {
+    stub(coordinator) { mock in
+      when(mock.declineResponse()).thenReturn(nil)
+    }
+
+    let result = await sut.onRejectRequest()
+
+    XCTAssertNil(result)
+  }
+
+  func testOnRejectRequest_WhenCoordinatorThrows_ThenDoesNotPropagateAndReturnsNil() async {
     stub(coordinator) { mock in
       when(mock.declineResponse()).thenThrow(TestNSError.generic)
     }
 
-    await sut.onRejectRequest()
+    let result = await sut.onRejectRequest()
+
+    XCTAssertNil(result)
+    verify(coordinator).declineResponse()
+  }
+
+  func testDeclinePresentation_WhenVerifierReturnsRedirectURI_ThenStillDeclinesThroughCoordinator() async throws {
+    let redirectURL = try XCTUnwrap(URL(string: "https://verifier.example/cancelled"))
+    stub(coordinator) { mock in
+      when(mock.declineResponse()).thenReturn(redirectURL)
+    }
+
+    await sut.declinePresentation()
 
     verify(coordinator).declineResponse()
   }

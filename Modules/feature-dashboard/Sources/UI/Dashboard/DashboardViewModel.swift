@@ -136,7 +136,6 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
               router: router,
               interactor: dashboardInteractor,
               logger: DIGraph.resolver.force(Logging.self),
-              deepLinkController: deepLinkController,
               analyticsController: DIGraph.resolver.force(AnalyticsController.self)
             )
           ),
@@ -150,7 +149,13 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
               config: IssuanceFlowUiConfig(flow: .noDocument)
             )
           ),
-          activitiesTab: ActivitiesTabView(),
+          activitiesTab: ActivitiesTabView(
+            with: .init(
+              router: router,
+              interactor: DIGraph.resolver.force(ActivitiesInteractor.self),
+              logger: DIGraph.resolver.force(Logging.self)
+            )
+          ),
           settingsTab: SettingsTabView(
             with: .init(
               router: router,
@@ -162,6 +167,18 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
       }
     }
     
+    func handleDeepLink() async {
+      guard let deepLink = deepLinkController.getPendingDeepLinkAction(),
+            deepLink.requiresCoordinator else {
+        return
+      }
+      deepLinkController.handleDeepLinkAction(
+        routerHost: router,
+        deepLinkExecutable: deepLink,
+        remoteSessionCoordinator: await dashboardInteractor.getWalletKitController().startSameDevicePresentation(deepLink: deepLink.link)
+      )
+    }
+
     func onAppear() {
         self.setState {
           $0.copy(

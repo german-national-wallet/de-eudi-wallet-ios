@@ -67,6 +67,7 @@ struct ConsentView<Router: RouterHost>: View {
               title: LocalizableStringKey.next.toString,
               action: viewModel.onShare
             )
+            .disabled(!viewModel.viewState.allowShare)
             .accessibilityIdentifier("rpConsentNextButton")
           }
           .padding(DSStyle.Spacers.SPACING_MEDIUM)
@@ -78,9 +79,12 @@ struct ConsentView<Router: RouterHost>: View {
             .zIndex(1)
         }
       }
+      .shimmer(isLoading: viewModel.viewState.isLoading)
       .scrollIndicators(.hidden)
       .task {
-        await viewModel.doWork()
+        if !viewModel.viewState.initialized {
+          await viewModel.doWork()
+        }
       }
       .sheet(isPresented: $showInfoSheet) {
         BottomSheetView(
@@ -92,7 +96,8 @@ struct ConsentView<Router: RouterHost>: View {
     }
     .cancelConfirmationDialog(
       isPresented: $isCancelDialogPresented,
-      onConfirm: viewModel.closeButtonTapped
+      config: .pidPresentation,
+      onConfirm: viewModel.confirmDecline
     )
     .centerDialog(
       isPresented: $viewModel.isConfirmationPopupVisible,

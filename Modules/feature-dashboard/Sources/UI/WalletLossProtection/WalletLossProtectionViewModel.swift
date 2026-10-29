@@ -23,7 +23,7 @@ final class WalletLossProtectionViewModel<Router: RouterHost>: ViewModel<Router,
     super.init(
       router: router,
       initialState: .init(
-        revocationCode: interactor.retrieveRevocationCode(),
+        revocationCode: try? interactor.retrieveRevocationCode(),
         isCodeCopied: false
       )
     )

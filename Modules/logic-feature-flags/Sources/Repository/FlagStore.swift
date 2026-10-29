@@ -34,7 +34,7 @@ actor FlagStoreImpl: FlagStore {
     self.logger = logger
 
     do {
-      rawFlags = try FlagValue.decodeAll(from: prefsController.getOptionalString(forKey: .featureFlagsPayload))
+      rawFlags = try FlagValue.decodeAll(from: prefsController.getOptionalString(forKey: .featureFlagsPayload), logger: logger)
     } catch {
       logger?.e("Feature flags payload decoding failed: \(error.logDescriptor)")
       rawFlags = [:]
@@ -57,7 +57,7 @@ actor FlagStoreImpl: FlagStore {
   }
 
   func replaceFlags(from payload: String) async throws {
-    rawFlags = try FlagValue.decodeAll(from: payload)
+    rawFlags = try FlagValue.decodeAll(from: payload, logger: logger)
     prefsController.setValue(isoDateFormatter.string(from: Date()), forKey: .featureFlagsLastUpdate)
 
     guard !rawFlags.isEmpty else {

@@ -30,7 +30,6 @@ final class TestStartupInteractor: EudiTest {
   var prefsController: MockPrefsController!
   var rwscaInteractor: MockRWSCAInteractor!
   var secureEnclaveController: MockSecureEnclaveController!
-  var pidRevokeInteractor: MockPIDRevokeInteractor!
   var appBlockingController: MockAppBlockingController!
   var pushAuthorizationProvider: MockPushAuthorizationProvider!
   var pnsAccountInteractor: MockPNSAccountInteractor!
@@ -42,7 +41,6 @@ final class TestStartupInteractor: EudiTest {
     self.prefsController = MockPrefsController()
     self.rwscaInteractor = MockRWSCAInteractor()
     self.secureEnclaveController = MockSecureEnclaveController()
-    self.pidRevokeInteractor = MockPIDRevokeInteractor()
     self.appBlockingController = MockAppBlockingController()
     self.pushAuthorizationProvider = MockPushAuthorizationProvider()
     self.pnsAccountInteractor = MockPNSAccountInteractor()
@@ -54,7 +52,6 @@ final class TestStartupInteractor: EudiTest {
       prefsController: prefsController,
       rwscaInteractor: rwscaInteractor,
       secureEnclaveController: secureEnclaveController,
-      pidRevokeInteractor: pidRevokeInteractor,
       appBlockingController: appBlockingController,
       pushAuthorizationProvider: pushAuthorizationProvider,
       pnsAccountInteractor: pnsAccountInteractor
@@ -63,7 +60,7 @@ final class TestStartupInteractor: EudiTest {
     stubPrefsControllerSetValue()
     stubKeyChainClear()
     stubWalletKitControllerClearAllDocuments()
-    stubNoOldWallet()
+    stubStoredAppDataVersion(StartupInteractorImpl.currentAppDataVersion)
   }
 
   override func tearDown() {
@@ -73,7 +70,6 @@ final class TestStartupInteractor: EudiTest {
     self.keyChainController = nil
     self.prefsController = nil
     self.secureEnclaveController = nil
-    self.pidRevokeInteractor = nil
     super.tearDown()
   }
 
@@ -163,56 +159,70 @@ final class TestStartupInteractor: EudiTest {
     verifyFirstBootStorageManipulation(count: 1)
   }
 
-  // MARK: - Migration tests
+  // MARK: - App data version tests
 
-  func testInitialize_WhenOldWalletIDPresent_RunsMigrationBeforeRouting() async throws {
+  func testInitialize_WhenNoAppDataVersionStored_ThenClearsAllDataAndStoresCurrentVersion() async {
     stubFetchDocuments(with: [])
     stubHasPin(with: false)
-    stubRunAtLeastOnce()
-    stubOldWalletPresent()
+    stubRunAtLeastOnce(false)
+    stubStoredAppDataVersion(nil)
+    stubPrefsControllerRemove()
 
     _ = await interactor.initialize(with: .zero)
 
-    // Sentinel deleted
-    verify(secureEnclaveController).deleteKeychainItem(keyTag: equal(to: .wiID))
-    // SE private keys deleted
-    verify(secureEnclaveController).deletePrivateKey(with: equal(to: .wiMdvmAuthPrivateKey))
-    verify(secureEnclaveController).deletePrivateKey(with: equal(to: .wiaPrivateKey))
-    // Stale WPB ID cleared
-    verify(secureEnclaveController).deleteKeychainItem(keyTag: equal(to: .wbWIID))
-    // Full wallet reset called
-    verify(pidRevokeInteractor).deletePIDFromWallet()
+    for key in Prefs.Key.allCases {
+      verify(prefsController, atLeastOnce()).remove(forKey: key)
+    }
+    verify(prefsController).setValue(isCurrentAppDataVersion(), forKey: Prefs.Key.appDataVersion)
+    verifyFirstBootStorageManipulation(count: 1)
   }
 
-  func testInitialize_WhenNoOldWalletID_SkipsMigration() async throws {
+  func testInitialize_WhenAppDataVersionUnchanged_ThenDoesNotClearData() async {
     stubFetchDocuments(with: [])
     stubHasPin(with: false)
     stubRunAtLeastOnce()
 
     _ = await interactor.initialize(with: .zero)
 
-    verify(secureEnclaveController, never()).deleteKeychainItem(keyTag: equal(to: .wiID))
-    verify(pidRevokeInteractor, never()).deletePIDFromWallet()
+    verify(prefsController, never()).setValue(any(), forKey: Prefs.Key.appDataVersion)
+    verify(prefsController, never()).remove(forKey: any())
+    verifyFirstBootStorageManipulation(count: 0)
+  }
+
+  func testInitialize_WhenAppDataVersionChanged_ThenClearsAllDataAndStoresCurrentVersion() async {
+    stubFetchDocuments(with: [])
+    stubHasPin(with: false)
+    stubRunAtLeastOnce(false)
+    stubStoredAppDataVersion(StartupInteractorImpl.currentAppDataVersion + 1)
+    stubPrefsControllerRemove()
+
+    _ = await interactor.initialize(with: .zero)
+
+    for key in Prefs.Key.allCases {
+      verify(prefsController, atLeastOnce()).remove(forKey: key)
+    }
+    verify(prefsController).setValue(isCurrentAppDataVersion(), forKey: Prefs.Key.appDataVersion)
+    verifyFirstBootStorageManipulation(count: 1)
   }
 
   // MARK: - Revocation code tests
 
-  func testStoredRevocationCode_WhenCodeStored_ThenReturnsCode() {
+  func testStoredRevocationCode_WhenCodeStored_ThenReturnsCode() throws {
     stubStoredRevocationCode("revocation-123")
 
-    XCTAssertEqual(interactor.storedRevocationCode(), "revocation-123")
+    XCTAssertEqual(try interactor.storedRevocationCode(), "revocation-123")
   }
 
-  func testStoredRevocationCode_WhenNoCodeStored_ThenReturnsNil() {
+  func testStoredRevocationCode_WhenNoCodeStored_ThenReturnsNil() throws {
     stubStoredRevocationCode(nil)
 
-    XCTAssertNil(interactor.storedRevocationCode())
+    XCTAssertNil(try interactor.storedRevocationCode())
   }
 
-  func testStoredRevocationCode_WhenCodeIsEmpty_ThenReturnsNil() {
+  func testStoredRevocationCode_WhenCodeIsEmpty_ThenReturnsNil() throws {
     stubStoredRevocationCode("")
 
-    XCTAssertNil(interactor.storedRevocationCode())
+    XCTAssertNil(try interactor.storedRevocationCode())
   }
 
   func testHasSeenRevocationCode_ReflectsStoredFlag() {
@@ -289,30 +299,19 @@ private extension TestStartupInteractor {
     }
   }
 
-  func stubNoOldWallet() {
-    stub(secureEnclaveController) { mock in
-      when(mock.retrieveStringFromKeychain(keyTag: equal(to: .wiID))).thenReturn(nil)
+  func stubStoredAppDataVersion(_ version: Any?) {
+    stub(prefsController) { mock in
+      when(mock.getValue(forKey: Prefs.Key.appDataVersion)).thenReturn(version)
     }
+  }
+
+  func isCurrentAppDataVersion() -> ParameterMatcher<Any?> {
+    ParameterMatcher { ($0 as? Int) == StartupInteractorImpl.currentAppDataVersion }
   }
 
   func stubStoredRevocationCode(_ code: String?) {
     stub(secureEnclaveController) { mock in
       when(mock.retrieveDecryptedString(keyTag: equal(to: .wpbWiRevocationCode))).thenReturn(code)
-    }
-  }
-
-  func stubOldWalletPresent() {
-    stub(secureEnclaveController) { mock in
-      when(mock.retrieveStringFromKeychain(keyTag: equal(to: .wiID))).thenReturn("old-wallet-id")
-      when(mock.deleteKeychainItem(keyTag: equal(to: .wiID))).thenDoNothing()
-      when(mock.deletePrivateKey(with: equal(to: .wiMdvmAuthPrivateKey))).thenReturn(true)
-      when(mock.deletePrivateKey(with: equal(to: .wiaPrivateKey))).thenReturn(true)
-      when(mock.deletePrivateKey(with: equal(to: .custom("com.dewallet.registration.privateKey")))).thenReturn(true)
-      when(mock.deleteKeychainItem(keyTag: equal(to: .wbWIID))).thenDoNothing()
-      when(mock.deleteKeychainItem(keyTag: equal(to: .wpbWiRevocationCode))).thenDoNothing()
-    }
-    stub(pidRevokeInteractor) { mock in
-      when(mock.deletePIDFromWallet()).thenDoNothing()
     }
   }
 
@@ -356,5 +355,11 @@ private extension TestStartupInteractor {
     verify(keyChainController, times(count)).clear()
     verify(keyChainController, times(count)).clearAllKeychainItems()
     verify(walletKitController, times(count)).clearAllDocuments()
+  }
+
+  func stubPrefsControllerRemove() {
+    stub(prefsController) { mock in
+      when(mock.remove(forKey: any())).thenDoNothing()
+    }
   }
 }

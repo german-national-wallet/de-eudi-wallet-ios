@@ -11,7 +11,7 @@ import logic_business
 public protocol MDVMRepository {
 
   /// Returns stored MDVM registration values when both token and wi id are available.
-  func getStoredRegistration() -> MDVMStoredRegistration?
+  func getStoredRegistration() throws -> MDVMStoredRegistration?
 
   func fetchChallenge() async throws -> String
 
@@ -75,10 +75,10 @@ final class MDVMRepositoryImpl: MDVMRepository {
 
   // MARK: - Registration
 
-  func getStoredRegistration() -> MDVMStoredRegistration? {
+  func getStoredRegistration() throws -> MDVMStoredRegistration? {
     guard
-      let mdvmToken = secureEnclaveController.retrieveDecryptedString(keyTag: .mdvmToken), !mdvmToken.isEmpty,
-      let mdvmWIID = secureEnclaveController.retrieveDecryptedString(keyTag: .mdvmWIID), !mdvmWIID.isEmpty
+      let mdvmToken = try secureEnclaveController.retrieveDecryptedString(keyTag: .mdvmToken), !mdvmToken.isEmpty,
+      let mdvmWIID = try secureEnclaveController.retrieveDecryptedString(keyTag: .mdvmWIID), !mdvmWIID.isEmpty
     else {
       return nil
     }
@@ -91,7 +91,7 @@ final class MDVMRepositoryImpl: MDVMRepository {
     skipIntegrityChecks: Bool,
     privateKey: SecKey
   ) async throws {
-    let storedRegistration = getStoredRegistration()
+    let storedRegistration = try getStoredRegistration()
     let body = try JSONEncoder().encode(payload)
     let contentDigest = httpSignatureService.createContentDigest(for: body)
     let signing = try prepareSigning(
@@ -121,7 +121,7 @@ final class MDVMRepositoryImpl: MDVMRepository {
     )
 
     let response: MDVMRegistrationResponse = try decodeResponse(from: result.data)
-    saveRegistration(mdvmWIID: response.mdvmWIID, mdvmToken: response.mdvmToken)
+    try saveRegistration(mdvmWIID: response.mdvmWIID, mdvmToken: response.mdvmToken)
   }
 
   private func makeRegisterHeaders(
@@ -146,9 +146,9 @@ final class MDVMRepositoryImpl: MDVMRepository {
     return headers
   }
 
-  private func saveRegistration(mdvmWIID: String, mdvmToken: String) {
-    _ = secureEnclaveController.storeEncryptedString(value: mdvmWIID, keyTag: .mdvmWIID)
-    _ = secureEnclaveController.storeEncryptedString(value: mdvmToken, keyTag: .mdvmToken)
+  private func saveRegistration(mdvmWIID: String, mdvmToken: String) throws {
+    _ = try secureEnclaveController.storeEncryptedString(value: mdvmWIID, keyTag: .mdvmWIID)
+    _ = try secureEnclaveController.storeEncryptedString(value: mdvmToken, keyTag: .mdvmToken)
   }
 
   // MARK: - Renewal
@@ -189,7 +189,7 @@ final class MDVMRepositoryImpl: MDVMRepository {
     )
 
     let response: MDVMRenewalResponse = try decodeResponse(from: result.data)
-    saveRegistration(mdvmWIID: mdvmWIID, mdvmToken: response.mdvmToken)
+    try saveRegistration(mdvmWIID: mdvmWIID, mdvmToken: response.mdvmToken)
   }
 
   private func makeRenewalHeaders(

@@ -17,6 +17,7 @@ import Swinject
 import logic_business
 import logic_api
 import logic_feature_flags
+import logic_storage
 import MdocSecurity18013
 
 public final class LogicCoreAssembly: Assembly {
@@ -89,6 +90,19 @@ public final class LogicCoreAssembly: Assembly {
       }
       .inObjectScope(ObjectScope.container)
       
+      container.register(TransactionLogControllerImpl.self) { r in
+        TransactionLogControllerImpl(
+          storageController: r.force(TransactionLogStorageController.self),
+          logger: r.force(Logging.self)
+        )
+      }
+      .inObjectScope(ObjectScope.container)
+
+      container.register(TransactionLogController.self) { r in
+        r.force(TransactionLogControllerImpl.self)
+      }
+      .inObjectScope(ObjectScope.container)
+
       container.register(WalletKitController.self) { r in
         WalletKitControllerImpl(
           walletKitConfig: r.force(WalletKitConfig.self),
@@ -101,6 +115,8 @@ public final class LogicCoreAssembly: Assembly {
             r.force(SecureArea.self, name: SoftwareSecureArea.name)
           ],
           networking: r.force(PinnedCertificateNetworking.self),
+          transactionLogger: r.force(TransactionLogControllerImpl.self),
+          transactionLogs: r.force(TransactionLogControllerImpl.self),
           logger: r.force(Logging.self)
         )
       }
@@ -144,7 +160,6 @@ public final class LogicCoreAssembly: Assembly {
         secureEnclaveController: r.force(SecureEnclaveController.self),
         configLogic: r.force(ConfigLogic.self),
         prefsController: r.force(PrefsController.self),
-        featureFlagRepository: r.force(FeatureFlagRepository.self),
         walletRevocationStore: r.force(WalletRevocationStore.self),
         logger: r.force(Logging.self)
       )
@@ -158,7 +173,6 @@ public final class LogicCoreAssembly: Assembly {
         secureEnclaveController: r.force(SecureEnclaveController.self),
         configLogic: r.force(ConfigLogic.self),
         prefsController: r.force(PrefsController.self),
-        featureFlagRepository: r.force(FeatureFlagRepository.self),
         walletRevocationStore: r.force(WalletRevocationStore.self),
         logger: r.force(Logging.self)
       )

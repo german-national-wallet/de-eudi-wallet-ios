@@ -47,23 +47,35 @@ struct WPBRepositoryTests {
   // MARK: - getStoredWIID / storeWIID / deleteWIID
 
   @Test
-  func getStoredWIID_WhenNothingStored_ReturnsNil() {
-    #expect(makeSUT().getStoredWIID() == nil)
+  func getStoredWIID_WhenNothingStored_ReturnsNil() throws {
+    #expect(try makeSUT().getStoredWIID() == nil)
   }
 
   @Test
-  func storeWIID_ThenGetStoredWIID_ReturnsStoredValue() {
+  func storeWIID_ThenGetStoredWIID_ReturnsStoredValue() throws {
     let sut = makeSUT()
-    sut.storeWIID("wi-id-123")
-    #expect(sut.getStoredWIID() == "wi-id-123")
+    try sut.storeWIID("wi-id-123")
+    #expect(try sut.getStoredWIID() == "wi-id-123")
   }
 
   @Test
-  func deleteWIID_AfterStoring_ReturnsNil() {
+  func deleteWIID_AfterStoring_ReturnsNil() throws {
     let sut = makeSUT()
-    sut.storeWIID("wi-id-123")
+    try sut.storeWIID("wi-id-123")
     sut.deleteWIID()
-    #expect(sut.getStoredWIID() == nil)
+    #expect(try sut.getStoredWIID() == nil)
+  }
+
+  @Test
+  func getStoredWIID_WhenStoredValueIsUnreadable_ThrowsDecryptionError() {
+    let secureEnclave = FakeSecureEnclaveController()
+    secureEnclave.storeStringInKeychain(value: "wi-id-123", keyTag: .wbWIID)
+    secureEnclave.decryptionError = SecureEnclaveControllerError.encryptedValueAuthenticationFailed
+    let sut = makeSUT(secureEnclave: secureEnclave)
+
+    #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try sut.getStoredWIID()
+    }
   }
 
   // MARK: - register
@@ -169,11 +181,14 @@ struct WPBRepositoryTests {
 
   // MARK: - Helpers
 
-  private func makeSUT(network: FakeNetworkManager = FakeNetworkManager()) -> WPBRepositoryImpl {
+  private func makeSUT(
+    network: FakeNetworkManager = FakeNetworkManager(),
+    secureEnclave: FakeSecureEnclaveController = FakeSecureEnclaveController()
+  ) -> WPBRepositoryImpl {
     WPBRepositoryImpl(
       networkManager: network,
       httpSignatureService: HTTPSignatureServiceImpl(),
-      secureEnclaveController: FakeSecureEnclaveController()
+      secureEnclaveController: secureEnclave
     )
   }
 
@@ -209,6 +224,8 @@ private final class FakeNetworkManager: NetworkManager {
 
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
+  var decryptionError: Error?
+  private(set) var storeEncryptedCallCount = 0
 
   func createPrivateKey(with keyTag: SecureEnclaveKeys) -> SecKey? { nil }
   func storePrivateKey(_ privateKey: SecKey, with keyTag: SecureEnclaveKeys) -> Bool { false }
@@ -220,9 +237,14 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
   func retrieveStringFromKeychain(keyTag: SecureEnclaveKeys) -> String? { stringStorage[keyTag] }
   // The fake does not actually encrypt; it shares the same backing store as the plain variants.
-  @discardableResult
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool { stringStorage[keyTag] = value; return true }
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? { stringStorage[keyTag] }
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
+    storeEncryptedCallCount += 1
+    stringStorage[keyTag] = value
+  }
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {
+    if let decryptionError { throw decryptionError }
+    return stringStorage[keyTag]
+  }
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) { stringStorage.removeValue(forKey: keyTag) }
   func generateECPrivateKey(from pin: String, and salt: String) throws -> SecKey { throw NSError(domain: "unused", code: -1) }
   func generatePublicKey(from privateKey: SecKey) throws -> SecKey { throw NSError(domain: "unused", code: -1) }

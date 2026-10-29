@@ -63,6 +63,9 @@ struct DashboardView<Router: RouterHost>: View {
     .onAppear {
       viewModel.onAppear()
     }
+    .task {
+      await viewModel.handleDeepLink()
+    }
   }
   
   @ViewBuilder

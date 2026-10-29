@@ -120,7 +120,7 @@ public final class PresentationRouter {
           logger: DIGraph.resolver.force(Logging.self)
         )
       ).eraseToAnyView()
-    case .showPinView(config: let config):
+    case .showPinView(config: let config, presentationCoordinator: let presentationCoordinator):
       PINView(
         viewModel: .init(
           router: host,
@@ -137,7 +137,17 @@ public final class PresentationRouter {
           onPinEntered: nil,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
-          logger: DIGraph.resolver.force(Logging.self)
+          logger: DIGraph.resolver.force(Logging.self),
+          onClose: presentationCoordinator.map { coordinator in
+            PresentationCancellation(
+              router: host,
+              interactor: DIGraph.resolver.force(
+                PresentationInteractor.self,
+                argument: coordinator
+              ),
+              analyticsController: DIGraph.resolver.force(AnalyticsController.self)
+            ).cancel
+          }
         )
       ).eraseToAnyView()
     case .pinRetryCounterView(config: let config):

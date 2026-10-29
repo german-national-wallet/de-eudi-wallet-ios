@@ -80,6 +80,15 @@ public final class DashboardRouter {
           document: detail
         )
       ).eraseToAnyView()
+    case .activityDetail(let id):
+      ActivityDetailView(
+        with: .init(
+          router: host,
+          interactor: DIGraph.resolver.force(ActivitiesInteractor.self),
+          activityId: id,
+          logger: DIGraph.resolver.force(Logging.self)
+        )
+      ).eraseToAnyView()
     }
   }
 }

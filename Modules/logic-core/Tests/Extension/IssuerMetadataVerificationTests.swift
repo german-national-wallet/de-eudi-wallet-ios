@@ -58,7 +58,6 @@ final class IssuerMetadataVerificationTests: XCTestCase {
   // MARK: - Policies
 
   func testVciConfig_WhenBuilt_ThenPidIssuerRequiresSignedMetadataWithoutTrailingSlash() throws {
-    try XCTSkipIf("VCI_REDIRECT_URI".valueFromBundle.isEmpty, "Needs the app's Info.plist (VCI_REDIRECT_URI)")
     let configLogic = MockConfigLogic()
     stub(configLogic) { mock in
       when(mock.vciIssuerURL.get).thenReturn("https://issuer.example.com/")
@@ -78,7 +77,8 @@ final class IssuerMetadataVerificationTests: XCTestCase {
       walletKitAttestationProvider: WalletAttestationProviderImpl(
         wiaIssuanceService: MockWIAIssuanceService(),
         secureEnclaveController: MockSecureEnclaveController()
-      )
+      ),
+      vciRedirectURI: "eudi-openid4ci://authorize"
     )
   }
 }

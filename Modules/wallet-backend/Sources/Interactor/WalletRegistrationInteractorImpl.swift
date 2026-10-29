@@ -39,7 +39,8 @@ final class WalletRegistrationInteractorImpl: WalletRegistrationInteractor {
       throw BackendError.notRegistered
     }
 
-    if let walletInstanceID = wpbInteractor.walletInstanceID {
+    // Missing walletInstanceID continues registration, but malformed throws
+    if let walletInstanceID = try wpbInteractor.walletInstanceID() {
       return walletInstanceID
     }
 

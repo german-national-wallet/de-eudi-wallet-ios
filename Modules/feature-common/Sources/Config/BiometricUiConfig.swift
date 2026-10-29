@@ -43,6 +43,7 @@ public extension UIConfig {
     public let isPreAuthorization: Bool
     public let shouldInitializeBiometricOnCreate: Bool
     public let invalidPinTitle: LocalizableStringKey
+    public let initialErrorMessage: LocalizableStringKey?
     public let pinScreenType: PINScreenType
     public let progressSteps: ProgressSteps?
     public let showsHelpButton: Bool
@@ -69,6 +70,7 @@ public extension UIConfig {
       && lhs.isPreAuthorization == rhs.isPreAuthorization
       && lhs.shouldInitializeBiometricOnCreate == rhs.shouldInitializeBiometricOnCreate
       && lhs.invalidPinTitle == rhs.invalidPinTitle
+      && lhs.initialErrorMessage == rhs.initialErrorMessage
       && lhs.pinScreenType == rhs.pinScreenType
       && lhs.progressSteps == rhs.progressSteps
       && lhs.showsHelpButton == rhs.showsHelpButton
@@ -105,6 +107,7 @@ public extension UIConfig {
       shouldInitializeBiometricOnCreate: Bool,
       iconImage: Image? = nil,
       invalidPinTitle: LocalizableStringKey,
+      initialErrorMessage: LocalizableStringKey? = nil,
       pinScreenType: PINScreenType,
       progressSteps: ProgressSteps? = nil,
       showsHelpButton: Bool = false,
@@ -127,6 +130,7 @@ public extension UIConfig {
       self.isPreAuthorization = isPreAuthorization
       self.shouldInitializeBiometricOnCreate = shouldInitializeBiometricOnCreate
       self.invalidPinTitle = invalidPinTitle
+      self.initialErrorMessage = initialErrorMessage
       self.pinScreenType = pinScreenType
       self.progressSteps = progressSteps
       self.showsHelpButton = showsHelpButton

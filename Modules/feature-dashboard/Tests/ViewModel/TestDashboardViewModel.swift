@@ -70,6 +70,54 @@ final class TestDashboardViewModel: XCTestCase {
     XCTAssertNotNil(viewModel.viewState.settingsTab)
   }
 
+  // MARK: - handleDeepLink
+
+  /// Regression guard: a presentation deep link that was cached during a cold launch must be
+  /// replayed once the dashboard is on screen, by delegating back to the deep-link controller.
+  func testHandleDeepLink_WhenPendingActionExists_ThenDelegatesToHandleDeepLinkAction() async {
+    let mockWalletKitController = MockWalletKitController()
+    let mockCoordinator = MockRemoteSessionCoordinator(session: Constants.mockPresentationSession)
+
+    stub(mockDashboardInteractor) { mock in
+      when(mock.getWalletKitController()).thenReturn(mockWalletKitController)
+    }
+    stub(mockWalletKitController) { mock in
+      when(mock.startSameDevicePresentation(deepLink: any())).thenReturn(mockCoordinator)
+    }
+    stub(mockDeepLinkController) { mock in
+      when(mock.getPendingDeepLinkAction()).thenReturn(makeOpenID4VPExecutable())
+      when(mock.handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())).thenDoNothing()
+    }
+
+    await makeViewModel().handleDeepLink()
+
+    verify(mockDeepLinkController).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
+  }
+
+  func testHandleDeepLink_WhenNoPendingAction_ThenDoesNothing() async {
+    stub(mockDeepLinkController) { mock in
+      when(mock.getPendingDeepLinkAction()).thenReturn(nil)
+    }
+
+    await makeViewModel().handleDeepLink()
+
+    verify(mockDeepLinkController, never()).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
+    verify(mockDashboardInteractor, never()).getWalletKitController()
+  }
+
+  /// A non-presentation cached deep link (e.g. the post-presentation verifier redirect that
+  /// `DocumentSuccessViewModel` caches) must not be auto-opened when the dashboard re-appears.
+  func testHandleDeepLink_WhenPendingActionDoesNotRequireCoordinator_ThenDoesNothing() async {
+    stub(mockDeepLinkController) { mock in
+      when(mock.getPendingDeepLinkAction()).thenReturn(makeExternalExecutable())
+    }
+
+    await makeViewModel().handleDeepLink()
+
+    verify(mockDeepLinkController, never()).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
+    verify(mockDashboardInteractor, never()).getWalletKitController()
+  }
+
   // MARK: - Helpers
 
   private func makeViewModel() -> DashboardViewModel<MockRouterHost> {
@@ -109,6 +157,18 @@ final class TestDashboardViewModel: XCTestCase {
       when(mock.appBuildVariant.get).thenReturn(.STAGING)
     }
   }
+
+  private func makeOpenID4VPExecutable() -> DeepLink.Executable {
+    let url = URL(string: "openid4vp://authorize?request_uri=https%3A%2F%2Fverifier.example%2Frequest")!
+    let components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+    return DeepLink.Executable(link: components, plainUrl: url, action: .openid4vp)
+  }
+
+  private func makeExternalExecutable() -> DeepLink.Executable {
+    let url = URL(string: "https://verifier.example/redirect?response_code=abc")!
+    let components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+    return DeepLink.Executable(link: components, plainUrl: url, action: .external)
+  }
 }
 
 private final class DashboardViewModelTestAssembly: Assembly {
@@ -133,5 +193,15 @@ private final class DashboardViewModelTestAssembly: Assembly {
     container.register(AddDocumentInteractor.self) { [addDocumentInteractor] _ in
       addDocumentInteractor
     }
+    container.register(ActivitiesInteractor.self) { _ in
+      EmptyActivitiesInteractor()
+    }
   }
+}
+
+private struct EmptyActivitiesInteractor: ActivitiesInteractor {
+  func fetchActivities() async -> ActivitiesPartialState { .success([]) }
+  func fetchActivity(with id: String) async -> ActivityDetailPartialState { .failure(CancellationError()) }
+  func deleteActivity(with id: String) async throws {}
+  func deleteAllActivities() async throws {}
 }

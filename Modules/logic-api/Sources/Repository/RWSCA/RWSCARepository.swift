@@ -13,7 +13,7 @@ public protocol RWSCARepository {
 
   func register(mdvmToken: String, authChallenge: String, privateKey: SecKey) async throws
 
-  func getRWSCAID() -> String?
+  func getRWSCAID() throws -> String?
 
   func startPinSession(mdvmToken: String, challenge: String, privateKey: SecKey, pinPrivateKey: SecKey, rwscaID: String) async throws -> RWSCAPinSessionResponse
 
@@ -78,7 +78,7 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     )
 
     let response: RWSCARegistrationResponse = try decodeResponse(from: result.data)
-    _ = secureEnclaveController.storeEncryptedString(
+    _ = try secureEnclaveController.storeEncryptedString(
       value: response.rwscaAccountID,
       keyTag: .rwscaAccountID
     )
@@ -307,8 +307,8 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     secureEnclaveController.deleteKeychainItem(keyTag: .rwscaAccountID)
   }
 
-  public func getRWSCAID() -> String? {
-    guard let rwscaAccountID = secureEnclaveController.retrieveDecryptedString(keyTag: .rwscaAccountID),
+  public func getRWSCAID() throws -> String? {
+    guard let rwscaAccountID = try secureEnclaveController.retrieveDecryptedString(keyTag: .rwscaAccountID),
           !rwscaAccountID.isEmpty else {
       return nil
     }

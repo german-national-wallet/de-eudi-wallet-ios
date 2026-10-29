@@ -19,6 +19,8 @@ public extension DesignSystem.Styles.Colors {
 
   // MARK: Status
   static let warning = warningLight
+  static let warningContainer = schemesWarningContainer
+  static let warningContainerAccent = schemesWarningContainerAccent
   static let success = successLight
   static let onSuccess = onSuccessLight
 

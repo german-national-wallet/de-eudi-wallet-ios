@@ -12,6 +12,21 @@ struct PresentationErrorDialogConfig: Equatable {
     case popTo(AppRoute)
     case addDigitalIDAgain
     case dismiss
+    case retry(RetryAction)
+  }
+  
+  struct RetryAction: Identifiable, Equatable {
+    let id: UUID
+    let action: () -> Void
+
+    init(action: @escaping () -> Void) {
+      self.id = UUID()
+      self.action = action
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+      lhs.id == rhs.id
+    }
   }
 
   struct Button: Equatable {

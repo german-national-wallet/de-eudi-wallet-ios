@@ -77,7 +77,7 @@ public protocol PresentationInteractor: Sendable {
     func onDeviceEngagement() async -> Result<OnlineAuthenticationRequestSuccessModel, Error>
     func onResponsePrepare(requestItems: [RequestDataUiModel]) async -> Result<RequestItemConvertible, Error>
     func onSendResponse() async -> RemoteSentResponsePartialState
-    func onRejectRequest() async
+    func onRejectRequest() async -> URL?
     func updatePresentationCoordinator(with coordinator: RemoteSessionCoordinator)
     func storeDynamicIssuancePendingUrl(with url: URL)
     func declinePresentation() async
@@ -213,11 +213,12 @@ final class PresentationInteractorImpl: PresentationInteractor {
     }
   }
 
-  public func onRejectRequest() async {
+  public func onRejectRequest() async -> URL? {
     do {
-      try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
+      return try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
     } catch {
       logger?.e("presentation rejection failed \(error.logDescriptor)")
+      return nil
     }
   }
 
@@ -262,7 +263,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
 
   public func declinePresentation() async {
     do {
-      try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
+      _ = try await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
     } catch {
       logger?.e("declinePresentation failed: \(error.logDescriptor)")
     }

@@ -37,8 +37,9 @@ public struct CustomAlertDialogConfig: Identifiable {
 
 struct CustomAlertDialog: View {
   var icon: Image?
+  var iconColor: Color = DSColor.onSurface
   var title: String
-  var subtitle: String
+  var subtitle: String?
   var buttons: [CustomAlertDialogConfig]
 
   var body: some View {
@@ -51,7 +52,7 @@ struct CustomAlertDialog: View {
             .resizable()
             .scaledToFit()
             .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
-            .foregroundColor(DSColor.onSurface)
+            .foregroundColor(iconColor)
             .padding(.bottom, DSStyle.Spacers.SPACING_SMALL)
             .accessibilityHidden(true)
         }
@@ -62,11 +63,13 @@ struct CustomAlertDialog: View {
           .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
 
-        Text(subtitle)
-          .font(DSTypography.Body.medium)
-          .foregroundColor(DSColor.onSurfaceVariant)
-          .multilineTextAlignment(.center)
-          .fixedSize(horizontal: false, vertical: true)
+        if let subtitle {
+          Text(subtitle)
+            .font(DSTypography.Body.medium)
+            .foregroundColor(DSColor.onSurfaceVariant)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+        }
       }
 
       VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {
@@ -130,8 +133,9 @@ struct CustomAlertDialogModifier: ViewModifier {
   @Binding var isPresented: Bool
 
   var icon: Image?
+  var iconColor: Color
   var title: String
-  var subtitle: String
+  var subtitle: String?
   var buttons: [CustomAlertDialogConfig]
 
   func body(content: Content) -> some View {
@@ -151,6 +155,7 @@ struct CustomAlertDialogModifier: ViewModifier {
 
         CustomAlertDialog(
           icon: icon,
+          iconColor: iconColor,
           title: title,
           subtitle: subtitle,
           buttons: wrappedButtons()
@@ -180,16 +185,18 @@ extension View {
   public func centerDialog(
     isPresented: Binding<Bool>,
     icon: Image? = nil,
+    iconColor: Color = DSColor.onSurface,
     title: LocalizableStringKey,
-    subtitle: LocalizableStringKey,
+    subtitle: LocalizableStringKey? = nil,
     buttons: [CustomAlertDialogConfig]
   ) -> some View {
     self.modifier(
       CustomAlertDialogModifier(
         isPresented: isPresented,
         icon: icon,
+        iconColor: iconColor,
         title: title.toString,
-        subtitle: subtitle.toString,
+        subtitle: subtitle?.toString,
         buttons: buttons
       )
     )

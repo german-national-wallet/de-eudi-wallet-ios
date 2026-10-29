@@ -104,7 +104,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
       "state" : {
-        "revision" : "0a71c5f2d11d01261337f2a3c40f936606314b70"
+        "revision" : "59e1e8cc2dde82734b6059a17754fb7a1016e171"
       }
     },
     {
@@ -112,8 +112,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-iso18013-data-model.git",
       "state" : {
-        "revision" : "65481ab832b19c8579f79539e4391a6b156fc408",
-        "version" : "0.26.0"
+        "revision" : "d3dfc244fe5737fc1ea2fa137bffcd9914ab2e72",
+        "version" : "0.27.2"
       }
     },
     {
@@ -121,8 +121,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-iso18013-data-transfer.git",
       "state" : {
-        "revision" : "ab942c6906f9a33cacea6dc9bcd49b7657169f3c",
-        "version" : "0.26.0"
+        "revision" : "bf2d8cb98a57569501d61ae1305f3d227fcd9bae",
+        "version" : "0.28.0"
       }
     },
     {
@@ -130,8 +130,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-iso18013-security",
       "state" : {
-        "revision" : "301f8c9ac67c7c8ced187df344aa91b99c2db790",
-        "version" : "0.26.1"
+        "revision" : "71bed6b2c1648e8ee258f33e747d8b3254080c0a",
+        "version" : "0.28.0"
       }
     },
     {
@@ -139,8 +139,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vci-swift.git",
       "state" : {
-        "revision" : "522e6ed22b1896b69e8c048a79d1a7646fc7b520",
-        "version" : "0.55.1"
+        "revision" : "9126d54189c08f4ee38f78f800bc6011648d8bf4",
+        "version" : "0.55.5"
       }
     },
     {
@@ -148,8 +148,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vp-swift.git",
       "state" : {
-        "revision" : "6e7729c18a2b8f5dcd044100d9803ebd29783917",
-        "version" : "0.42.0"
+        "revision" : "bce7772e6c4f61699729c4f3368d0c996f180c54",
+        "version" : "0.43.2"
       }
     },
     {
@@ -157,8 +157,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-statium-swift.git",
       "state" : {
-        "revision" : "d3cb29f978b7c5f839351e56bc9b433c105a5737",
-        "version" : "0.5.0"
+        "revision" : "da66b71423a5b8a27799d105449d3c0e154230dc",
+        "version" : "0.6.0"
       }
     },
     {
@@ -166,8 +166,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-wallet-storage.git",
       "state" : {
-        "revision" : "bdcccf2bc55588af55671f973f4156a73e1e2d38",
-        "version" : "0.26.1"
+        "revision" : "964aefcc29eae64036b30d868ef748da44e427c5",
+        "version" : "0.26.2"
       }
     },
     {
@@ -400,8 +400,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GigaBitcoin/secp256k1.swift.git",
       "state" : {
-        "revision" : "e70a10e036a55fffea31568f0af92d69b6d449cd",
-        "version" : "0.23.2"
+        "revision" : "bcd6dd8e615ce243eab7097f213c8c4b39305a2e",
+        "version" : "0.24.0"
       }
     },
     {
@@ -528,6 +528,15 @@
       "state" : {
         "revision" : "a0a57e949a8903563aba4615869310c0ebf14c03",
         "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "swift-issue-reporting",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
+      "state" : {
+        "revision" : "b23bb4493c439d3e05152bc167014235ba3d47fc",
+        "version" : "2.1.2"
       }
     },
     {

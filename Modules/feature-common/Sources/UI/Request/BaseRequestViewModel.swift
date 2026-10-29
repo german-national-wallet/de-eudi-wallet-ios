@@ -178,6 +178,26 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
+  public func onPresentationDoWorkSuccess() {
+    setState {
+      $0.copy(
+        contentHeaderConfig: .init(
+          appIconAndTextData: AppIconAndTextData(
+            appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
+            appText: ThemeManager.shared.image.euditext
+          ),
+          description: .dataSharingTitle,
+          mainText: getTitle(),
+          relyingPartyData: RelyingPartyData(
+            isVerified: viewState.isTrusted,
+            name: getRelyingParty(),
+            description: getCaption()
+          )
+        )
+      )
+    }
+  }
+
   public func resetState() {
     setState { previous in
       .init(

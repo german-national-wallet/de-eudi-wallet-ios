@@ -85,16 +85,16 @@ public struct PINView<Router: RouterHost>: View {
         viewModel.pin = updatedPin
       }
     }
-    .sheet(isPresented: $viewModel.isSheetPresented) {
+    .sheet(isPresented: $viewModel.isSheetPresented, onDismiss: { viewModel.canFocus = true }, content: {
       switch viewModel.viewState.config.pinScreenType {
-        
+
       case .eidCanFlow:
         CanInfoView()
           .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
           .presentationDetents([.fraction(0.9)])
           .background(DSColor.background)
           .ignoresSafeArea()
-        
+
       case .issueEidPinFlow:
         CardPinLetterInfoSheetView(
           onSetCardPin: viewModel.setCardPinTapped,
@@ -102,7 +102,7 @@ public struct PINView<Router: RouterHost>: View {
         )
         .presentationDetents([.fraction(0.9)])
 
-      case .transportPinFlow:
+      case .transportPinFlow, .transportPinRetryFlow:
         BottomSheetViewWithAction(
           title: LocalizableStringKey.setupPinSheetTitle.toString,
           message: LocalizableStringKey.setupPinSheetMessage.toString,
@@ -117,9 +117,10 @@ public struct PINView<Router: RouterHost>: View {
         )
         .presentationDetents([.fraction(0.9)])
       }
-    }
+    })
     .cancelConfirmationDialog(
       isPresented: $isCancelDialogPresented,
+      config: viewModel.cancelConfirmationConfig,
       onConfirm: viewModel.handleCloseButton
     )
   }
@@ -145,6 +146,7 @@ public struct PINView<Router: RouterHost>: View {
           title: caption.toString,
           icon: Theme.shared.image.help
         ) {
+          viewModel.canFocus = false
           $viewModel.isSheetPresented.wrappedValue = true
         }
       }

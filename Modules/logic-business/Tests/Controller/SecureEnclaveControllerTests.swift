@@ -5,6 +5,7 @@
 //  Created by Tamas Dancsi on 18.02.26.
 //
 
+import CryptoKit
 import Foundation
 import Security
 import Testing
@@ -71,6 +72,45 @@ struct SecureEnclaveControllerTests {
     #expect(keyInfo.derBase64.isEmpty == false)
   }
 
+  @Test
+  func generateECPrivateKey_DerivesPBKDF2OfPinAndRawSaltWithCounterZero() throws {
+    let secureEnclaveController = SecureEnclaveControllerImpl(
+      logger: nil,
+      walletDataEncryptionController: WalletDataEncryptionControllerImpl(logger: nil)
+    )
+
+    let privateKey = try secureEnclaveController.generateECPrivateKey(from: "123456", and: "AAECAwQFBgcICQoLDA0ODw==")
+
+    let x963 = try #require(SecKeyCopyExternalRepresentation(privateKey, nil) as Data?)
+    let scalar = x963.suffix(32).map { String(format: "%02x", $0) }.joined()
+    #expect(scalar == "f607e1d743ea31b36e4de666151e9f909bb14fab632ed11f8e6f5570706af9f1")
+  }
+
+  @Test
+  func generateECPrivateKey_WhenSaltIsNotSixteenBase64Bytes_ThrowsPinKeyDerivationFailed() {
+    let secureEnclaveController = SecureEnclaveControllerImpl(
+      logger: nil,
+      walletDataEncryptionController: WalletDataEncryptionControllerImpl(logger: nil)
+    )
+
+    #expect(throws: SecureEnclaveControllerError.pinKeyDerivationFailed) {
+      _ = try secureEnclaveController.generateECPrivateKey(from: "123456", and: "not base64!")
+    }
+    #expect(throws: SecureEnclaveControllerError.pinKeyDerivationFailed) {
+      _ = try secureEnclaveController.generateECPrivateKey(from: "123456", and: "000102030405060708090a0b0c0d0e0f")
+    }
+  }
+
+  @Test
+  func p256PrivateKey_RejectsOutOfRangeScalars() {
+    #expect(throws: (any Error).self) {
+      _ = try P256.Signing.PrivateKey(rawRepresentation: Data(count: 32))
+    }
+    #expect(throws: (any Error).self) {
+      _ = try P256.Signing.PrivateKey(rawRepresentation: Data(repeating: 0xFF, count: 32))
+    }
+  }
+
   private func makePrivateKey() throws -> SecKey {
     let attributes: [String: Any] = [
       kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
@@ -105,7 +145,7 @@ private final class SecureEnclaveControllerFake: SecureEnclaveController {
   func deletePrivateKey(with keyTag: SecureEnclaveKeys) -> Bool { true }
   func storeStringInKeychain(value: String, keyTag: SecureEnclaveKeys) -> Bool { true }
   func retrieveStringFromKeychain(keyTag: SecureEnclaveKeys) -> String? { nil }
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool { true }
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {}
   func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? { nil }
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) {}
 

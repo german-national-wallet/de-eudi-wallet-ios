@@ -33,6 +33,7 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   let pinSessionInteractor: PinSessionInteractor
   private let analyticsController: AnalyticsController
   private let errorHandler: PresentationErrorHandler
+  private let openURL: @MainActor (URL) -> Void
 
   private let relyingParty: String
   private let pidDocTypeRawValues: Set<String> = [
@@ -47,12 +48,14 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     analyticsController: AnalyticsController,
     errorHandler: PresentationErrorHandler,
     originator: AppRoute,
-    relyingParty: String
+    relyingParty: String,
+    openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
   ) {
     self.interactor = interactor
     self.pinSessionInteractor = pinSessionInteractor
     self.analyticsController = analyticsController
     self.errorHandler = errorHandler
+    self.openURL = openURL
     self.relyingParty = relyingParty
     super.init(router: router, originator: originator)
   }
@@ -87,25 +90,12 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         relyingParty: .custom(authenticationRequest.relyingParty),
         isTrusted: authenticationRequest.isTrusted
       )
-      setState {
-        $0.copy(
-          contentHeaderConfig: .init(
-            appIconAndTextData: AppIconAndTextData(
-              appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
-              appText: ThemeManager.shared.image.euditext
-            ),
-            description: .dataSharingTitle,
-            mainText: getTitle(),
-            relyingPartyData: RelyingPartyData(
-              isVerified: viewState.isTrusted,
-              name: getRelyingParty(),
-              description: getCaption()
-            )
-          )
-        )
-      }
+      self.onPresentationDoWorkSuccess()
     case .failure(let error):
-      present(errorHandler.handle(error, originator: getOriginator()))
+      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: .init(action: { [weak self] in
+        self?.analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
+        Task { await self?.doWork() }
+      })))
     }
   }
   
@@ -132,7 +122,7 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         if isPIDRequest {
           pinSessionInteractor.clear()
         }
-        self.present(self.errorHandler.handle(error, originator: self.getOriginator()))
+        self.presentError(self.errorHandler.handle(error, originator: self.getOriginator()))
       }
     }
   }
@@ -182,7 +172,8 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
                 pinScreenType: .verifyWalletPinFlow,
                 imageIcon: Theme.shared.image.setupWalletPin,
                 items: viewState.items
-              )
+              ),
+              presentationCoordinator: remoteSessionCoordinator
             )
         )
     case .failure: nil
@@ -198,7 +189,11 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       finalAttributes: [AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.declined],
       errorDescription: nil
     )
-    Task { await self.interactor.onRejectRequest() }
+    Task {
+      if let redirectURL = await self.interactor.onRejectRequest() {
+        self.openURL(redirectURL)
+      }
+    }
     router.popTo(with: getPopRoute() ?? .featureDashboardModule(.dashboard))
     isConfirmationPopupVisible = false
   }
@@ -217,10 +212,13 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       router.popTo(with: getOriginator())
     case .dismiss:
       isConfirmationPopupVisible = false
+    case .retry(let retryAction):
+      retryAction.action()
     }
   }
 
-  private func present(_ presentation: PresentationErrorPresentation) {
+  private func presentError(_ presentation: PresentationErrorPresentation) {
+    setState { $0.copy(isLoading: false, initialized: true) }
     switch presentation {
     case .notice(let config):
       router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))

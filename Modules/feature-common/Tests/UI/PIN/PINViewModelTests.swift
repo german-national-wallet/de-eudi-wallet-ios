@@ -101,6 +101,28 @@ final class PINViewModelTests: XCTestCase {
     XCTAssertFalse(sut.isInvalidPin)
   }
 
+  func testOnViewAppeared_WhenConfigHasInitialError_ThenShowsIt() {
+    sut = makeSUT(config: makeConfig(pinScreenType: .transportPinRetryFlow, initialErrorMessage: .transportPinWrongEntry))
+
+    sut.onViewAppeared()
+
+    XCTAssertTrue(sut.isInvalidPin)
+    XCTAssertEqual(sut.errorMessage, LocalizableStringKey.transportPinWrongEntry.toString)
+  }
+
+  func testOnSendData_WhenTransportPinRetryFlow_ThenForwardsEnteredPin() async {
+    let received = LockedValue<String?>(nil)
+    sut = makeSUT(
+      config: makeConfig(pinScreenType: .transportPinRetryFlow),
+      onPinEntered: PinCallbackWrapper(onEntered: { received.set($0) })
+    )
+    enterPIN("54321")
+
+    await sut.onSendData()
+
+    XCTAssertEqual(received.get(), "54321")
+  }
+
   func testDoNavigation_WhenNavigationTypePushes_ThenPushesRoute() {
     stub(router) { mock in
       when(mock.push(with: any())).thenDoNothing()
@@ -219,6 +241,46 @@ final class PINViewModelTests: XCTestCase {
     }
   }
 
+  func testHandleCloseButton_WhenVerifyingWalletPinWithCloseAction_ThenRunsItInsteadOfNavigating() {
+    var closeActionCallCount = 0
+    sut = makeSUT(
+      config: makeConfig(pinScreenType: .verifyWalletPinFlow),
+      onClose: { closeActionCallCount += 1 }
+    )
+
+    sut.handleCloseButton()
+
+    XCTAssertEqual(closeActionCallCount, 1)
+    verify(router, never()).popTo(with: any())
+    verify(router, never()).push(with: any())
+  }
+
+  func testHandleCloseButton_WhenVerifyingWalletPinWithoutCloseAction_ThenFallsBackToCloseNavigation() {
+    stub(router) { mock in
+      when(mock.popTo(with: any())).thenDoNothing()
+    }
+
+    sut.handleCloseButton()
+
+    let captor = ArgumentCaptor<AppRoute>()
+    verify(router).popTo(with: captor.capture())
+    guard case .featureIssuanceModule(.issuanceAddDocument) = captor.value else {
+      return XCTFail("Expected the default close navigation")
+    }
+  }
+
+  func testCancelConfirmationConfig_WhenCloseActionIsSet_ThenUsesPresentationCopy() {
+    sut = makeSUT(config: makeConfig(pinScreenType: .verifyWalletPinFlow), onClose: {})
+
+    XCTAssertEqual(sut.cancelConfirmationConfig.title, .pidPresentationDialogCancelTitle)
+    XCTAssertEqual(sut.cancelConfirmationConfig.confirmTitle, .pidPresentationDialogCancelPrimButton)
+  }
+
+  func testCancelConfirmationConfig_WhenNoCloseActionIsSet_ThenUsesIssuanceCopy() {
+    XCTAssertEqual(sut.cancelConfirmationConfig.title, .pidIssuanceDialogCancelTitle)
+    XCTAssertEqual(sut.cancelConfirmationConfig.confirmTitle, .pidIssuanceDialogCancelPrimButton)
+  }
+
   // Without an interactor there is nothing to hand the instructions screen, so closing the sheet
   // is all this can do.
   func testSetCardPinTapped_WhenThereIsNoVerificationInteractor_ThenOnlyClosesTheSheet() {
@@ -261,7 +323,9 @@ final class PINViewModelTests: XCTestCase {
 
   private func makeSUT(
     config: UIConfig.Biometry,
-    issuanceVarificationInteractor: IssuanceVerificationInteractor? = nil
+    issuanceVarificationInteractor: IssuanceVerificationInteractor? = nil,
+    onPinEntered: PinCallbackWrapper? = nil,
+    onClose: (@MainActor () -> Void)? = nil
   ) -> PINViewModel<MockRouterHost> {
     PINViewModel(
       router: router,
@@ -272,15 +336,17 @@ final class PINViewModelTests: XCTestCase {
       parInteractor: parInteractor,
       config: config,
       throttlePinInput: false,
-      onPinEntered: nil,
+      onPinEntered: onPinEntered,
       pinSessionInteractor: pinSessionInteractor,
       issuanceCancellationInteractor: issuanceCancellationInteractor,
-      logger: nil
+      logger: nil,
+      onClose: onClose
     )
   }
 
   private func makeConfig(
     pinScreenType: PINScreenType,
+    initialErrorMessage: LocalizableStringKey? = nil,
     pinForConfirmationFlow: String? = nil,
     finishAuthorizationResponseDTO: FinishAuthorizationResponse? = nil
   ) -> UIConfig.Biometry {
@@ -294,6 +360,7 @@ final class PINViewModelTests: XCTestCase {
       isPreAuthorization: false,
       shouldInitializeBiometricOnCreate: false,
       invalidPinTitle: .invalidQuickPin,
+      initialErrorMessage: initialErrorMessage,
       pinScreenType: pinScreenType,
       pinForConfirmationFlow: pinForConfirmationFlow,
       finishAuthorizationResponseDTO: finishAuthorizationResponseDTO
@@ -321,6 +388,23 @@ final class PINViewModelTests: XCTestCase {
     while !condition(), Date() < deadline {
       await Task.yield()
     }
+  }
+}
+
+private final class LockedValue<Value>: @unchecked Sendable {
+  private let lock = NSLock()
+  private var value: Value
+
+  init(_ value: Value) {
+    self.value = value
+  }
+
+  func get() -> Value {
+    lock.withLock { value }
+  }
+
+  func set(_ newValue: Value) {
+    lock.withLock { value = newValue }
   }
 }
 

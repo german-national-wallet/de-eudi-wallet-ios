@@ -135,6 +135,11 @@ public protocol ImageManagerProtocol: Sendable {
   var help: Image { get }
   var buildingBlocks: Image { get }
   var externalLink: Image { get }
+  var activitySupport: Image { get }
+  var activityDataPolicy: Image { get }
+  var activityWebsite: Image { get }
+  var activityInformation: Image { get }
+  var activityWarning: Image { get }
   var presentationAccessDenied: Image { get }
   var closeIcon: Image { get }
   var burgeramtInfo: Image { get }
@@ -271,6 +276,11 @@ final class ImageManager: ImageManagerProtocol {
     case help = "question_icon"
     case buildingBlocks = "building_blocks"
     case externalLink = "external_link"
+    case activitySupport = "activity_support"
+    case activityDataPolicy = "activity_data_policy"
+    case activityWebsite = "activity_website"
+    case activityInformation = "activity_information"
+    case activityWarning = "activity_warning"
     case presentationAccessDenied = "presentation_access_denied"
     case closeIcon = "icon_close"
     case burgeramtInfo = "burgeramt_info"
@@ -658,6 +668,26 @@ final class ImageManager: ImageManagerProtocol {
 
   var externalLink: Image {
     Image(ImageEnum.externalLink.rawValue, bundle: bundle)
+  }
+
+  var activitySupport: Image {
+    Image(ImageEnum.activitySupport.rawValue, bundle: bundle)
+  }
+
+  var activityDataPolicy: Image {
+    Image(ImageEnum.activityDataPolicy.rawValue, bundle: bundle)
+  }
+
+  var activityWebsite: Image {
+    Image(ImageEnum.activityWebsite.rawValue, bundle: bundle)
+  }
+
+  var activityInformation: Image {
+    Image(ImageEnum.activityInformation.rawValue, bundle: bundle)
+  }
+
+  var activityWarning: Image {
+    Image(ImageEnum.activityWarning.rawValue, bundle: bundle)
   }
   var burgeramtInfo: Image {
     Image(ImageEnum.burgeramtInfo.rawValue, bundle: bundle)

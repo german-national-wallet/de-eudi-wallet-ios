@@ -10,7 +10,7 @@ import logic_core
 
 public protocol WPBInteractor {
   /// Retrieve wallet instance id
-  var walletInstanceID: String? { get }
+  func walletInstanceID() throws -> String?
   /// Register a new WPB account
   func register(mdvmStoredRegistration: MDVMStoredRegistration) async throws -> String
   /// Issue wallet instance attestation bound to the provided WIA private key
@@ -32,12 +32,13 @@ public final class WPBInteractorImpl: WPBInteractor {
     self.mdvmInteractor = mdvmInteractor
   }
 
-  public var walletInstanceID: String? {
-    repository.getStoredWIID()
+  public func walletInstanceID() throws -> String? {
+    try repository.getStoredWIID()
   }
 
   public func register(mdvmStoredRegistration: MDVMStoredRegistration) async throws -> String {
-    if let wbWIID = walletInstanceID {
+    // Missing walletInstanceID continues registration, but malformed throws
+    if let wbWIID = try walletInstanceID() {
       return wbWIID
     }
 
@@ -46,8 +47,8 @@ public final class WPBInteractorImpl: WPBInteractor {
       mdvmToken: mdvmStoredRegistration.mdvmToken,
       authChallenge: challenge
     )
-    repository.storeWIID(response.wbWIID)
-    repository.storeRevocationCode(response.wpbWiRevocationCode)
+    try repository.storeWIID(response.wbWIID)
+    try repository.storeRevocationCode(response.wpbWiRevocationCode)
     return response.wbWIID
   }
 
@@ -55,10 +56,8 @@ public final class WPBInteractorImpl: WPBInteractor {
     guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw WPBRepositoryError.notRegistered
     }
-    guard let wbWIID = walletInstanceID else {
-      throw WPBRepositoryError.notRegistered
-    }
 
+    let wbWIID = try requireWalletInstanceID()
     let challenge = try await repository.fetchChallenge()
     let response = try await repository.issueAttestation(
       mdvmToken: mdvmStoredRegistration.mdvmToken,
@@ -73,10 +72,8 @@ public final class WPBInteractorImpl: WPBInteractor {
     guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw WPBRepositoryError.notRegistered
     }
-    guard let wbWIID = walletInstanceID else {
-      throw WPBRepositoryError.notRegistered
-    }
 
+    let wbWIID = try requireWalletInstanceID()
     let challenge = try await repository.fetchChallenge()
     try await repository.deleteAccount(
       mdvmToken: mdvmStoredRegistration.mdvmToken,
@@ -85,6 +82,13 @@ public final class WPBInteractorImpl: WPBInteractor {
     )
     repository.deleteWIID()
     repository.deleteRevocationCode()
+  }
+
+  private func requireWalletInstanceID() throws -> String {
+    guard let wbWIID = try walletInstanceID() else {
+      throw WPBRepositoryError.notRegistered
+    }
+    return wbWIID
   }
 }
 

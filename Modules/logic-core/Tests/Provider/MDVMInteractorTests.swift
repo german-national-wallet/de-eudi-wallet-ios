@@ -12,7 +12,6 @@ import Security
 @testable import logic_core
 @testable import logic_business
 @testable import logic_api
-@testable import logic_feature_flags
 @testable import logic_test
 
 struct MDVMInteractorTests {
@@ -26,7 +25,6 @@ struct MDVMInteractorTests {
   private let mockConfigLogic = MockConfigLogic()
   private let mockPrefsController = MockPrefsController()
   private let mockLogger = MockLogging()
-  private let featureFlagRepositoryStub = FeatureFlagRepositoryStub()
   private let revocationStoreSpy = WalletRevocationStoreSpy()
 
   init() {
@@ -45,7 +43,6 @@ struct MDVMInteractorTests {
       secureEnclaveController: mockSecureEnclaveController,
       configLogic: mockConfigLogic,
       prefsController: mockPrefsController,
-      featureFlagRepository: featureFlagRepositoryStub,
       walletRevocationStore: revocationStoreSpy,
       logger: mockLogger
     )
@@ -139,7 +136,6 @@ struct MDVMInteractorTests {
 
   @Test
   func ensureFreshMDVMToken_WhenStoredTokenIsNearExpiryInSandbox_RenewsWithoutSkipIntegrityChecks() async throws {
-    featureFlagRepositoryStub.setMDVMTokenFreshnessBuffer("PT10M")
     let expiringToken = makeJWT(expiration: Date().addingTimeInterval(60))
 
     stub(mockConfigLogic) { mock in
@@ -181,7 +177,6 @@ struct MDVMInteractorTests {
 
   @Test
   func ensureFreshMDVMToken_WhenStoredTokenIsNearExpiryInDev_RenewsWithSkipIntegrityChecks() async throws {
-    featureFlagRepositoryStub.setMDVMTokenFreshnessBuffer("PT10M")
     let expiringToken = makeJWT(expiration: Date().addingTimeInterval(60))
 
     stub(mockConfigLogic) { mock in
@@ -221,7 +216,6 @@ struct MDVMInteractorTests {
 
   @Test
   func ensureFreshMDVMToken_WhenRenewalFailsWithIOSAttestationFailure_KeepsMDVMPersistedState() async throws {
-    featureFlagRepositoryStub.setMDVMTokenFreshnessBuffer("PT10M")
     let expiringToken = makeJWT(expiration: Date().addingTimeInterval(60))
 
     stub(mockConfigLogic) { mock in
@@ -277,7 +271,6 @@ struct MDVMInteractorTests {
   func ensureFreshMDVMToken_WhenRenewalIsRejectedAsRevoked_ConfirmsTheRevocation() async throws {
     // The path users who declined push notifications rely on: the regular renewal must confirm the
     // revocation too, otherwise only opted-in devices would ever self-lock.
-    featureFlagRepositoryStub.setMDVMTokenFreshnessBuffer("PT10M")
     let expiringToken = makeJWT(expiration: Date().addingTimeInterval(60))
 
     stub(mockConfigLogic) { mock in
@@ -324,18 +317,33 @@ struct MDVMInteractorTests {
   }
 
   @Test
-  func ensureFreshMDVMToken_WhenBufferIsZeroAndTokenNotExpired_DoesNotRenew() async throws {
-    featureFlagRepositoryStub.setMDVMTokenFreshnessBuffer("PT0M")
-    let tokenWithOneMinuteLeft = makeJWT(expiration: Date().addingTimeInterval(60))
+  func ensureFreshMDVMToken_WhenTokenExpiresJustOutsideRenewalBuffer_DoesNotRenew() async throws {
+    let tokenWithElevenMinutesLeft = makeJWT(expiration: Date().addingTimeInterval(11 * 60))
 
     stub(mockMDVMRepository) { mock in
       when(mock.getStoredRegistration()).thenReturn(
-        MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: tokenWithOneMinuteLeft)
+        MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: tokenWithElevenMinutesLeft)
       )
     }
 
     try await sut.ensureFreshMDVMToken()
 
+    verify(mockMDVMRepository, never()).renew(payload: any(), mdvmWIID: anyString(), authChallenge: anyString(), skipIntegrityChecks: any(), privateKey: any())
+  }
+
+  @Test
+  func ensureFreshMDVMToken_WhenStoredRegistrationIsUnreadable_PropagatesWithoutRegistering() async {
+    stub(mockMDVMRepository) { mock in
+      when(mock.getStoredRegistration()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      try await sut.ensureFreshMDVMToken()
+    }
+
+    // A corrupt token must not be mistaken for "not registered": no silent re-registration.
+    verify(mockMDVMRepository, never()).fetchChallenge()
+    verify(mockMDVMRepository, never()).register(payload: any(), authChallenge: anyString(), skipIntegrityChecks: any(), privateKey: any())
     verify(mockMDVMRepository, never()).renew(payload: any(), mdvmWIID: anyString(), authChallenge: anyString(), skipIntegrityChecks: any(), privateKey: any())
   }
 
@@ -373,23 +381,5 @@ private final class WalletRevocationStoreSpy: WalletRevocationStore, @unchecked 
 
   func clearRevoked() {
     isWalletRevoked = false
-  }
-}
-
-private final class FeatureFlagRepositoryStub: FeatureFlagRepository, @unchecked Sendable {
-  private var mdvmTokenFreshnessBuffer = "PT10M"
-
-  func getFlagValue<T>(_ flag: FeatureFlag<T>) async -> T {
-    if flag.key == FeatureFlag<String>.mdvmTokenFreshnessBuffer.key,
-       let value = mdvmTokenFreshnessBuffer as? T {
-      return value
-    }
-    return flag.defaultValue
-  }
-
-  func refreshFlagsIfNeeded() async {}
-
-  func setMDVMTokenFreshnessBuffer(_ value: String) {
-    mdvmTokenFreshnessBuffer = value
   }
 }

@@ -28,7 +28,7 @@ public protocol RemoteSessionCoordinator: Sendable {
   func initialize() async
   func requestReceived() async throws -> PresentationRequest
   func sendResponse(response: RequestItemConvertible) async throws
-  func declineResponse() async throws
+  func declineResponse() async throws -> URL?
 
   func getState() async -> PresentationState
   func getStream() -> AsyncStream<PresentationState>
@@ -86,8 +86,12 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
     }
   }
     
-  public func declineResponse() async throws {
-    try await session.sendResponse(userAccepted: false, itemsToSend: [:], onCancel: nil, onSuccess: nil)
+  public func declineResponse() async throws -> URL? {
+    let redirectURL = SendableCurrentValueSubject<URL?>(nil)
+    try await session.sendResponse(userAccepted: false, itemsToSend: [:], onCancel: nil) { url in
+      redirectURL.setValue(url)
+    }
+    return redirectURL.getValue()
   }
 
   public func getState() async -> PresentationState {

@@ -12,7 +12,16 @@ import logic_resources
 import logic_ui
 
 protocol PresentationErrorHandler {
-  func handle(_ error: Error, originator: AppRoute) -> PresentationErrorPresentation
+  func handle(
+    _ error: Error,
+    originator: AppRoute
+  ) -> PresentationErrorPresentation
+
+  func handle(
+    _ error: Error,
+    originator: AppRoute,
+    retryAction: PresentationErrorDialogConfig.RetryAction?
+  ) -> PresentationErrorPresentation
 }
 
 final class PresentationErrorHandlerImpl: PresentationErrorHandler {
@@ -32,7 +41,15 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
     self.walletKitController = walletKitController
   }
 
-  func handle(_ error: Error, originator: AppRoute) -> PresentationErrorPresentation {
+  func handle(_ error: any Error, originator: AppRoute) -> PresentationErrorPresentation {
+    handle(error, originator: originator, retryAction: nil)
+  }
+
+  func handle(
+    _ error: Error,
+    originator: AppRoute,
+    retryAction: PresentationErrorDialogConfig.RetryAction?
+  ) -> PresentationErrorPresentation {
     if let backendError = error as? BackendError, !backendError.errorCode.isEmpty {
       let traceId = endTrace(serverCode: backendError.errorCode, serverTraceId: backendError.traceId, error: error)
       return .dialog(
@@ -41,7 +58,7 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
     }
     let classified = classifier.classify(error)
     let traceId = endTrace(classified: classified)
-    return presentation(for: classified, traceId: traceId, originator: originator)
+    return presentation(for: classified, traceId: traceId, originator: originator, retryAction: retryAction)
   }
 
   // MARK: - Designed states
@@ -49,7 +66,8 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
   private func presentation(
     for classified: ClassifiedPresentationError,
     traceId: String,
-    originator: AppRoute
+    originator: AppRoute,
+    retryAction: PresentationErrorDialogConfig.RetryAction?
   ) -> PresentationErrorPresentation {
     switch classified.errorClass {
     case .unclassified:
@@ -63,15 +81,27 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
         errorCode: PresentationErrorHandlerImpl.diagnosticLabel(classified)
       ))
     case .networkUnavailable:
-      return .dialog(.init(
-        title: .globalNoInternetErrorTitle,
-        titleIcon: Theme.shared.image.warning,
-        message: .globalNoInternetErrorParagraph,
-        errorCode: nil,
-        traceId: traceId,
-        primary: .init(title: .globalNoInternetErrorPrimButton, action: .popTo(originator)),
-        secondary: nil
-      ))
+      let dismissButton = PresentationErrorDialogConfig.Button(
+        title: .globalNoInternetErrorPrimButton,
+        action: .popTo(originator)
+      )
+      let retryButton = retryAction.map { action in
+        PresentationErrorDialogConfig.Button(
+          title: .globalTryAgainButton,
+          action: .retry(action)
+        )
+      }
+      return .dialog(
+        .init(
+          title: .globalNoInternetErrorTitle,
+          titleIcon: Theme.shared.image.warning,
+          message: .globalNoInternetErrorParagraph,
+          errorCode: nil,
+          traceId: traceId,
+          primary: retryButton ?? dismissButton,
+          secondary: retryButton != nil ? dismissButton : nil
+        )
+      )
     case .relyingPartyNotTrusted:
       return .notice(PresentationErrorHandlerImpl.notTrustedNotice(originator: originator))
     case .credentialNotAvailable:

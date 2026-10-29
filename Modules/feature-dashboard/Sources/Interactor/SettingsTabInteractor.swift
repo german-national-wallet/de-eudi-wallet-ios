@@ -23,7 +23,7 @@ public protocol SettingsTabInteractor: Sendable {
   func getAppVersion() -> String
   func getAppBuildNumber() -> String
   func retrieveLogFileUrl() -> URL?
-  func retrieveRevocationCode() -> String?
+  func retrieveRevocationCode() throws -> String?
 }
 
 final class SettingsTabInteractorImpl: SettingsTabInteractor {
@@ -54,8 +54,8 @@ final class SettingsTabInteractorImpl: SettingsTabInteractor {
     return walletController.retrieveLogFileUrl()
   }
 
-  func retrieveRevocationCode() -> String? {
-    guard let code = secureEnclaveController.retrieveDecryptedString(keyTag: .wpbWiRevocationCode),
+  func retrieveRevocationCode() throws -> String? {
+    guard let code = try secureEnclaveController.retrieveDecryptedString(keyTag: .wpbWiRevocationCode),
           !code.isEmpty else {
       return nil
     }

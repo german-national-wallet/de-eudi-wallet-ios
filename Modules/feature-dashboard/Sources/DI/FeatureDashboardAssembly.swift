@@ -40,6 +40,15 @@ public final class FeatureDashboardAssembly: Assembly {
       }
       .inObjectScope(ObjectScope.transient)
       
+      container.register(ActivitiesInteractor.self) { r in
+        ActivitiesInteractorImpl(
+          transactionLogController: r.force(TransactionLogController.self),
+          walletKitController: r.force(WalletKitController.self),
+          logger: r.force(Logging.self)
+        )
+      }
+      .inObjectScope(ObjectScope.transient)
+
       container.register(SettingsTabInteractor.self) { r in
         SettingsTabInteractorImpl(
           walletController: r.force(WalletKitController.self),

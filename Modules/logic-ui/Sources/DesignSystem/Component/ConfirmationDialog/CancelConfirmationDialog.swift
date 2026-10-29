@@ -42,6 +42,13 @@ public struct CancelConfirmationConfig {
     confirmTitle: .eaaIssuanceDialogCancelPrimButton,
     dismissTitle: .eaaIssuanceDialogCancelSecButton
   )
+
+  public static let pidPresentation = CancelConfirmationConfig(
+    title: .pidPresentationDialogCancelTitle,
+    message: .pidPresentationDialogCancelSubTitle,
+    confirmTitle: .pidPresentationDialogCancelPrimButton,
+    dismissTitle: .pidPresentationDialogCancelSecButton
+  )
 }
 
 public extension View {

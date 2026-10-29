@@ -42,7 +42,8 @@ final class PresentationRequestViewModelTests: XCTestCase {
       when(mock.startTrace(name: any(), initialAttributes: any())).thenDoNothing()
     }
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any()))
+        .thenReturn(.dialog(.fixture(traceId: "trace-id")))
     }
   }
 
@@ -84,11 +85,19 @@ final class PresentationRequestViewModelTests: XCTestCase {
     stub(interactor) { mock in
       when(mock.onDeviceEngagement()).thenReturn(.failure(TestNSError.generic))
     }
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any(), retryAction: any()))
+        .thenReturn(.dialog(.fixture(traceId: "trace-id")))
+    }
 
     await sut.doWork()
 
     XCTAssertEqual(sut.errorDialog?.traceId, "trace-id")
-    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    verify(errorHandler).handle(
+      any(),
+      originator: equal(to: AppRoute.featureDashboardModule(.dashboard)),
+      retryAction: any()
+    )
     verify(interactor).onDeviceEngagement()
     verify(analyticsController).startTrace(name: any(), initialAttributes: any())
     verify(router, never()).push(with: any())
@@ -97,7 +106,7 @@ final class PresentationRequestViewModelTests: XCTestCase {
   func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRoute() async {
     var didPushNoticeRoute = false
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.notice(.fixture()))
     }
     stub(interactor) { mock in
       when(mock.onDeviceEngagement()).thenReturn(.failure(TestNSError.generic))

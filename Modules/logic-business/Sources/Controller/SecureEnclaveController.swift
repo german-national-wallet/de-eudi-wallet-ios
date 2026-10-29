@@ -10,7 +10,6 @@ import CryptoKit
 
 public enum SecureEnclaveKeys: Equatable {
   case wia
-  case wiID
   case wbWIID
   case wpbWiRevocationCode
   case mdvmToken
@@ -31,7 +30,6 @@ public enum SecureEnclaveKeys: Equatable {
   var value: String {
     switch self {
     case .wia: return "com.dewallet.wia"
-    case .wiID: return "com.dewallet.wiID"
     case .wbWIID: return "com.dewallet.wb.wi_id"
     case .wpbWiRevocationCode: return "com.dewallet.wb.wi_revocation_code"
     case .mdvmToken: return "com.dewallet.mdvm.token"
@@ -66,10 +64,9 @@ public protocol SecureEnclaveController {
   func storeStringInKeychain(value: String, keyTag: SecureEnclaveKeys) -> Bool
   func retrieveStringFromKeychain(keyTag: SecureEnclaveKeys) -> String?
   /// Encrypts the value with `wi_data_enc_symk` before storing it in the Keychain.
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool
-  /// Retrieves and decrypts a value stored via `storeEncryptedString`. Transparently migrates
-  /// legacy plaintext values that were written before encryption was introduced.
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String?
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws
+  /// Retrieves and decrypts a value stored via `storeEncryptedString`.
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String?
   func deleteKeychainItem(keyTag: SecureEnclaveKeys)
   func generateECPrivateKey(from pin: String, and salt: String) throws -> SecKey
   func generatePublicKey(from privateKey: SecKey) throws -> SecKey
@@ -217,25 +214,44 @@ public final class SecureEnclaveControllerImpl: SecureEnclaveController {
     return String(data: valueData, encoding: .utf8)
   }
 
-  public func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool {
-    guard let plaintext = value.data(using: .utf8) else { return false }
+  public func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
+    let plaintext = Data(value.utf8)
     walletDataEncryptionController.generateKeyIfNeeded()
-    guard let ciphertext = try? walletDataEncryptionController.encrypt(plaintext) else {
-      logger?.e("Failed to encrypt value for keyTag: \(keyTag.value)")
-      return false
+    let ciphertext: Data
+    do {
+      ciphertext = try walletDataEncryptionController.encrypt(plaintext)
+    } catch WalletDataEncryptionError.keyUnavailable {
+      throw SecureEnclaveControllerError.encryptionKeyUnavailable
+    } catch {
+      throw SecureEnclaveControllerError.encryptionFailed
     }
-    return storeStringInKeychain(value: ciphertext.base64EncodedString(), keyTag: keyTag)
+    guard storeStringInKeychain(value: ciphertext.base64EncodedString(), keyTag: keyTag) else {
+      throw SecureEnclaveControllerError.keychainWriteFailed
+    }
   }
 
-  public func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? {
+  public func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {
     guard let stored = retrieveStringFromKeychain(keyTag: keyTag) else { return nil }
-    if let ciphertext = Data(base64Encoded: stored),
-       let plaintext = try? walletDataEncryptionController.decrypt(ciphertext),
-       let value = String(data: plaintext, encoding: .utf8) {
-      return value
+
+    guard let ciphertext = Data(base64Encoded: stored) else {
+      throw SecureEnclaveControllerError.invalidEncryptedValueEncoding
     }
-    _ = storeEncryptedString(value: stored, keyTag: keyTag)
-    return stored
+    let plaintext: Data
+    do {
+      plaintext = try walletDataEncryptionController.decrypt(ciphertext)
+    } catch WalletDataEncryptionError.keyUnavailable {
+      throw SecureEnclaveControllerError.encryptionKeyUnavailable
+    } catch WalletDataEncryptionError.invalidCiphertextFormat {
+      throw SecureEnclaveControllerError.invalidCiphertextFormat
+    } catch WalletDataEncryptionError.authenticationFailed {
+      throw SecureEnclaveControllerError.encryptedValueAuthenticationFailed
+    } catch {
+      throw SecureEnclaveControllerError.unexpectedDecryptionFailure
+    }
+    guard let value = String(data: plaintext, encoding: .utf8) else {
+      throw SecureEnclaveControllerError.invalidDecryptedValueEncoding
+    }
+    return value
   }
 
   public func deleteKeychainItem(keyTag: SecureEnclaveKeys) {
@@ -250,31 +266,38 @@ public final class SecureEnclaveControllerImpl: SecureEnclaveController {
   }
 
   public func generateECPrivateKey(from pin: String, and salt: String) throws -> SecKey {
-    let combined = "\(pin)\(salt)"
-    let combinedData = Data(combined.utf8)
-    let saltData = Data(salt.utf8)
+    guard let saltData = Data(base64Encoded: salt), saltData.count == 16 else {
+      throw SecureEnclaveControllerError.pinKeyDerivationFailed
+    }
     let iterations = 120_000
     let keyLength = 32 // 256 bits
 
-    var derivedKey = [UInt8](repeating: 0, count: keyLength)
-    let result = derivedKey.withUnsafeMutableBytes { derivedKeyPointer in
-      saltData.withUnsafeBytes { saltPointer in
-        CCKeyDerivationPBKDF(
-          CCPBKDFAlgorithm(kCCPBKDF2),
-          combined, combinedData.count,
-          saltPointer.baseAddress!.assumingMemoryBound(to: UInt8.self), saltData.count,
-          CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
-          UInt32(iterations),
-          derivedKeyPointer.baseAddress!.assumingMemoryBound(to: UInt8.self),
-          keyLength
-        )
+    // A PBKDF2 output of 0 or >= n is not a valid P-256 key, so derive again with the next counter until CryptoKit accepts one
+    for counter: UInt32 in 0..<3 {
+      let saltWithCounter = saltData + withUnsafeBytes(of: counter.bigEndian) { Data($0) }
+      var derivedKey = [UInt8](repeating: 0, count: keyLength)
+      let result = derivedKey.withUnsafeMutableBytes { derivedKeyPointer in
+        saltWithCounter.withUnsafeBytes { saltPointer in
+          CCKeyDerivationPBKDF(
+            CCPBKDFAlgorithm(kCCPBKDF2),
+            pin, pin.utf8.count,
+            saltPointer.baseAddress!.assumingMemoryBound(to: UInt8.self), saltWithCounter.count,
+            CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
+            UInt32(iterations),
+            derivedKeyPointer.baseAddress!.assumingMemoryBound(to: UInt8.self),
+            keyLength
+          )
+        }
+      }
+
+      guard result == kCCSuccess else {
+        throw SecureEnclaveControllerError.pinKeyDerivationFailed
+      }
+      if let privateKey = try? P256.Signing.PrivateKey(rawRepresentation: Data(derivedKey)) {
+        return try privateKey.toSecKey()
       }
     }
-
-    guard result == kCCSuccess else {
-      throw NSError(domain: "PBKDF2Error", code: Int(result), userInfo: nil)
-    }
-    return try P256.Signing.PrivateKey(rawRepresentation: Data(derivedKey)).toSecKey()
+    throw SecureEnclaveControllerError.pinKeyDerivationFailed
   }
 
   public func generatePublicKey(from privateKey: SecKey) throws -> SecKey {

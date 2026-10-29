@@ -16,7 +16,6 @@ struct DashboardPIDState: ViewState {
 
 final class DashboardCredentialViewModel<Router: RouterHost>: ViewModel<Router, DashboardPIDState> {
   private let interactor: DashboardInteractor
-  private let deeplinkController: DeepLinkController
   private let logger: Logging?
   private let analyticsController: AnalyticsController
 
@@ -30,11 +29,9 @@ final class DashboardCredentialViewModel<Router: RouterHost>: ViewModel<Router, 
     router: Router,
     interactor: DashboardInteractor,
     logger: Logging?,
-    deepLinkController: DeepLinkController,
     analyticsController: AnalyticsController
   ) {
     self.interactor = interactor
-    self.deeplinkController = deepLinkController
     self.logger = logger
     self.analyticsController = analyticsController
     super.init(
@@ -110,18 +107,6 @@ final class DashboardCredentialViewModel<Router: RouterHost>: ViewModel<Router, 
     let isPID = doc.configurationIdentifier?.contains("pid") ?? false
     pidName = isPID ? LocalizableStringKey.dashboardCardTitle.toString : ""
     pidIssuer = isPID ? LocalizableStringKey.dashboardCardIssuer.toString : ""
-  }
-
-  func handleDeepLink() async {
-    guard let deepLink = deeplinkController.getPendingDeepLinkAction(),
-          deepLink.requiresCoordinator else {
-      return
-    }
-    deeplinkController.handleDeepLinkAction(
-      routerHost: router,
-      deepLinkExecutable: deepLink,
-      remoteSessionCoordinator: await interactor.getWalletKitController().startSameDevicePresentation(deepLink: deepLink.link)
-    )
   }
 
   func performIssuance() {

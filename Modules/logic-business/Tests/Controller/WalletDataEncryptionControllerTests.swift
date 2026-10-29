@@ -98,7 +98,7 @@ struct WalletDataEncryptionControllerTests {
     // Flip the last byte to break the GCM authentication tag.
     ciphertext[ciphertext.count - 1] ^= 0xFF
 
-    #expect(throws: WalletDataEncryptionError.decryptionFailed) {
+    #expect(throws: WalletDataEncryptionError.authenticationFailed) {
       _ = try sut.decrypt(ciphertext)
     }
   }
@@ -108,7 +108,7 @@ struct WalletDataEncryptionControllerTests {
     let (sut, _) = makeSUT()
     sut.generateKeyIfNeeded()
 
-    #expect(throws: WalletDataEncryptionError.decryptionFailed) {
+    #expect(throws: WalletDataEncryptionError.invalidCiphertextFormat) {
       _ = try sut.decrypt(Data("not-a-sealed-box".utf8))
     }
   }
@@ -136,7 +136,7 @@ struct WalletDataEncryptionControllerTests {
     storage.storeKey(CryptoKit.SymmetricKey(size: .bits256))
 
     // Data sealed with the old key can no longer be opened with the new key.
-    #expect(throws: WalletDataEncryptionError.decryptionFailed) {
+    #expect(throws: WalletDataEncryptionError.authenticationFailed) {
       _ = try sut.decrypt(ciphertext)
     }
   }

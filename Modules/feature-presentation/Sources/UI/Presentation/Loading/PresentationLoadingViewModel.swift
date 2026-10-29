@@ -244,7 +244,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       router.popTo(with: route)
     case .addDigitalIDAgain:
       showPIDResetConfirmationPopup = true
-    case .dismiss:
+    case .dismiss, .retry:
       break
     }
   }

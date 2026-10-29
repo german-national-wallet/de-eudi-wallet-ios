@@ -10,10 +10,10 @@ import logic_business
 
 public protocol WPBRepository {
   func fetchChallenge() async throws -> String
-  func getStoredWIID() -> String?
-  func storeWIID(_ wiid: String)
+  func getStoredWIID() throws -> String?
+  func storeWIID(_ wiid: String) throws
   func deleteWIID()
-  func storeRevocationCode(_ revocationCode: String)
+  func storeRevocationCode(_ revocationCode: String) throws
   func deleteRevocationCode()
   func register(
     mdvmToken: String,
@@ -57,23 +57,23 @@ public final class WPBRepositoryImpl: WPBRepository {
     return response.wbAuthChallenge
   }
 
-  public func getStoredWIID() -> String? {
-    guard let wiid = secureEnclaveController.retrieveDecryptedString(keyTag: .wbWIID), !wiid.isEmpty else {
+  public func getStoredWIID() throws -> String? {
+    guard let wiid = try secureEnclaveController.retrieveDecryptedString(keyTag: .wbWIID), !wiid.isEmpty else {
       return nil
     }
     return wiid
   }
 
-  public func storeWIID(_ wiid: String) {
-    _ = secureEnclaveController.storeEncryptedString(value: wiid, keyTag: .wbWIID)
+  public func storeWIID(_ wiid: String) throws {
+    _ = try secureEnclaveController.storeEncryptedString(value: wiid, keyTag: .wbWIID)
   }
 
   public func deleteWIID() {
     secureEnclaveController.deleteKeychainItem(keyTag: .wbWIID)
   }
 
-  public func storeRevocationCode(_ revocationCode: String) {
-    _ = secureEnclaveController.storeEncryptedString(value: revocationCode, keyTag: .wpbWiRevocationCode)
+  public func storeRevocationCode(_ revocationCode: String) throws {
+    _ = try secureEnclaveController.storeEncryptedString(value: revocationCode, keyTag: .wpbWiRevocationCode)
   }
 
   public func deleteRevocationCode() {

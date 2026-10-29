@@ -300,19 +300,19 @@ struct RWSCARepositoryImplTests {
   struct GetRWSCAIDTests {
 
     @Test("returns stored account ID when present")
-    func returnsStoredValue() {
+    func returnsStoredValue() throws {
       let secureEnclave = FakeSecureEnclaveController()
       _ = secureEnclave.storeStringInKeychain(value: "account-999", keyTag: .rwscaAccountID)
       let sut = makeSUT(secureEnclaveController: secureEnclave)
 
-      #expect(sut.getRWSCAID() == "account-999")
+      #expect(try sut.getRWSCAID() == "account-999")
     }
 
     @Test("returns nil when no account ID is stored")
-    func returnsNilWhenMissing() {
+    func returnsNilWhenMissing() throws {
       let sut = makeSUT(secureEnclaveController: FakeSecureEnclaveController())
 
-      #expect(sut.getRWSCAID() == nil)
+      #expect(try sut.getRWSCAID() == nil)
     }
 
     @Test("returns nil after a failed registration attempt")
@@ -328,7 +328,7 @@ struct RWSCARepositoryImplTests {
         privateKey: makeMockPrivateKey()
       )
 
-      #expect(sut.getRWSCAID() == nil)
+      #expect(try sut.getRWSCAID() == nil)
     }
 
     @Test("returns account ID after successful registration")
@@ -344,7 +344,19 @@ struct RWSCARepositoryImplTests {
         privateKey: makeMockPrivateKey()
       )
 
-      #expect(sut.getRWSCAID() == "account-123")
+      #expect(try sut.getRWSCAID() == "account-123")
+    }
+
+    @Test("throws decryption error when the stored account ID is unreadable")
+    func throwsWhenUnreadable() {
+      let secureEnclave = FakeSecureEnclaveController()
+      _ = secureEnclave.storeStringInKeychain(value: "account-999", keyTag: .rwscaAccountID)
+      secureEnclave.decryptionError = SecureEnclaveControllerError.encryptedValueAuthenticationFailed
+      let sut = makeSUT(secureEnclaveController: secureEnclave)
+
+      #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+        _ = try sut.getRWSCAID()
+      }
     }
   }
 
@@ -1014,7 +1026,7 @@ struct RWSCARepositoryImplTests {
         mdvmPrivateKey: makeMockPrivateKey()
       )
 
-      #expect(sut.getRWSCAID() == nil)
+      #expect(try sut.getRWSCAID() == nil)
     }
 
     @Test("sends delete signature headers")
@@ -1076,7 +1088,7 @@ struct RWSCARepositoryImplTests {
         )
       }
 
-      #expect(sut.getRWSCAID() == "account-123")
+      #expect(try sut.getRWSCAID() == "account-123")
     }
 
     @Test("throws signingFailed when signature service throws")
@@ -1119,6 +1131,8 @@ struct RWSCARepositoryImplTests {
 
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
+  var decryptionError: Error?
+  private(set) var storeEncryptedCallCount = 0
 
   func createPrivateKey(with keyTag: SecureEnclaveKeys) -> SecKey? { nil }
   func storePrivateKey(_ privateKey: SecKey, with keyTag: SecureEnclaveKeys) -> Bool { false }
@@ -1136,14 +1150,13 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
 
   // The fake does not actually encrypt; it shares the same backing store as the plain variants.
-  @discardableResult
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool {
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
+    storeEncryptedCallCount += 1
     stringStorage[keyTag] = value
-    return true
   }
-
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? {
-    stringStorage[keyTag]
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {
+    if let decryptionError { throw decryptionError }
+    return stringStorage[keyTag]
   }
 
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) {

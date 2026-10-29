@@ -147,6 +147,19 @@ struct RWSCAInteractorTests {
     verify(prefsController).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
 
+  @Test func register_WhenStoredIDIsUnreadable_ThrowsWithoutRegisteringAgain() async throws {
+    stub(rwscaRepository) { mock in
+      when(mock.getRWSCAID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      try await sut.register(mdvmStoredRegistration: MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
+    }
+
+    verify(rwscaRepository, never()).fetchChallenge()
+    verify(rwscaRepository, never()).register(mdvmToken: any(), authChallenge: any(), privateKey: any())
+  }
+
   @Test func startPINSession_WhenPINIsAlreadyInitialized_ThenStartsPINSessionWithoutSavingPrefs() async throws {
     stub(mdvmInteractor) { mock in
       when(mock.ensureFreshMDVMToken())
@@ -440,6 +453,58 @@ struct RWSCAInteractorTests {
       pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
     )
     verify(prefsController).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
+  }
+
+  @Test func startPinSession_WhenStoredIDIsUnreadable_ThrowsDecryptionErrorNotNotRegistered() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
+    }
+    stub(rwscaRepository) { mock in
+      when(mock.getRWSCAID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(false)
+    }
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      try await sut.startPinSession(pin: "123456")
+    }
+
+    verify(rwscaRepository, never()).fetchChallenge()
+    verify(walletPinRepository, never()).getPinPrivateKey(pin: any())
+  }
+
+  @Test func startPinSession_WhenPinSaltIsUnreadable_ThrowsWithoutInitializingPin() async throws {
+    stub(mdvmInteractor) { mock in
+      when(mock.ensureFreshMDVMToken())
+        .thenReturn(MDVMStoredRegistration(mdvmWIID: "mock_wiid", mdvmToken: "mock_token"))
+    }
+    stub(rwscaRepository) { mock in
+      when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchChallenge()).thenReturn("mock_challenge")
+    }
+    stub(secureEnclaveController) { mock in
+      when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
+    }
+    stub(walletPinRepository) { mock in
+      when(mock.getPinPrivateKey(pin: any()))
+        .thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(false)
+    }
+
+    // A corrupt salt would derive a different PIN key; sending it would burn the backend retry counter.
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      try await sut.startPinSession(pin: "123456")
+    }
+
+    verify(rwscaRepository, never()).initializePinAndStartPinSession(
+      mdvmToken: any(), challenge: any(), rwscaID: any(),
+      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+    )
+    verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
 
   @Test func createKeys_Success() async throws {

@@ -25,7 +25,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn("existing-wi-id")
+      when(mock.walletInstanceID()).thenReturn("existing-wi-id")
     }
 
     let sut = WalletRegistrationInteractorImpl(
@@ -71,7 +71,7 @@ struct WalletRegistrationInteractorImplTests {
 
     stub(wpbInteractor) { mock in
       when(mock.register(mdvmStoredRegistration: any())).thenReturn("wb-wi-id-123")
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
     }
 
     let sut = WalletRegistrationInteractorImpl(
@@ -90,7 +90,7 @@ struct WalletRegistrationInteractorImplTests {
     let mdvmInteractor = FakeMDVMInteractor(token: nil)
     let wpbInteractor = MockWPBInteractor()
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
     }
 
     let sut = WalletRegistrationInteractorImpl(
@@ -111,7 +111,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
       when(mock.register(mdvmStoredRegistration: any()))
         .thenThrow(BackendError.serverError(code: "MDVM_TOKEN_VERIFICATION_FAILURE", description: "invalid token", traceID: "t-1"))
     }
@@ -135,7 +135,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
       when(mock.register(mdvmStoredRegistration: any()))
         .thenThrow(BackendError.serverError(code: "SOME_FUTURE_SERVER_CODE", description: "whatever", traceID: "t-2"))
     }
@@ -158,7 +158,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
       when(mock.register(mdvmStoredRegistration: any()))
         .thenThrow(BackendError.decodingFailed)
     }
@@ -194,7 +194,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
       when(mock.register(mdvmStoredRegistration: any())).thenReturn("wb-wi-id-123")
     }
 
@@ -217,7 +217,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
     }
 
     let sut = WalletRegistrationInteractorImpl(
@@ -246,7 +246,7 @@ struct WalletRegistrationInteractorImplTests {
     let wpbInteractor = MockWPBInteractor()
 
     stub(wpbInteractor) { mock in
-      when(mock.walletInstanceID.get).thenReturn(nil)
+      when(mock.walletInstanceID()).thenReturn(nil)
     }
 
     let sut = WalletRegistrationInteractorImpl(
@@ -261,6 +261,29 @@ struct WalletRegistrationInteractorImplTests {
     }
     #expect(secureEnclaveController.deletedKeyTags.isEmpty)
     #expect(mdvmInteractor.ensureFreshMDVMTokenCallCount == 1)
+  }
+
+  // MARK: - Store Error
+
+  @Test
+  func registerWalletInstance_WhenStoredWIIDIsUnreadable_ThrowsWithoutTouchingMDVM() async {
+    let mdvmInteractor = FakeMDVMInteractor(token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token"))
+    let wpbInteractor = MockWPBInteractor()
+    stub(wpbInteractor) { mock in
+      when(mock.walletInstanceID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+    let sut = WalletRegistrationInteractorImpl(
+      mdvmInteractor: mdvmInteractor,
+      wpbInteractor: wpbInteractor,
+      walletRevocationInteractor: FakeWalletRevocationInteractor(isWalletRevoked: false),
+      secureEnclaveController: FakeSecureEnclaveController()
+    )
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try await sut.registerWalletInstance()
+    }
+    #expect(mdvmInteractor.ensureFreshMDVMTokenCallCount == 0)
+    verify(wpbInteractor, never()).register(mdvmStoredRegistration: any())
   }
 }
 
@@ -288,8 +311,8 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   func deletePrivateKey(with keyTag: SecureEnclaveKeys) -> Bool { false }
   func storeStringInKeychain(value: String, keyTag: SecureEnclaveKeys) -> Bool { false }
   func retrieveStringFromKeychain(keyTag: SecureEnclaveKeys) -> String? { nil }
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool { false }
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? { nil }
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws { }
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? { nil }
   func generateECPrivateKey(from pin: String, and salt: String) throws -> SecKey { throw BackendError.unknown }
   func generatePublicKey(from privateKey: SecKey) throws -> SecKey { throw BackendError.unknown }
   func getOrCreatePrivateKey(with keyTag: SecureEnclaveKeys) throws -> SecKey { throw BackendError.unknown }

@@ -51,6 +51,8 @@ public enum PINScreenType: Sendable {
   ///  - **Flow:
   ///   ** User wants to setup a new EID CARD -> `transportPinFlow` ->`setupNewEidPinFlow`
   case setupNewEidPinFlow
+
+  case transportPinRetryFlow
   
   /// `confirmNewEIDPinFlow` represents the flow triggered
   ///  after entering the **NEW EID PIN**, this is asked to confirm

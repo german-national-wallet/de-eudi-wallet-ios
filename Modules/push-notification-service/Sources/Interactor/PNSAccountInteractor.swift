@@ -90,7 +90,7 @@ public actor PNSAccountInteractorImpl: PNSAccountInteractor {
       logger?.d("[PNS] notifications are not authorized, skipping account sync")
       return
     }
-    guard let mdvmRegistration = mdvmRepository.getStoredRegistration() else {
+    guard let mdvmRegistration = try? mdvmRepository.getStoredRegistration() else {
       logger?.d("[PNS] wallet instance is not registered at the MDVM yet, skipping account sync")
       return
     }
@@ -105,7 +105,7 @@ public actor PNSAccountInteractorImpl: PNSAccountInteractor {
         mdvmToken: mdvmRegistration.mdvmToken,
         authChallenge: challenge
       )
-      repository.storeRegistration(
+      try repository.storeRegistration(
         PNSStoredRegistration(mppRegistrationToken: mppRegistrationToken, registeredAt: Date())
       )
       logger?.d("[PNS] account synced: \(reason.rawValue)")

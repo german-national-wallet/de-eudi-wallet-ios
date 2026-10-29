@@ -333,6 +333,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case setupPinSheetMessage
   case setupPinSheetButtonText
   case transportPinViewTitle
+  case transportPinWrongEntry
   case setupNewPinInstructionViewTitle
   case eidSetupCardPinIntroParagraph
   case setupNewPinInstructionViewPrimaryButtonTilte
@@ -546,6 +547,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionCodeViewTitle
   case transactionCodeViewDescription
   case logsDownloadDisclaimer
+  case globalTryAgainButton
 
   case eaaOfferViewTitle
   case eaaOfferViewSubTitle
@@ -571,6 +573,10 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidIssuanceDialogCancelSubTitle
   case pidIssuanceDialogCancelPrimButton
   case pidIssuanceDialogCancelSecButton
+  case pidPresentationDialogCancelTitle
+  case pidPresentationDialogCancelSubTitle
+  case pidPresentationDialogCancelPrimButton
+  case pidPresentationDialogCancelSecButton
   case eaaIssuanceTransactionCodeEntryPrimButton
   case eaaIssuanceLoadingTitle
   case eaaIssuanceSuccessTitle
@@ -592,16 +598,16 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidPresentationDialogRpOveraskingPrimButton
   case pidPresentationDialogRpOveraskingSecButton
     
-    case pidPresentationDialogRpRejectionTitle
-    case pidPresentationDialogRpRejectionParagraph
-    case pidPresentationDialogRpRejectionPrimButton
-    case pidPresentationDialogRpRejectionSecButton
-    case pidPresentationDialogRpRejectionSecButton2
-    case pidPresentationNoIssuedPidTitle
-    case pidPresentationNoIssuedPidParagraph
-    case pidPresentationNoIssuedPidPrimButton
-    case eaaPresentationCredentialNotFoundTitle
-    
+  case pidPresentationDialogRpRejectionTitle
+  case pidPresentationDialogRpRejectionParagraph
+  case pidPresentationDialogRpRejectionPrimButton
+  case pidPresentationDialogRpRejectionSecButton
+  case pidPresentationDialogRpRejectionSecButton2
+  case pidPresentationNoIssuedPidTitle
+  case pidPresentationNoIssuedPidParagraph
+  case pidPresentationNoIssuedPidPrimButton
+  case eaaPresentationCredentialNotFoundTitle
+
   case pidPresentationRetryCounterLockedTitle
   case pidPresentationRetryCounterBlockedParagraph
   case pidPresentationRetryCounterLockedPrimButton
@@ -733,6 +739,59 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case dashboardTabBarTitleLabelActivity
   case dashboardTabBarTitleLabelSettings
   case dashboardTabBarTitleLabelScanner
+
+  // MARK: Activities
+
+  case activitiesOverviewTitle
+  case activitiesOverviewEmptyHeadline
+  case activitiesOverviewEmptyParagraph
+  case activitiesOverviewHowToUseButton([String])
+  case activitiesOverviewToday
+  case activitiesOverviewYesterday
+  case activitiesOverviewLastWeek
+  case activitiesOverviewLastMonth
+  case activitiesOverviewAWhileAgo
+  case activitiesDetailVerifiedOn
+  case activitiesDetailCredentialAndDataShared
+  case activitiesDetailServiceInformation
+  case activitiesDetailDataPolicy
+  case activitiesDetailWebsite
+  case activitiesDetailSupport
+  case activitiesDetailValuesOf([String])
+  case activitiesDetailValues([String])
+  case activitiesDetailReportSuspicion
+  case activitiesDetailDeleteActivity
+  case activitiesDetailDeleteTitle
+  case activitiesDetailIssuedOn
+  case activitiesDetailDeletedOn
+  case activitiesDetailIdCreated
+  case activitiesDetailIdDeleted
+  case activitiesDetailIssuerInformation
+  case activitiesDetailCredentialCreated
+  case activitiesDetailCredentialDeleted
+  case activitiesDetailRejectedOn
+  case activitiesDetailFailureDeclined
+  case activitiesDetailFailureGeneric
+  case activitiesDetailFailureServiceRejected
+  case activitiesDetailNoDataShared
+  case activitiesLogTypePresentation
+  case activitiesLogTypeIssuance
+  case activitiesLogTypeDeletion
+  case activitiesLogStatusNotCompleted
+  case activitiesLogUnknownParty
+  case activitiesLogDetailDate
+  case activitiesLogDetailStatus
+  case activitiesLogDetailCompleted
+  case activitiesLogDetailPurpose
+  case activitiesLogDetailIssuer
+  case activitiesLogDetailCredential
+  case activitiesLogCredentialCreated([String])
+  case activitiesLogCredentialDeleted([String])
+  case activitiesLogMultipleCredentials
+  case activitiesLogTime([String])
+  case activitiesDeleteAllEntries
+  case activitiesDeleteAllTitle
+  case activitiesDeleteAllConfirm
 }
 
 public extension LocalizableStringKey {

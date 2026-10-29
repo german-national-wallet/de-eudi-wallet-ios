@@ -17,13 +17,6 @@ public struct FeatureFlag<T: Sendable>: Sendable {
 
 public extension FeatureFlag where T == String {
 
-  /// Uses an ISO 8601 temporal duration string
-  /// https://tc39.es/proposal-temporal/docs/duration.html
-  static let mdvmTokenFreshnessBuffer: FeatureFlag<String> = .init(
-    key: "mdvm_token_freshness_buffer",
-    defaultValue: "PT10M"
-  )
-
   /// How long a `mpp_registration_token` stored at the PNS may go without a refresh. Keeps the
   /// token from becoming stale while avoiding calls to the MPP and the PNS on every start-up.
   /// Uses an ISO 8601 temporal duration string

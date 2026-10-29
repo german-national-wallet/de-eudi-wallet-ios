@@ -17,7 +17,6 @@ import logic_analytics
 final class TestDashboardPIDViewModel: XCTestCase {
 
   private var mockInteractor: MockDashboardInteractor!
-  private var mockDeepLinkController: MockDeepLinkController!
   private var mockRouter: MockRouterHost!
   private var mockAnalyticsController: MockAnalyticsController!
 
@@ -25,14 +24,12 @@ final class TestDashboardPIDViewModel: XCTestCase {
     super.setUp()
     mockInteractor = MockDashboardInteractor()
     mockRouter = MockRouterHost()
-    mockDeepLinkController = MockDeepLinkController()
     mockAnalyticsController = MockAnalyticsController()
   }
 
   override func tearDown() {
     mockInteractor = nil
     mockRouter = nil
-    mockDeepLinkController = nil
     mockAnalyticsController = nil
     super.tearDown()
   }
@@ -48,7 +45,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -65,7 +61,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -82,7 +77,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -102,7 +96,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -122,7 +115,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -142,7 +134,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -160,7 +151,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -178,7 +168,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -196,7 +185,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -217,7 +205,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -235,7 +222,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -262,7 +248,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -280,86 +265,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
     XCTAssertEqual(viewModel.pidName, "")
   }
 
-  // MARK: - handleDeepLink
-
-  /// Regression guard: a presentation deep link that was cached during a cold launch must be
-  /// replayed once the dashboard is on screen, by delegating back to the deep-link controller.
-  func testHandleDeepLink_WhenPendingActionExists_ThenDelegatesToHandleDeepLinkAction() async {
-    let mockWalletKitController = MockWalletKitController()
-    let mockCoordinator = MockRemoteSessionCoordinator(session: Constants.mockPresentationSession)
-    let executable = makeOpenID4VPExecutable()
-
-    stub(mockInteractor) { mock in
-      when(mock.getPIDDocument()).thenReturn(nil)
-      when(mock.getWalletKitController()).thenReturn(mockWalletKitController)
-    }
-    stub(mockWalletKitController) { mock in
-      when(mock.startSameDevicePresentation(deepLink: any())).thenReturn(mockCoordinator)
-    }
-    stub(mockDeepLinkController) { mock in
-      when(mock.getPendingDeepLinkAction()).thenReturn(executable)
-      when(mock.handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())).thenDoNothing()
-    }
-
-    let viewModel = DashboardCredentialViewModel(
-      router: mockRouter,
-      interactor: mockInteractor,
-      logger: nil,
-      deepLinkController: mockDeepLinkController,
-      analyticsController: mockAnalyticsController
-    )
-
-    await viewModel.handleDeepLink()
-
-    verify(mockDeepLinkController).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
-  }
-
-  func testHandleDeepLink_WhenNoPendingAction_ThenDoesNothing() async {
-    stub(mockInteractor) { mock in
-      when(mock.getPIDDocument()).thenReturn(nil)
-    }
-    stub(mockDeepLinkController) { mock in
-      when(mock.getPendingDeepLinkAction()).thenReturn(nil)
-    }
-
-    let viewModel = DashboardCredentialViewModel(
-      router: mockRouter,
-      interactor: mockInteractor,
-      logger: nil,
-      deepLinkController: mockDeepLinkController,
-      analyticsController: mockAnalyticsController
-    )
-
-    await viewModel.handleDeepLink()
-
-    verify(mockDeepLinkController, never()).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
-    verify(mockInteractor, never()).getWalletKitController()
-  }
-
-  /// A non-presentation cached deep link (e.g. the post-presentation verifier redirect that
-  /// `DocumentSuccessViewModel` caches) must not be auto-opened when the dashboard re-appears.
-  func testHandleDeepLink_WhenPendingActionDoesNotRequireCoordinator_ThenDoesNothing() async {
-    stub(mockInteractor) { mock in
-      when(mock.getPIDDocument()).thenReturn(nil)
-    }
-    stub(mockDeepLinkController) { mock in
-      when(mock.getPendingDeepLinkAction()).thenReturn(makeExternalExecutable())
-    }
-
-    let viewModel = DashboardCredentialViewModel(
-      router: mockRouter,
-      interactor: mockInteractor,
-      logger: nil,
-      deepLinkController: mockDeepLinkController,
-      analyticsController: mockAnalyticsController
-    )
-
-    await viewModel.handleDeepLink()
-
-    verify(mockDeepLinkController, never()).handleDeepLinkAction(routerHost: any(), deepLinkExecutable: any(), remoteSessionCoordinator: any())
-    verify(mockInteractor, never()).getWalletKitController()
-  }
-
   func testPerformIssuance_WhenCalled_ThenStartsIssuanceTraceAndPushesOnboarding() {
     stub(mockInteractor) { mock in
       when(mock.getPIDDocument()).thenReturn(nil)
@@ -375,7 +280,6 @@ final class TestDashboardPIDViewModel: XCTestCase {
       router: mockRouter,
       interactor: mockInteractor,
       logger: nil,
-      deepLinkController: mockDeepLinkController,
       analyticsController: mockAnalyticsController
     )
 
@@ -386,17 +290,5 @@ final class TestDashboardPIDViewModel: XCTestCase {
       initialAttributes: any()
     )
     verify(mockRouter).push(with: equal(to: .featureIssuanceModule(.issuanceOnboardingCardView)))
-  }
-
-  private func makeOpenID4VPExecutable() -> DeepLink.Executable {
-    let url = URL(string: "openid4vp://authorize?request_uri=https%3A%2F%2Fverifier.example%2Frequest")!
-    let components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
-    return DeepLink.Executable(link: components, plainUrl: url, action: .openid4vp)
-  }
-
-  private func makeExternalExecutable() -> DeepLink.Executable {
-    let url = URL(string: "https://verifier.example/redirect?response_code=abc")!
-    let components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
-    return DeepLink.Executable(link: components, plainUrl: url, action: .external)
   }
 }

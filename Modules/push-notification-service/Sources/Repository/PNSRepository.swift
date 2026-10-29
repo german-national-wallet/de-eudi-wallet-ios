@@ -21,7 +21,7 @@ public protocol PNSRepository {
   ) async throws
 
   func getStoredRegistration() -> PNSStoredRegistration?
-  func storeRegistration(_ registration: PNSStoredRegistration)
+  func storeRegistration(_ registration: PNSStoredRegistration) throws
   func deleteStoredRegistration()
 }
 
@@ -95,7 +95,7 @@ public final class PNSRepositoryImpl: PNSRepository {
 
   public func getStoredRegistration() -> PNSStoredRegistration? {
     guard
-      let stored = secureEnclaveController.retrieveDecryptedString(keyTag: .mppRegistrationToken),
+      let stored = try? secureEnclaveController.retrieveDecryptedString(keyTag: .mppRegistrationToken),
       let data = stored.data(using: .utf8),
       let registration = try? Self.decoder.decode(PNSStoredRegistration.self, from: data),
       !registration.mppRegistrationToken.isEmpty
@@ -105,7 +105,7 @@ public final class PNSRepositoryImpl: PNSRepository {
     return registration
   }
 
-  public func storeRegistration(_ registration: PNSStoredRegistration) {
+  public func storeRegistration(_ registration: PNSStoredRegistration) throws {
     guard
       let data = try? Self.encoder.encode(registration),
       let value = String(data: data, encoding: .utf8)
@@ -113,7 +113,7 @@ public final class PNSRepositoryImpl: PNSRepository {
       logger?.e("[PNS] unable to encode the local registration record")
       return
     }
-    _ = secureEnclaveController.storeEncryptedString(value: value, keyTag: .mppRegistrationToken)
+    _ = try secureEnclaveController.storeEncryptedString(value: value, keyTag: .mppRegistrationToken)
   }
 
   public func deleteStoredRegistration() {

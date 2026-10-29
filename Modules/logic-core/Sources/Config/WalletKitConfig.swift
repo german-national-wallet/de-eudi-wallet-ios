@@ -76,13 +76,16 @@ protocol WalletKitConfig: Sendable {
 struct WalletKitConfigImpl: WalletKitConfig {
   let configLogic: ConfigLogic
   let walletKitAttestationProvider: WalletAttestationsProvider
+  let vciRedirectURI: String
 
   init(
     configLogic: ConfigLogic,
-    walletKitAttestationProvider: WalletAttestationsProvider
+    walletKitAttestationProvider: WalletAttestationsProvider,
+    vciRedirectURI: String = "VCI_REDIRECT_URI".valueFromBundle
   ) {
     self.configLogic = configLogic
     self.walletKitAttestationProvider = walletKitAttestationProvider
+    self.vciRedirectURI = vciRedirectURI
   }
 
   var userAuthenticationRequired: Bool {
@@ -105,11 +108,11 @@ struct WalletKitConfigImpl: WalletKitConfig {
         credentialIssuerURL: configLogic.vciIssuerURL.map(\.trimmingTrailingSlash),
         clientId: getBundleNullableValue(key: "VCI_CLIENT_ID"),
         keyAttestationsConfig: .init(walletAttestationsProvider: walletKitAttestationProvider),
-        authFlowRedirectionURI: URL(string: getBundleValue(key: "VCI_REDIRECT_URI"))!,
+        authFlowRedirectionURI: URL(string: vciRedirectURI)!,
         allowPlainJwtProof: true,
         requireDpop: true,
         issuerMetadataPolicy: .requireSigned(issuerTrust: issuerMetadataTrust),
-        cacheIssuerMetadata: true
+        encryptionSupportConfig: Self.responseEncryptionConfig
       )
     ]
     return openId4VciConfigurations.reduce(
@@ -126,8 +129,19 @@ struct WalletKitConfigImpl: WalletKitConfig {
     }
   }
 
+  // RSA response encryption is disabled; credential responses are encrypted to EC P-256 keys only.
+  // Unregistered issuers get a copy of this configuration and inherit the setting.
+  static let responseEncryptionConfig = EncryptionSupportConfig(
+    credentialResponseEncryptionPolicy: .required,
+    ecConfig: EcConfig(ecKeyCurve: .P256),
+    rsaConfig: nil
+  )
+
   private var issuerMetadataTrust: IssuerTrust {
-    let trustSource: TrustSource = .staticList(StaticListTrustSource(rootCertificates: staticRootCertificates))
+    // Revocation off as before the 0.56.0 update: on iOS it requires an OCSP responder, which current access/registration certificates lack
+    let trustSource: TrustSource = .staticList(
+      StaticListTrustSource(rootCertificates: staticRootCertificates, isRevocationEnabled: false)
+    )
     let trustManager = EtsiTrustManager(
       source: trustSource.withContextTypeMappings(nil),
       defaultVerificationContext: EtsiContextType.wrpac.verificationContext
@@ -158,15 +172,16 @@ struct WalletKitConfigImpl: WalletKitConfig {
       DocumentTypeIdentifier.mDocPid.rawValue: .pid,
       DocumentTypeIdentifier.sdJwtPid.rawValue: .pid
     ]
-
+    // Revocation off as before the 0.56.0 update: on iOS it requires an OCSP responder, which current access/registration certificates lack
     return TrustConfiguration(
       trustSource: .staticList(
-        StaticListTrustSource(rootCertificates: staticRootCertificates)
+        StaticListTrustSource(rootCertificates: staticRootCertificates, isRevocationEnabled: false)
       ),
       fallbackTrustSource: .etsi(
         EtsiTrustSource(
           loteLocations: loteLocations,
-          contextTypeMappings: classifications
+          contextTypeMappings: classifications,
+          isRevocationEnabled: false
         )
       ),
       defaultPolicy: .warning,

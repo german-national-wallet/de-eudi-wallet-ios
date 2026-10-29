@@ -188,7 +188,7 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
 
   private func revocationDestination(continueRoute: AppRoute) -> AppRoute {
     guard !interactor.hasSeenRevocationCode(),
-          let revocationCode = interactor.storedRevocationCode() else {
+          let revocationCode = try? interactor.storedRevocationCode() else {
       return continueRoute
     }
 

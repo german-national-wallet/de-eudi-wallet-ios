@@ -23,20 +23,24 @@ public struct PIDCredentialCardView: View {
     static let backgroundImageAspectRatio: CGFloat = 328 / 141
     static let placeholderMinHeight: CGFloat = 208
     static let placeholderContentInset: CGFloat = 23
+    static let viewDetailsIconSize: CGFloat = 18
   }
 
   private let credentialTitle: String
   private let issuer: String
   private let style: Style
+  private let onViewData: (() -> Void)?
 
   public init(
     credentialTitle: String,
     issuer: String = "",
-    style: Style = .final
+    style: Style = .final,
+    onViewData: (() -> Void)? = nil
   ) {
     self.credentialTitle = credentialTitle
     self.issuer = issuer
     self.style = style
+    self.onViewData = onViewData
   }
 
   public var body: some View {
@@ -60,6 +64,12 @@ public struct PIDCredentialCardView: View {
       .padding(.trailing, Layout.eagleBadgeWidth)
 
       backgroundImage
+        .overlay(alignment: .bottomLeading) {
+          if let onViewData {
+            viewDetailsButton(action: onViewData)
+              .padding(DSStyle.Spacers.SPACING_SMALL)
+          }
+        }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(DSColor.surface)
@@ -105,6 +115,30 @@ public struct PIDCredentialCardView: View {
           .accessibilityIdentifier("credentialIssuerView")
       }
     }
+  }
+
+  private func viewDetailsButton(action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      HStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
+        Text(.eaaOfferViewDetailsButtonTitle)
+          .font(DSTypography.Label.large)
+          .foregroundColor(DSColor.onSecondaryContainer)
+
+        Theme.shared.image.arrowForward
+          .renderingMode(.template)
+          .resizable()
+          .scaledToFit()
+          .frame(width: Layout.viewDetailsIconSize, height: Layout.viewDetailsIconSize)
+          .foregroundColor(DSColor.onSecondaryContainer)
+          .accessibilityHidden(true)
+      }
+      .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
+      .padding(.vertical, DSStyle.Spacers.SPACING_SMALL)
+      .background(DSColor.surfaceContainerLow, in: Capsule())
+      .overlay(Capsule().stroke(DSColor.outlineVariant, lineWidth: 1))
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("pidCredentialViewDetailsButton")
   }
 
   private var eagleBadge: some View {

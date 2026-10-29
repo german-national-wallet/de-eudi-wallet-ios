@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import logic_business
 
 enum FlagValue: Sendable, Equatable {
   case bool(Bool)
@@ -12,17 +13,24 @@ enum FlagValue: Sendable, Equatable {
   case json(String)
 
   /// Decodes a FeatureHub payload into the flag values the app reads.
-  static func decodeAll(from json: String) throws -> [String: FlagValue] {
+  static func decodeAll(from json: String, logger: Logging? = nil) throws -> [String: FlagValue] {
     guard !json.isEmpty else {
       return [:]
     }
 
-    let flags: [RawFlag]
+    let environments: [FeatureFlagFetchResponse]
     do {
-      flags = try JSONDecoder().decode([FeatureFlagFetchResponse].self, from: Data(json.utf8)).flatMap(\.features)
+      environments = try JSONDecoder().decode([FeatureFlagFetchResponse].self, from: Data(json.utf8))
     } catch {
       throw FlagError.invalidPayload
     }
+
+    let skippedKeys = environments.flatMap(\.skippedFeatureKeys)
+    if !skippedKeys.isEmpty {
+      logger?.e("Feature flags skipped, invalid entries: \(skippedKeys)")
+    }
+
+    let flags = environments.flatMap(\.features)
 
     guard Set(flags.map(\.key)).count == flags.count else {
       throw FlagError.duplicateKey

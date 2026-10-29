@@ -10,7 +10,7 @@ import CryptoKit
 
 public protocol RWSCAInteractor: Sendable {
   func register(mdvmStoredRegistration: MDVMStoredRegistration) async throws
-  func getRWSCAID() -> String?
+  func getRWSCAID() throws -> String?
   func deleteAccount() async throws
   func startPinSession(pin: String) async throws -> RWSCAPinSessionResponse
   func createKeys(numberOfKeys: Int, ppCNonce: String) async throws -> RWSCACreateKeysResponse
@@ -39,7 +39,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
   }
 
   public func register(mdvmStoredRegistration: MDVMStoredRegistration) async throws {
-    if let rwscaID = rwscaRepository.getRWSCAID(), !rwscaID.isEmpty {
+    if let rwscaID = try rwscaRepository.getRWSCAID(), !rwscaID.isEmpty {
       return
     }
     let challenge = try await rwscaRepository.fetchChallenge()
@@ -48,8 +48,8 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
     try await rwscaRepository.register(mdvmToken: mdvmStoredRegistration.mdvmToken, authChallenge: challenge, privateKey: mdvmPrivateKey)
   }
 
-  public func getRWSCAID() -> String? {
-    rwscaRepository.getRWSCAID()
+  public func getRWSCAID() throws -> String? {
+    try rwscaRepository.getRWSCAID()
   }
 
   public func deleteAccount() async throws {
@@ -145,7 +145,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
     guard let mdvmStoredRegistration = try await mdvmInteractor.ensureFreshMDVMToken() else {
       throw RWSCARepositoryError.notRegistered
     }
-    guard let rwscaID = rwscaRepository.getRWSCAID(), !rwscaID.isEmpty else {
+    guard let rwscaID = try rwscaRepository.getRWSCAID(), !rwscaID.isEmpty else {
       throw RWSCARepositoryError.notRegistered
     }
 
@@ -171,7 +171,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
   }
 
   private func getRegisteredRWSCAID() throws -> String {
-    guard let rwscaID = rwscaRepository.getRWSCAID(), !rwscaID.isEmpty else {
+    guard let rwscaID = try rwscaRepository.getRWSCAID(), !rwscaID.isEmpty else {
       throw RWSCARepositoryError.notRegistered
     }
     return rwscaID

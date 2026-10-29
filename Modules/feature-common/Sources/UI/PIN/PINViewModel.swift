@@ -29,6 +29,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
   let pinSessionInteractor: PinSessionInteractor
   let issuanceCancellationInteractor: IssuanceCancellationInteractor
   let logger: Logging?
+  private let onClose: (@MainActor () -> Void)?
 
   public init(
     router: Router,
@@ -42,9 +43,11 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     onPinEntered: PinCallbackWrapper?,
     pinSessionInteractor: PinSessionInteractor,
     issuanceCancellationInteractor: IssuanceCancellationInteractor,
-    logger: Logging?
+    logger: Logging?,
+    onClose: (@MainActor () -> Void)? = nil
   ) {
     self.onPinEntered = onPinEntered
+    self.onClose = onClose
     self.interactor = interactor
     guard let config = config as? UIConfig.Biometry else {
       fatalError("BiometryViewModel:: Invalid configuraton")
@@ -84,6 +87,10 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     pin.removeAll()
     isInvalidPin = false
     canFocus = true
+    if let initialErrorMessage = viewState.config.initialErrorMessage {
+      errorMessage = initialErrorMessage.toString
+      isInvalidPin = true
+    }
   }
   
   func doWork() async {
@@ -104,6 +111,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
       case .verifyWalletPinFlow: verifyWalletPinFlow()
       case .issueEidPinFlow: issueEidPinFlow()
       case .transportPinFlow: transportPinFlow()
+      case .transportPinRetryFlow: transportPinRetryFlow()
       case .setupNewEidPinFlow: setupNewEidPinFlow()
       case .confirmNewEIDPinFlow: confirmNewEIDPinFlow()
       case .setupWalletPinflow: setupWalletPinFlow()
@@ -220,8 +228,16 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
         router.cancelToStart()
 
       default:
-        self.closeButtonTapped()
+        if let onClose {
+          onClose()
+        } else {
+          self.closeButtonTapped()
+        }
     }
+  }
+
+  var cancelConfirmationConfig: CancelConfirmationConfig {
+    onClose == nil ? .pidIssuance : .pidPresentation
   }
 
   private func abandonIssuance() {

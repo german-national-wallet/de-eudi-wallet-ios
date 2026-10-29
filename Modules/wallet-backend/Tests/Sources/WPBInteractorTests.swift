@@ -20,19 +20,67 @@ struct WPBInteractorTests {
   // MARK: - walletInstanceID
 
   @Test
-  func walletInstanceID_WhenRepositoryHasValue_ReturnsIt() {
+  func walletInstanceID_WhenRepositoryHasValue_ReturnsIt() throws {
     let repository = MockWPBRepository()
     stub(repository) { when($0.getStoredWIID()).thenReturn("stored-wi-id") }
 
-    #expect(makeSUT(repository: repository).walletInstanceID == "stored-wi-id")
+    #expect(try makeSUT(repository: repository).walletInstanceID() == "stored-wi-id")
   }
 
   @Test
-  func walletInstanceID_WhenRepositoryReturnsNil_ReturnsNil() {
+  func walletInstanceID_WhenRepositoryReturnsNil_ReturnsNil() throws {
     let repository = MockWPBRepository()
     stub(repository) { when($0.getStoredWIID()).thenReturn(nil) }
 
-    #expect(makeSUT(repository: repository).walletInstanceID == nil)
+    #expect(try makeSUT(repository: repository).walletInstanceID() == nil)
+  }
+
+  @Test
+  func walletInstanceID_WhenRepositoryThrows_PropagatesDecryptionError() {
+    let repository = MockWPBRepository()
+    stub(repository) {
+      when($0.getStoredWIID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+
+    #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try makeSUT(repository: repository).walletInstanceID()
+    }
+  }
+
+  @Test
+  func register_WhenStoredWIIDIsUnreadable_ThrowsWithoutEnrollingAgain() async {
+    let repository = MockWPBRepository()
+    stub(repository) {
+      when($0.getStoredWIID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+    let sut = makeSUT(repository: repository)
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try await sut.register(
+        mdvmStoredRegistration: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token")
+      )
+    }
+
+    // An unreadable WIID must never be treated as "no account": that would open a second WPB account.
+    verify(repository, never()).fetchChallenge()
+    verify(repository, never()).register(mdvmToken: any(), authChallenge: any())
+    verify(repository, never()).storeWIID(any())
+    verify(repository, never()).storeRevocationCode(any())
+  }
+
+  @Test
+  func issueAttestation_WhenStoredWIIDIsUnreadable_ThrowsDecryptionErrorNotNotRegistered() async {
+    let repository = MockWPBRepository()
+    let mdvmInteractor = FakeMDVMInteractor(token: MDVMStoredRegistration(mdvmWIID: "mdvm-id", mdvmToken: "mdvm-token"))
+    stub(repository) {
+      when($0.getStoredWIID()).thenThrow(SecureEnclaveControllerError.encryptedValueAuthenticationFailed)
+    }
+    let sut = makeSUT(repository: repository, mdvmInteractor: mdvmInteractor)
+
+    await #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try await sut.issueAttestation(wiaPrivateKey: wiaPrivateKey)
+    }
+    verify(repository, never()).fetchChallenge()
   }
 
   // MARK: - register

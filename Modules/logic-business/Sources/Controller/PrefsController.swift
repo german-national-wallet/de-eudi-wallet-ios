@@ -100,7 +100,8 @@ final public class PrefsControllerImpl: PrefsController {
 public struct Prefs {}
 
 public extension Prefs {
-  enum Key: String {
+  enum Key: String, CaseIterable {
+    case appDataVersion = "app_data_version"
     case biometryEnabled
     case cachedDeepLink
     case runAtLeastOnce

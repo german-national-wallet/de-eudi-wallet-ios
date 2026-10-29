@@ -23,6 +23,7 @@ public extension DIGraph {
         LogicBusinessAssembly(),
         LogicAssemblyModule(),
         LogicAnalyticsAssembly(),
+        LogicStorageAssembly(),
         LogicCoreAssembly(),
         LogicUiAssembly(),
         LogicApiAssembly(),

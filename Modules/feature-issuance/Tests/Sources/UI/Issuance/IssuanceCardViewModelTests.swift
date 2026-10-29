@@ -94,6 +94,66 @@ final class IssuanceCardViewModelTests: XCTestCase {
     XCTAssertTrue(sut.showHelpAndTipsActionSheet)
   }
 
+  func testInvalidPinErrorReceived_WhenSetEIDPINFlow_ThenPushesTransportPinRetryScreen() {
+    let sut = makeSUT(eidFlow: .setEidPin)
+    stub(router) { mock in
+      when(mock.push(with: any())).thenDoNothing()
+    }
+
+    sut.invalidPinErrorReceived(error: IssuanceWorkflowError.invalidPin, cardStatusInfo: nil)
+
+    let config = capturedPinViewConfig()
+    XCTAssertEqual(config?.pinScreenType, .transportPinRetryFlow)
+    XCTAssertEqual(config?.quickPinSize, 5)
+    XCTAssertEqual(config?.initialErrorMessage, .transportPinWrongEntry)
+  }
+
+  func testInvalidPinErrorReceived_WhenAuthenticationFlow_ThenPushesInvalidPinErrorScreen() {
+    let sut = makeSUT(eidFlow: .authentication)
+    stub(router) { mock in
+      when(mock.push(with: any())).thenDoNothing()
+    }
+
+    sut.invalidPinErrorReceived(error: IssuanceWorkflowError.invalidPin, cardStatusInfo: nil)
+
+    let captor = ArgumentCaptor<AppRoute>()
+    verify(router).push(with: captor.capture())
+    guard case .featureCommonModule(.errorView) = captor.value else {
+      return XCTFail("Expected the invalid PIN error view")
+    }
+  }
+
+  func testTransportPinRetryRoute_WhenPinEntered_ThenSendsPinToCardAndReturnsToScan() async {
+    let sut = makeSUT(eidFlow: .setEidPin)
+    let returned = expectation(description: "Wait for the scan screen to be shown again")
+    stub(issuanceVerificationInteractor) { mock in
+      when(mock.setPin(any())).thenDoNothing()
+    }
+    stub(router) { mock in
+      when(mock.pop()).then { returned.fulfill() }
+    }
+
+    guard case .featureIssuanceModule(.pinView(_, let onPinEntered, let verificationInteractor)) = sut.getTransportPinRetryRoute() else {
+      return XCTFail("Expected a PIN view route")
+    }
+    XCTAssertNil(verificationInteractor)
+    onPinEntered?.onEntered("54321")
+
+    await fulfillment(of: [returned], timeout: 1)
+    verify(issuanceVerificationInteractor, times(2)).setDelegate(any())
+    verify(issuanceVerificationInteractor).setPin(equal(to: "54321"))
+    XCTAssertTrue(sut.viewState.isLoading)
+  }
+
+  private func capturedPinViewConfig() -> UIConfig.Biometry? {
+    let captor = ArgumentCaptor<AppRoute>()
+    verify(router).push(with: captor.capture())
+    guard case .featureIssuanceModule(.pinView(let config, _, _)) = captor.value else {
+      return nil
+    }
+    return config as? UIConfig.Biometry
+  }
+
   private func makeSUT(eidFlow: EidFlowType) -> IssuanceCardViewModel<MockRouterHost> {
     // Abandoning cancels the issuance in a detached task, so the stub has to exist even for
     // the tests that do not assert on it.

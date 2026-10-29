@@ -20,6 +20,15 @@ final class ImageAssetAdditionsTests: XCTestCase {
     )
   }
 
+  func test_activityServiceLinkAssets_existInBundle() {
+    for name in ["activity_support", "activity_data_policy", "activity_website", "activity_information", "activity_warning"] {
+      XCTAssertNotNil(
+        UIImage(named: name, in: .assetsBundle, compatibleWith: nil),
+        "Missing '\(name)' asset in the resources bundle"
+      )
+    }
+  }
+
   func test_arrowForwardAsset_existsInBundle() {
     XCTAssertNotNil(
       UIImage(named: "arrow-forward", in: .assetsBundle, compatibleWith: nil),

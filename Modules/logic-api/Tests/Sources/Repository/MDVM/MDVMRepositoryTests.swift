@@ -54,7 +54,7 @@ struct MDVMRepositoryTests {
       privateKey: makePrivateKey()
     )
 
-    #expect(sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-id-123", mdvmToken: "mdvm-token-xyz"))
+    #expect(try sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-id-123", mdvmToken: "mdvm-token-xyz"))
   }
 
   @Test
@@ -97,7 +97,7 @@ struct MDVMRepositoryTests {
       privateKey: makePrivateKey()
     )
 
-    #expect(sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-id-123", mdvmToken: "new-mdvm-token"))
+    #expect(try sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-id-123", mdvmToken: "new-mdvm-token"))
   }
 
   @Test
@@ -166,7 +166,7 @@ struct MDVMRepositoryTests {
   }
 
   @Test
-  func getStoredRegistration_WhenNoStoredValuesExist_ReturnsNil() {
+  func getStoredRegistration_WhenNoStoredValuesExist_ReturnsNil() throws {
     let mockNetworkManager = FakeNetworkManager()
     let secureEnclaveController = FakeSecureEnclaveController()
     let sut: MDVMRepository = MDVMRepositoryImpl(
@@ -175,11 +175,11 @@ struct MDVMRepositoryTests {
       secureEnclaveController: secureEnclaveController
     )
 
-    #expect(sut.getStoredRegistration() == nil)
+    #expect(try sut.getStoredRegistration() == nil)
   }
 
   @Test
-  func getStoredRegistration_WhenTokenAndWIIDExist_ReturnsStoredRegistration() {
+  func getStoredRegistration_WhenTokenAndWIIDExist_ReturnsStoredRegistration() throws {
     let mockNetworkManager = FakeNetworkManager()
     let secureEnclaveController = FakeSecureEnclaveController()
     secureEnclaveController.storeStringInKeychain(value: "mdvm-token", keyTag: .mdvmToken)
@@ -191,7 +191,26 @@ struct MDVMRepositoryTests {
       secureEnclaveController: secureEnclaveController
     )
 
-    #expect(sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-wi-id", mdvmToken: "mdvm-token"))
+    #expect(try sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "mdvm-wi-id", mdvmToken: "mdvm-token"))
+  }
+
+  @Test
+  func getStoredRegistration_WhenStoredValueIsUnreadable_ThrowsDecryptionError() {
+    let secureEnclaveController = FakeSecureEnclaveController()
+    secureEnclaveController.storeStringInKeychain(value: "mdvm-token", keyTag: .mdvmToken)
+    secureEnclaveController.storeStringInKeychain(value: "mdvm-wi-id", keyTag: .mdvmWIID)
+    secureEnclaveController.decryptionError = SecureEnclaveControllerError.encryptedValueAuthenticationFailed
+    let sut: MDVMRepository = MDVMRepositoryImpl(
+      networkManager: FakeNetworkManager(),
+      httpSignatureService: HTTPSignatureServiceImpl(),
+      secureEnclaveController: secureEnclaveController
+    )
+
+    #expect(throws: SecureEnclaveControllerError.encryptedValueAuthenticationFailed) {
+      _ = try sut.getStoredRegistration()
+    }
+    // Fail-close: the unreadable value is never written back as plaintext.
+    #expect(secureEnclaveController.storeEncryptedCallCount == 0)
   }
 
   private func makePrivateKey() -> SecKey {
@@ -209,6 +228,8 @@ struct MDVMRepositoryTests {
 
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
+  var decryptionError: Error?
+  private(set) var storeEncryptedCallCount = 0
 
   func createPrivateKey(with keyTag: SecureEnclaveKeys) -> SecKey? { nil }
   func storePrivateKey(_ privateKey: SecKey, with keyTag: SecureEnclaveKeys) -> Bool { false }
@@ -226,17 +247,17 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
 
   // The fake does not actually encrypt; it shares the same backing store as the plain variants.
-  @discardableResult
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool {
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
     stringStorage[keyTag] = value
-    return true
   }
 
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? {
-    stringStorage[keyTag]
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {
+    if let decryptionError { throw decryptionError }
+    return stringStorage[keyTag]
   }
 
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) {
+    storeEncryptedCallCount += 1
     stringStorage.removeValue(forKey: keyTag)
   }
 

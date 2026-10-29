@@ -31,7 +31,7 @@ public extension PresentationSession {
       itemSets: disclosedDocumentSets.map(\.docElements),
       relyingParty: readerCertIssuer ?? LocalizableStringKey.unknownVerifier.toString,
       dataRequestInfo: readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
-      isTrusted: readerCertIssuerValid == true,
+      isTrusted: readerAuthenticationStatus == .authenticated,
       policyViolations: allPolicyViolations,
       supervisoryAuthorityURI: wrpVerifierPolicy?.supervisoryAuthority?.uri
         .flatMap { URL(string: $0) },

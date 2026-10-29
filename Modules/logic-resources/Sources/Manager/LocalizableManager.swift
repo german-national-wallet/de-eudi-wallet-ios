@@ -46,7 +46,7 @@ final class LocalizableManager: LocalizableManagerType {
       // Basic UI elements
       "search": "app_onboarding.welcome.prim_button", // Placeholder - need to find actual search key
       "add_doc": "app_onboarding.no_cards.prim_button", // Placeholder - need to find actual add_doc key
-      "cancel_button": "pid_presentation.dialog_rp_rejection.sec_button", // "Abbrechen"
+      "cancel_button": "global.cancel_button",
       "ok_button": "pid_presentation.rp_info.prim_button", // "Weiter"
       "share_button": "pid_presentation.success.prim_button", // Placeholder
       "try_again": "pid_issuance.dialog_server_error.prim_button", // Completed
@@ -1122,6 +1122,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_issuance.sheet_eID_PIN_not_set.sec_button")
       case .transportPinViewTitle:
         bundle.localizedString(forKey: mapKey("transport_pin_view_title"))
+      case .transportPinWrongEntry:
+        bundle.localizedString(forKey: "eid_setup.transport_pin_entry.error")
       case .setupNewPinInstructionViewTitle:
         bundle.localizedString(forKey: mapKey("setup_new_pin_instruction_view_title"))
       case .setupNewPinInstructionViewPrimaryButtonTilte:
@@ -1636,6 +1638,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "global.menu_title")
       case .globalNext:
         bundle.localizedString(forKey: "global.next")
+      case .globalTryAgainButton:
+        bundle.localizedString(forKey: "global.try_again_button")
 
       case .eaaOfferViewTitle:
         bundle.localizedString(forKey: "eaa_issuance.eaa_info.title")
@@ -1677,6 +1681,14 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_issuance.dialog_cancel.prim_button")
       case .pidIssuanceDialogCancelSecButton:
         bundle.localizedString(forKey: "pid_issuance.dialog_cancel.sec_button")
+      case .pidPresentationDialogCancelTitle:
+        bundle.localizedString(forKey: "pid_presentation.dialog_cancel.title")
+      case .pidPresentationDialogCancelSubTitle:
+        bundle.localizedString(forKey: "pid_presentation.dialog_cancel.paragraph")
+      case .pidPresentationDialogCancelPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_cancel.prim_button")
+      case .pidPresentationDialogCancelSecButton:
+        bundle.localizedString(forKey: "pid_presentation.dialog_cancel.sec_button")
       case .eaaIssuanceTransactionCodeEntryPrimButton:
         bundle.localizedString(forKey: "eaa_issuance.transaction_code_entry.prim_button")
       case .eaaIssuanceLoadingTitle:
@@ -1877,6 +1889,108 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "tap_navigation.label_3")
       case .dashboardTabBarTitleLabelScanner:
         bundle.localizedString(forKey: "tap_navigation.label_4")
+
+      // MARK: Activities
+      case .activitiesOverviewTitle:
+        bundle.localizedString(forKey: "activities.overview.title")
+      case .activitiesOverviewEmptyHeadline:
+        bundle.localizedString(forKey: "activities.overview.banner_headline")
+      case .activitiesOverviewEmptyParagraph:
+        bundle.localizedString(forKey: "activities.overview.banner_paragraph")
+      case .activitiesOverviewHowToUseButton(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.overview.sec_button", arguments: args)
+      case .activitiesOverviewToday:
+        bundle.localizedString(forKey: "activities.overview.label_today")
+      case .activitiesOverviewYesterday:
+        bundle.localizedString(forKey: "activities.overview.label_yesterday")
+      case .activitiesOverviewLastWeek:
+        bundle.localizedString(forKey: "activities.overview.label_last_week")
+      case .activitiesOverviewLastMonth:
+        bundle.localizedString(forKey: "activities.overview.label_last_month")
+      case .activitiesOverviewAWhileAgo:
+        bundle.localizedString(forKey: "activities.overview.label_while")
+      case .activitiesDetailVerifiedOn:
+        bundle.localizedString(forKey: "activities.detail.label_1")
+      case .activitiesDetailCredentialAndDataShared:
+        bundle.localizedString(forKey: "activities.detail.label_2")
+      case .activitiesDetailServiceInformation:
+        bundle.localizedString(forKey: "activities.detail.label_3")
+      case .activitiesDetailDataPolicy:
+        bundle.localizedString(forKey: "activities.detail.label_5")
+      case .activitiesDetailWebsite:
+        bundle.localizedString(forKey: "activities.detail.label_6")
+      case .activitiesDetailSupport:
+        bundle.localizedString(forKey: "activities.detail.label_4")
+      case .activitiesDetailValuesOf(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.detail.values_of", arguments: args)
+      case .activitiesDetailValues(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.detail.values_shared", arguments: args)
+      case .activitiesDetailReportSuspicion:
+        bundle.localizedString(forKey: "activities.detail.sec_button")
+      case .activitiesDetailDeleteActivity:
+        bundle.localizedString(forKey: "activities.detail.delete_button")
+      case .activitiesDetailDeleteTitle:
+        bundle.localizedString(forKey: "activities.detail.delete_title")
+      case .activitiesDetailIssuedOn:
+        bundle.localizedString(forKey: "activities.detail.issued_on")
+      case .activitiesDetailDeletedOn:
+        bundle.localizedString(forKey: "activities.detail.deleted_on")
+      case .activitiesDetailIdCreated:
+        bundle.localizedString(forKey: "activities.detail.id_created")
+      case .activitiesDetailIdDeleted:
+        bundle.localizedString(forKey: "activities.detail.id_deleted")
+      case .activitiesDetailIssuerInformation:
+        bundle.localizedString(forKey: "activities.detail.issuer_information")
+      case .activitiesDetailCredentialCreated:
+        bundle.localizedString(forKey: "activities.detail.credential_created")
+      case .activitiesDetailCredentialDeleted:
+        bundle.localizedString(forKey: "activities.detail.credential_deleted")
+      case .activitiesDetailRejectedOn:
+        bundle.localizedString(forKey: "activities.detail.rejected_on")
+      case .activitiesDetailFailureDeclined:
+        bundle.localizedString(forKey: "activities.detail.failure_declined")
+      case .activitiesDetailFailureGeneric:
+        bundle.localizedString(forKey: "activities.detail.failure_generic")
+      case .activitiesDetailFailureServiceRejected:
+        bundle.localizedString(forKey: "activities.detail.failure_service_rejected")
+      case .activitiesDetailNoDataShared:
+        bundle.localizedString(forKey: "activities.detail.no_data_shared")
+      case .activitiesLogTypePresentation:
+        bundle.localizedString(forKey: "activities.log.type_presentation")
+      case .activitiesLogTypeIssuance:
+        bundle.localizedString(forKey: "activities.log.type_issuance")
+      case .activitiesLogTypeDeletion:
+        bundle.localizedString(forKey: "activities.log.type_deletion")
+      case .activitiesLogStatusNotCompleted:
+        bundle.localizedString(forKey: "activities.log.status_not_completed")
+      case .activitiesLogUnknownParty:
+        bundle.localizedString(forKey: "activities.log.unknown_party")
+      case .activitiesLogDetailDate:
+        bundle.localizedString(forKey: "activities.log.detail_date")
+      case .activitiesLogDetailStatus:
+        bundle.localizedString(forKey: "activities.log.detail_status")
+      case .activitiesLogDetailCompleted:
+        bundle.localizedString(forKey: "activities.log.detail_completed")
+      case .activitiesLogDetailPurpose:
+        bundle.localizedString(forKey: "activities.log.detail_purpose")
+      case .activitiesLogDetailIssuer:
+        bundle.localizedString(forKey: "activities.log.detail_issuer")
+      case .activitiesLogDetailCredential:
+        bundle.localizedString(forKey: "activities.log.detail_credential")
+      case .activitiesLogCredentialCreated(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.log.credential_created", arguments: args)
+      case .activitiesLogCredentialDeleted(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.log.credential_deleted", arguments: args)
+      case .activitiesLogMultipleCredentials:
+        bundle.localizedString(forKey: "activities.log.multiple_credentials")
+      case .activitiesLogTime(let args):
+        bundle.localizedStringWithArguments(forKey: "activities.log.time", arguments: args)
+      case .activitiesDeleteAllEntries:
+        bundle.localizedString(forKey: "activities.panel_delete_entries.button_2")
+      case .activitiesDeleteAllTitle:
+        bundle.localizedString(forKey: "activities.log.delete_all_title")
+      case .activitiesDeleteAllConfirm:
+        bundle.localizedString(forKey: "activities.log.delete_all_confirm")
       }
     }
   }

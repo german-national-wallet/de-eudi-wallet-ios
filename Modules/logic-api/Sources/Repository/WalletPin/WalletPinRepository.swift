@@ -24,7 +24,7 @@ final class WalletPinRepositoryImpl: WalletPinRepository {
   private func getPinSalt() throws -> String {
     let saltTag: SecureEnclaveKeys = .rwscaAuthPrivateKeySalt
 
-    if let salt = secureEnclaveController.retrieveDecryptedString(keyTag: saltTag) {
+    if let salt = try secureEnclaveController.retrieveDecryptedString(keyTag: saltTag) {
       return salt
     }
 
@@ -33,9 +33,10 @@ final class WalletPinRepositoryImpl: WalletPinRepository {
     guard status == errSecSuccess else {
       throw PoPGenerationError.saltGenerationFailed
     }
-    let newSalt = Data(saltBytes).map { String(format: "%02hhx", $0) }.joined()
+    // Stored as base64 so the PIN key derivation can decode it back to the raw 16 salt bytes
+    let newSalt = Data(saltBytes).base64EncodedString()
 
-    _ = secureEnclaveController.storeEncryptedString(value: newSalt, keyTag: saltTag)
+    _ = try secureEnclaveController.storeEncryptedString(value: newSalt, keyTag: saltTag)
 
     return newSalt
   }

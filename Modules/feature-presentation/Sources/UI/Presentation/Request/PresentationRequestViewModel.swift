@@ -64,25 +64,9 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         relyingParty: .custom(authenticationRequest.relyingParty),
         isTrusted: authenticationRequest.isTrusted
       )
-      setState {
-        $0.copy(
-          contentHeaderConfig: .init(
-            appIconAndTextData: AppIconAndTextData(
-              appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
-              appText: ThemeManager.shared.image.euditext
-            ),
-            description: .dataSharingTitle,
-            mainText: getTitle(),
-            relyingPartyData: RelyingPartyData(
-              isVerified: viewState.isTrusted,
-              name: getRelyingParty(),
-              description: getCaption()
-            )
-          )
-        )
-      }
+      self.onPresentationDoWorkSuccess()
     case .failure(let error):
-      present(errorHandler.handle(error, originator: getOriginator()))
+      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: retryAction))
     }
   }
 
@@ -110,7 +94,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         if isPIDRequest {
           pinSessionInteractor.clear()
         }
-        self.present(self.errorHandler.handle(error, originator: self.getOriginator()))
+        self.presentError(self.errorHandler.handle(error, originator: self.getOriginator()))
       }
     }
   }
@@ -179,7 +163,8 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
             pinScreenType: .verifyWalletPinFlow,
             imageIcon: Theme.shared.image.setupWalletPin,
             items: viewState.items
-          )
+          ),
+          presentationCoordinator: remoteSessionCoordinator
         )
       )
     case .failure: nil
@@ -240,10 +225,12 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
       router.popTo(with: getOriginator())
     case .dismiss:
       break
+    case .retry(let retryAction):
+      retryAction.action()
     }
   }
 
-  private func present(_ presentation: PresentationErrorPresentation) {
+  private func presentError(_ presentation: PresentationErrorPresentation) {
     switch presentation {
     case .notice(let config):
       router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))

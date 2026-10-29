@@ -963,4 +963,6 @@ extension DesignSystem.Styles.Colors {
   static let warningLight = Color(hex: "#FF9900")
   // The warning color. (dark)
   static let warningDark = Color(hex: "#FFC774")
+  static let schemesWarningContainer = Color(hex: "#FFFBE5")
+  static let schemesWarningContainerAccent = Color(hex: "#A16A00")
 }

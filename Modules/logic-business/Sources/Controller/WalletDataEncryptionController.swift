@@ -11,6 +11,8 @@ public enum WalletDataEncryptionError: Error {
   case keyUnavailable
   case encryptionFailed
   case decryptionFailed
+  case invalidCiphertextFormat
+  case authenticationFailed
 }
 
 /// Owns the lifecycle of `wi_data_enc_symk`, the symmetric key used to encrypt sensitive
@@ -78,12 +80,19 @@ public final class WalletDataEncryptionControllerImpl: WalletDataEncryptionContr
     guard let key = keyStorage.loadKey() else {
       throw WalletDataEncryptionError.keyUnavailable
     }
+    let sealedBox: AES.GCM.SealedBox
     do {
-      let sealedBox = try AES.GCM.SealedBox(combined: data)
+      sealedBox = try AES.GCM.SealedBox(combined: data)
+    } catch {
+      logger?.e("Invalid wi_data_enc_symk ciphertext format: \(error)")
+      throw WalletDataEncryptionError.invalidCiphertextFormat
+    }
+
+    do {
       return try AES.GCM.open(sealedBox, using: key)
     } catch {
-      logger?.e("wi_data_enc_symk decryption failed: \(error)")
-      throw WalletDataEncryptionError.decryptionFailed
+      logger?.e("wi_data_enc_symk authentication failed: \(error)")
+      throw WalletDataEncryptionError.authenticationFailed
     }
   }
 

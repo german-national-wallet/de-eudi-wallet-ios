@@ -25,7 +25,7 @@ public protocol StartupInteractor {
   func initialize(with splashAnimationDuration: TimeInterval) async -> AppRoute
   func initializeAppFlow(with splashAnimationDuration: TimeInterval) async -> AppRoute
   func clearFirstRunFlag()
-  func storedRevocationCode() -> String?
+  func storedRevocationCode() throws -> String?
   func hasSeenRevocationCode() -> Bool
   func markRevocationCodeSeen()
   func hasSeenAppIntro() -> Bool
@@ -44,6 +44,9 @@ public protocol StartupInteractor {
 
 final class StartupInteractorImpl: StartupInteractor {
 
+  /// Increment on breaking local storage changes: any change wipes the wallet on the next launch, like CURRENT_APP_DATA_VERSION on Android
+  static let currentAppDataVersion = 2
+
   private let walletKitController: WalletKitController
   private let quickPinInteractor: QuickPinInteractor
   private let keyChainController: KeyChainController
@@ -51,7 +54,6 @@ final class StartupInteractorImpl: StartupInteractor {
   private let rwscaInteractor: RWSCAInteractor
   private let remoteWSCA: RemoteWSCAService?
   private let secureEnclaveController: SecureEnclaveController
-  private let pidRevokeInteractor: PIDRevokeInteractor
   private let appBlockingController: AppBlockingController
   private let pushAuthorizationProvider: PushAuthorizationProvider
   private let pnsAccountInteractor: PNSAccountInteractor
@@ -68,7 +70,6 @@ final class StartupInteractorImpl: StartupInteractor {
     rwscaInteractor: RWSCAInteractor,
     remoteWSCA: RemoteWSCAService? = nil,
     secureEnclaveController: SecureEnclaveController,
-    pidRevokeInteractor: PIDRevokeInteractor,
     appBlockingController: AppBlockingController,
     pushAuthorizationProvider: PushAuthorizationProvider,
     pnsAccountInteractor: PNSAccountInteractor
@@ -80,7 +81,6 @@ final class StartupInteractorImpl: StartupInteractor {
     self.rwscaInteractor = rwscaInteractor
     self.remoteWSCA = remoteWSCA
     self.secureEnclaveController = secureEnclaveController
-    self.pidRevokeInteractor = pidRevokeInteractor
     self.appBlockingController = appBlockingController
     self.pushAuthorizationProvider = pushAuthorizationProvider
     self.pnsAccountInteractor = pnsAccountInteractor
@@ -123,7 +123,7 @@ final class StartupInteractorImpl: StartupInteractor {
   }
 
   private func manageStorageForFirstRun() async {
-    await migrateOldWalletIfNeeded()
+    resetAppDataIfVersionChanged()
     if !prefsController.getBool(forKey: .runAtLeastOnce) {
       await walletKitController.clearAllDocuments()
       keyChainController.clear()
@@ -139,30 +139,15 @@ final class StartupInteractorImpl: StartupInteractor {
     }
   }
 
-  /// Before WPB, the wallet backend ID was stored as .wiID ("com.dewallet.wiID")
-  /// If found, the user has a pre-WPB wallet -> we wipe all backend state so fresh MDVM + WPB registration can run cleanly
-  /// .wiID (the migration marker) is deleted last, so if the app crashes mid-migration the cleanup re-runs on the next launch
-  private func migrateOldWalletIfNeeded() async {
-    guard secureEnclaveController.retrieveStringFromKeychain(keyTag: .wiID) != nil else {
+  /// On a change or first definition of the version, clearing all prefs (including .runAtLeastOnce) triggers the first-run wipe
+  private func resetAppDataIfVersionChanged() {
+    let storedVersion = prefsController.getValue(forKey: .appDataVersion) as? Int
+    guard storedVersion != Self.currentAppDataVersion else {
       return
     }
-
-    //TODO: Remove this in future versions
-    /// Warning: deletePIDFromWallet works off the in-memory document list, which is only populated by loadDocuments
-    /// Migration need to run after the app loaded documents, otherwise PID is never found
-    try? await walletKitController.loadDocuments()
-
-    try? await pidRevokeInteractor.deletePIDFromWallet()
-
-    //clean up of old .regPrivKey
-    _ = secureEnclaveController.deletePrivateKey(with: .custom("com.dewallet.registration.privateKey"))
-    _ = secureEnclaveController.deletePrivateKey(with: .wiMdvmAuthPrivateKey)
-    _ = secureEnclaveController.deletePrivateKey(with: .wiaPrivateKey)
-    secureEnclaveController.deleteKeychainItem(keyTag: .wbWIID)
-    secureEnclaveController.deleteKeychainItem(keyTag: .wpbWiRevocationCode)
-
-    /// Deleted last: the marker only goes away once the cleanup above has fully completed
-    secureEnclaveController.deleteKeychainItem(keyTag: .wiID)
+    Prefs.Key.allCases
+      .forEach { prefsController.remove(forKey: $0) }
+    prefsController.setValue(Self.currentAppDataVersion, forKey: .appDataVersion)
   }
 
   func clearFirstRunFlag() {
@@ -171,8 +156,8 @@ final class StartupInteractorImpl: StartupInteractor {
     keyChainController.clearAllKeychainItems()
   }
 
-  func storedRevocationCode() -> String? {
-    guard let code = secureEnclaveController.retrieveDecryptedString(keyTag: .wpbWiRevocationCode),
+  func storedRevocationCode() throws -> String? {
+    guard let code = try secureEnclaveController.retrieveDecryptedString(keyTag: .wpbWiRevocationCode),
           !code.isEmpty else {
       return nil
     }

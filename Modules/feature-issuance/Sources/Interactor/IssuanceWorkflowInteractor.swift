@@ -65,22 +65,29 @@ final class IssuanceWorkflowInteractorImpl: IssuanceWorkflowInteractor {
   private var tokenURL: URL?
   private let controller = AA2SDKWrapper.workflowController
   private let logger: Logging?
+  private let simulatedCardKeyGenerator: SimulatedEIDCardKeyGenerator
   private var canRequested = false
   private var isPinIncorrect = false
+  private var isTransportPinSubmitted = false
   private var enteredPin: String?
   private var workflowType: EidFlowType = .authentication
   private var areCallbacksRegistered = false
   
   var delegate: IssuanceWorkflowInteractorDelegate?
   
-  init(logger: Logging?) {
+  init(
+    logger: Logging?,
+    simulatedCardKeyGenerator: SimulatedEIDCardKeyGenerator = SimulatedEIDCardKeyGenerator()
+  ) {
     self.logger = logger
+    self.simulatedCardKeyGenerator = simulatedCardKeyGenerator
   }
   
   func startPinChangeFlow(tokenURL: URL, transportPin: String) {
     registerCallbacksIfNeeded()
     self.tokenURL = tokenURL
     self.enteredPin = transportPin
+    isTransportPinSubmitted = false
     if !controller.isStarted {
       controller.start()
     } else {
@@ -274,6 +281,7 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
     tokenURL = nil
     canRequested = false
     isPinIncorrect = false
+    isTransportPinSubmitted = false
     enteredPin = nil
     workflowType = .authentication
     
@@ -317,7 +325,14 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
     
     switch workflowType {
     case .setEidPin:
-      controller.setPin(enteredPin)
+      if !isTransportPinSubmitted {
+        isTransportPinSubmitted = true
+        controller.setPin(enteredPin)
+      } else {
+        controller.interrupt()
+        let cardStatusInfo = CardStatusInfo(deactivated: reader.card?.deactivated, inoperative: reader.card?.inoperative, pinRetryCounter: reader.card?.pinRetryCounter)
+        delegate?.invalidPinErrorReceived(error: IssuanceWorkflowError.invalidPin, cardStatusInfo: cardStatusInfo)
+      }
     case .authentication:
       if !isPinIncorrect {
        isPinIncorrect = true
@@ -344,8 +359,22 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
   func onInsertCard(error: String?) {
     logger?.e("IDGO -> 4. onInsertCard")
     if AppEnvironment.isUITesting || AppState.shared.useSimulatedEIDCard {
-      controller.setCard(name: AppEnvironment.ausweiseSdkSimulatorIdentifier)
+      controller.setCard(
+        name: AppEnvironment.ausweisSdkSimulatorIdentifier,
+        simulator: makeSimulatedCard()
+      )
     }
+  }
+
+  private func makeSimulatedCard() -> Simulator? {
+    guard let pseudonymKey = simulatedCardKeyGenerator.generatePseudonymKeyHex() else {
+      logger?.e("IDGO -> Failed to generate simulated eID card pseudonym key")
+      return nil
+    }
+    return Simulator(
+      withFiles: SimulatedEIDCardDataFiles.ausweisAppDefaults,
+      withKeys: [SimulatorKey(withId: SimulatedEIDCardKeyGenerator.pseudonymKeyId, withContent: pseudonymKey)]
+    )
   }
   
   func onInternalError(error: String) {

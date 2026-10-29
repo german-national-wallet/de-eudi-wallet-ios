@@ -14,11 +14,11 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
-      revision: "0a71c5f2d11d01261337f2a3c40f936606314b70"
+      revision: "59e1e8cc2dde82734b6059a17754fb7a1016e171"
     ),
     .package(
       url: "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vp-swift.git",
-      exact: "0.42.0"
+      exact: "0.43.2"
     ),
     .package(
       name: "logic-resources",
@@ -37,6 +37,10 @@ let package = Package(
       path: "../logic-feature-flags"
     ),
     .package(
+      name: "logic-storage",
+      path: "../logic-storage"
+    ),
+    .package(
       name: "logic-test",
       path: "../logic-test"
     )
@@ -49,6 +53,7 @@ let package = Package(
         "logic-business",
         "logic-api",
         "logic-feature-flags",
+        "logic-storage",
         .product(
           name: "EudiWalletKit",
           package: "de-eudi-lib-ios-wallet-kit"
@@ -67,6 +72,7 @@ let package = Package(
         "logic-business",
         "logic-api",
         "logic-feature-flags",
+        "logic-storage",
         "logic-test",
         .product(
           name: "EudiWalletKit",

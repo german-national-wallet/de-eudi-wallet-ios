@@ -176,39 +176,53 @@ struct PNSRepositoryTests {
   }
 
   @Test
-  func storeRegistration_ThenGetStoredRegistration_RoundTripsTokenAndTimestamp() {
+  func storeRegistration_ThenGetStoredRegistration_RoundTripsTokenAndTimestamp() throws {
     let sut = makeSUT()
     /// Truncated to whole seconds: the record is persisted as an ISO 8601 string.
     let registeredAt = Date(timeIntervalSince1970: 1_770_000_000)
     let registration = PNSStoredRegistration(mppRegistrationToken: "mpp-token", registeredAt: registeredAt)
 
-    sut.storeRegistration(registration)
+    try sut.storeRegistration(registration)
 
     #expect(sut.getStoredRegistration() == registration)
   }
 
   @Test
-  func getStoredRegistration_WhenStoredTokenIsEmpty_ReturnsNil() {
+  func getStoredRegistration_WhenStoredTokenIsEmpty_ReturnsNil() throws {
     let sut = makeSUT()
-    sut.storeRegistration(PNSStoredRegistration(mppRegistrationToken: "", registeredAt: Date()))
+    try sut.storeRegistration(PNSStoredRegistration(mppRegistrationToken: "", registeredAt: Date()))
 
     #expect(sut.getStoredRegistration() == nil)
   }
 
   @Test
-  func getStoredRegistration_WhenStoredValueIsNotARecord_ReturnsNil() {
+  func getStoredRegistration_WhenStoredValueIsNotARecord_ReturnsNil() throws {
     let secureEnclave = FakeSecureEnclaveController()
     let sut = makeSUT(secureEnclave: secureEnclave)
     /// Guards the migration case: before this record existed the tag could hold a bare token.
-    _ = secureEnclave.storeEncryptedString(value: "bare-legacy-token", keyTag: .mppRegistrationToken)
+    _ = try secureEnclave.storeEncryptedString(value: "bare-legacy-token", keyTag: .mppRegistrationToken)
 
     #expect(sut.getStoredRegistration() == nil)
   }
 
   @Test
-  func deleteStoredRegistration_AfterStoring_ReturnsNil() {
+  func getStoredRegistration_WhenStoredValueIsUnreadable_ReturnsNilWithoutWritingBack() throws {
+    let secureEnclave = FakeSecureEnclaveController()
+    let sut = makeSUT(secureEnclave: secureEnclave)
+    try sut.storeRegistration(PNSStoredRegistration(mppRegistrationToken: "mpp-token", registeredAt: Date()))
+    let writesBeforeRead = secureEnclave.storeEncryptedCallCount
+    secureEnclave.decryptionError = SecureEnclaveControllerError.encryptedValueAuthenticationFailed
+
+    /// Push registration is best-effort: an unreadable record means "no account" and triggers a
+    /// fresh sync, but the corrupt value itself must never be handed back or re-persisted.
+    #expect(sut.getStoredRegistration() == nil)
+    #expect(secureEnclave.storeEncryptedCallCount == writesBeforeRead)
+  }
+
+  @Test
+  func deleteStoredRegistration_AfterStoring_ReturnsNil() throws {
     let sut = makeSUT()
-    sut.storeRegistration(PNSStoredRegistration(mppRegistrationToken: "mpp-token", registeredAt: Date()))
+    try sut.storeRegistration(PNSStoredRegistration(mppRegistrationToken: "mpp-token", registeredAt: Date()))
 
     sut.deleteStoredRegistration()
 
@@ -252,6 +266,8 @@ private final class FakeNetworkManager: NetworkManager, @unchecked Sendable {
 
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
+  var decryptionError: Error?
+  private(set) var storeEncryptedCallCount = 0
 
   func createPrivateKey(with keyTag: SecureEnclaveKeys) -> SecKey? { nil }
   func storePrivateKey(_ privateKey: SecKey, with keyTag: SecureEnclaveKeys) -> Bool { false }
@@ -263,9 +279,14 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
   func retrieveStringFromKeychain(keyTag: SecureEnclaveKeys) -> String? { stringStorage[keyTag] }
   // The fake does not actually encrypt; it shares the same backing store as the plain variants.
-  @discardableResult
-  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) -> Bool { stringStorage[keyTag] = value; return true }
-  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) -> String? { stringStorage[keyTag] }
+  func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
+    storeEncryptedCallCount += 1
+    stringStorage[keyTag] = value
+  }
+  func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {
+    if let decryptionError { throw decryptionError }
+    return stringStorage[keyTag]
+  }
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) { stringStorage.removeValue(forKey: keyTag) }
   func generateECPrivateKey(from pin: String, and salt: String) throws -> SecKey { throw NSError(domain: "unused", code: -1) }
   func generatePublicKey(from privateKey: SecKey) throws -> SecKey { throw NSError(domain: "unused", code: -1) }

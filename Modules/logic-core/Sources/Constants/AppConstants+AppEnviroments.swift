@@ -39,7 +39,7 @@ public enum AppEnvironment {
     URL(string: "IMPRINT_LINK".valueFromBundle)
   }
 
-  public static let ausweiseSdkSimulatorIdentifier = "Simulator"
+  public static let ausweisSdkSimulatorIdentifier = "Simulator"
 
   public static var reportIssueUrl: URL? {
     URL(string: "REPORT_ISSUE_URL".valueFromBundle)

@@ -35,6 +35,14 @@ final class LocalizableStringKeyAdditionsTests: XCTestCase {
     )
   }
 
+  func test_activitiesHowToUseButton_insertsTheAppName() {
+    let appName = LocalizableStringKey.appName.toString
+    let value = LocalizableStringKey.activitiesOverviewHowToUseButton([appName]).toString
+
+    XCTAssertTrue(value.contains(appName), "Expected the app name in \(value)")
+    XCTAssertFalse(value.contains("%@"), "Expected the placeholder to be filled")
+  }
+
   func test_pidOnboardingKeys_resolveToTranslatedValues() {
     let keys: [(LocalizableStringKey, String)] = [
       (.pidNoLetterForgotInfoTitle, "pid_issuance.no_letter_forgot_info.title"),
@@ -60,6 +68,22 @@ final class LocalizableStringKeyAdditionsTests: XCTestCase {
         rawKey,
         "Expected a translated value, not the raw key — \(rawKey) is not wired to the bundle"
       )
+    }
+  }
+
+  func test_pidPresentationDialogCancelKeys_resolveToTranslatedValues() {
+    let keys: [(LocalizableStringKey, String)] = [
+      (.pidPresentationDialogCancelTitle, "pid_presentation.dialog_cancel.title"),
+      (.pidPresentationDialogCancelSubTitle, "pid_presentation.dialog_cancel.paragraph"),
+      (.pidPresentationDialogCancelPrimButton, "pid_presentation.dialog_cancel.prim_button"),
+      (.pidPresentationDialogCancelSecButton, "pid_presentation.dialog_cancel.sec_button")
+    ]
+
+    for (key, rawKey) in keys {
+      let value = key.toString
+
+      XCTAssertFalse(value.isEmpty, "Expected a non-empty localized value for \(rawKey)")
+      XCTAssertNotEqual(value, rawKey, "Expected a translated value, not the raw key for \(rawKey)")
     }
   }
 }

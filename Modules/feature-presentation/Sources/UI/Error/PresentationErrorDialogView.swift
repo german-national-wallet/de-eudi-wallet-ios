@@ -43,13 +43,17 @@ struct PresentationErrorDialogView: View {
           .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
 
-        VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-          if let errorCode = config.errorCode {
-            diagnosticRow(label: .globalErrorCodeTitle, value: errorCode)
+        if config.errorCode != nil || !config.traceId.isEmpty {
+          VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_MEDIUM) {
+            if let errorCode = config.errorCode {
+              diagnosticRow(label: .globalErrorCodeTitle, value: errorCode)
+            }
+            if !config.traceId.isEmpty {
+              traceRow
+            }
           }
-          traceRow
+          .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
 
         VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {
           DSPrimaryButton(title: config.primary.title.toString) {
@@ -124,6 +128,17 @@ struct PresentationErrorDialogView: View {
   return PresentationErrorDialogView(
     config: PresentationErrorHandlerImpl.genericDialog(
       traceId: "12344ds1234ff12sd312445235fs234545d",
+      originator: .featureDashboardModule(.dashboard)
+    ),
+    onAction: { _ in }
+  )
+}
+
+#Preview("Generic no trace") {
+  CustomFonts().loadFonts()
+  return PresentationErrorDialogView(
+    config: PresentationErrorHandlerImpl.genericDialog(
+      traceId: "",
       originator: .featureDashboardModule(.dashboard)
     ),
     onAction: { _ in }

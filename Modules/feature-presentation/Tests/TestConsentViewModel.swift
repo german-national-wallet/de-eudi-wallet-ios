@@ -21,6 +21,7 @@ final class TestConsentViewModel: XCTestCase {
   var pinSessionInteractor: PinSessionInteractorStub!
   var analyticsController: AnalyticsControllerStub!
   var errorHandler: MockPresentationErrorHandler!
+  private var openedURLs: [URL] = []
 
   override func setUp() {
     stubInteractor = ConsentPresentationInteractorStub()
@@ -29,8 +30,11 @@ final class TestConsentViewModel: XCTestCase {
     errorHandler = MockPresentationErrorHandler()
     stub(errorHandler) { mock in
       when(mock.handle(any(), originator: any())).thenReturn(.dialog(.fixture(traceId: "trace-id")))
+      when(mock.handle(any(), originator: any(), retryAction: any()))
+        .thenReturn(.dialog(.fixture(traceId: "trace-id")))
     }
     recordingRouter = RecordingRouterHost()
+    openedURLs = []
   }
 
   override func tearDown() {
@@ -108,14 +112,18 @@ final class TestConsentViewModel: XCTestCase {
 
     XCTAssertTrue(viewModel.consentItems.isEmpty)
     XCTAssertEqual(viewModel.errorDialog?.traceId, "trace-id")
-    verify(errorHandler).handle(any(), originator: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    verify(errorHandler).handle(
+      any(),
+      originator: equal(to: AppRoute.featureDashboardModule(.dashboard)),
+      retryAction: any()
+    )
     XCTAssertFalse(recordingRouter.didPush)
   }
 
   func testDoWork_WhenHandlerReturnsNotice_ThenPushesNoticeRoute() async {
     stubInteractor.deviceEngagementResult = .failure(TestNSError.generic)
     stub(errorHandler) { mock in
-      when(mock.handle(any(), originator: any())).thenReturn(.notice(.fixture()))
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.notice(.fixture()))
     }
 
     let viewModel = makeViewModel()
@@ -316,6 +324,55 @@ final class TestConsentViewModel: XCTestCase {
     XCTAssertFalse(viewModel.isConfirmationPopupVisible)
   }
 
+  func testConfirmDecline_WhenVerifierReturnsRedirectURI_ThenOpensItAndPopsToOriginator() async throws {
+    let redirectURL = try XCTUnwrap(URL(string: "https://verifier.example/cancelled"))
+    stubInteractor.rejectRedirectURL = redirectURL
+    let viewModel = makeViewModel()
+
+    viewModel.confirmDecline()
+    try await waitUntil { !self.openedURLs.isEmpty }
+
+    XCTAssertEqual(openedURLs, [redirectURL])
+    XCTAssertEqual(stubInteractor.rejectRequestCallCount, 1)
+    XCTAssertEqual(recordingRouter.lastPoppedToRoute, .featureDashboardModule(.dashboard))
+  }
+
+  func testConfirmDecline_WhenVerifierReturnsNoRedirectURI_ThenOpensNothing() async {
+    let rejectionSent = expectation(description: "access_denied sent")
+    stubInteractor.onRejectRequestCalled = { rejectionSent.fulfill() }
+    let viewModel = makeViewModel()
+
+    viewModel.confirmDecline()
+    await fulfillment(of: [rejectionSent], timeout: 1)
+    await Task.yield()
+
+    XCTAssertTrue(openedURLs.isEmpty)
+    XCTAssertEqual(recordingRouter.lastPoppedToRoute, .featureDashboardModule(.dashboard))
+  }
+
+  func testOnDecline_WhenUserGoesBack_ThenOpensNothing() async {
+    stubInteractor.rejectRedirectURL = URL(string: "https://verifier.example/cancelled")
+    let viewModel = makeViewModel()
+
+    viewModel.onDecline()
+    viewModel.onErrorDialogAction(.dismiss)
+    await Task.yield()
+
+    XCTAssertTrue(openedURLs.isEmpty)
+    XCTAssertEqual(stubInteractor.rejectRequestCallCount, 0)
+  }
+
+  private func waitUntil(timeout: TimeInterval = 1, _ condition: @escaping () -> Bool) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while !condition() {
+      guard Date() < deadline else {
+        XCTFail("Condition not met within \(timeout)s")
+        return
+      }
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+  }
+
   func testOnDecline_WhenUserGoesBack_ThenSendsNothing() async {
     let viewModel = makeViewModel()
 
@@ -372,7 +429,8 @@ final class TestConsentViewModel: XCTestCase {
       analyticsController: analyticsController,
       errorHandler: errorHandler,
       originator: .featureDashboardModule(.dashboard),
-      relyingParty: "RP"
+      relyingParty: "RP",
+      openURL: { [weak self] url in self?.openedURLs.append(url) }
     )
   }
 
@@ -435,6 +493,7 @@ private final class ConsentPresentationInteractorStub: PresentationInteractor, @
   var pidPresentation: Bool = false
   private(set) var rejectRequestCallCount = 0
   var onRejectRequestCalled: (() -> Void)?
+  var rejectRedirectURL: URL?
 
   func getSessionStatePublisher() -> RemotePublisherPartialState {
     .failure(TestNSError.generic)
@@ -472,9 +531,10 @@ private final class ConsentPresentationInteractorStub: PresentationInteractor, @
     0
   }
 
-  func onRejectRequest() async {
+  func onRejectRequest() async -> URL? {
     rejectRequestCallCount += 1
     onRejectRequestCalled?()
+    return rejectRedirectURL
   }
 }
 

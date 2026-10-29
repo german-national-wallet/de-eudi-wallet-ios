@@ -21,6 +21,9 @@ public final class LogicStorageAssembly: Assembly {
   public init() {}
 
   public func assemble(container: Container) {
-
+    container.register(TransactionLogStorageController.self) { _ in
+      TransactionLogStorageControllerImpl()
+    }
+    .inObjectScope(ObjectScope.container)
   }
 }

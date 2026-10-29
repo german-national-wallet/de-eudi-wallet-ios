@@ -255,12 +255,16 @@ private final class FakePNSRepository: PNSRepository, @unchecked Sendable {
 
 private final class FakeMDVMRepository: MDVMRepository, @unchecked Sendable {
   private let storedRegistration: MDVMStoredRegistration?
+  private let readError: Error?
 
-  init(storedRegistration: MDVMStoredRegistration?) {
+  init(storedRegistration: MDVMStoredRegistration?, readError: Error? = nil) {
     self.storedRegistration = storedRegistration
+    self.readError = readError
   }
-
-  func getStoredRegistration() -> MDVMStoredRegistration? { storedRegistration }
+  func getStoredRegistration() throws -> MDVMStoredRegistration? {
+    if let readError { throw readError }
+    return storedRegistration
+  }
   func fetchChallenge() async throws -> String { "mdvm-challenge" }
   func register(
     payload: MDVMRegistrationPayload,
