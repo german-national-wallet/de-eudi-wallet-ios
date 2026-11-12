@@ -52,6 +52,31 @@ final class RemoteSessionCoordinatorTests: XCTestCase {
     }
   }
 
+  func testInitialize_WhenRequestMatchesNoStoredDocument_ThenDoesNotFetchAgain() async {
+    let service = DecliningPresentationService(redirectURL: nil)
+    let session = makeSession(with: service)
+    let sut = RemoteSessionCoordinatorImpl(session: session)
+
+    await sut.initialize()
+    await sut.initialize()
+
+    XCTAssertEqual(service.receiveRequestCallCount, 1)
+    XCTAssertEqual(session.uiError?.code, .noDocumentsAvailable)
+  }
+
+  func testInitialize_WhenDownloadFails_ThenFetchesAgainOnRetry() async {
+    let service = DecliningPresentationService(
+      redirectURL: nil,
+      receiveRequestFailure: DecliningPresentationService.DispatchFailure()
+    )
+    let sut = RemoteSessionCoordinatorImpl(session: makeSession(with: service))
+
+    await sut.initialize()
+    await sut.initialize()
+
+    XCTAssertEqual(service.receiveRequestCallCount, 2)
+  }
+
   private func makeSession(with service: DecliningPresentationService) -> PresentationSession {
     PresentationSession(
       presentationService: service,
@@ -69,12 +94,15 @@ private final class DecliningPresentationService: PresentationService, @unchecke
 
   private let redirectURL: URL?
   private let failure: Error?
+  private let receiveRequestFailure: Error?
   private(set) var recordedUserAccepted: [Bool] = []
   private(set) var recordedItemCounts: [Int] = []
+  private(set) var receiveRequestCallCount = 0
 
-  init(redirectURL: URL?, failure: Error? = nil) {
+  init(redirectURL: URL?, failure: Error? = nil, receiveRequestFailure: Error? = nil) {
     self.redirectURL = redirectURL
     self.failure = failure
+    self.receiveRequestFailure = receiveRequestFailure
   }
 
   var flow: FlowType { .other }
@@ -99,7 +127,11 @@ private final class DecliningPresentationService: PresentationService, @unchecke
   }
 
   func receiveRequest() async throws -> [MdocDataTransfer18013.UserRequestInfo] {
-    []
+    receiveRequestCallCount += 1
+    if let receiveRequestFailure {
+      throw receiveRequestFailure
+    }
+    return []
   }
 
   func sendResponse(

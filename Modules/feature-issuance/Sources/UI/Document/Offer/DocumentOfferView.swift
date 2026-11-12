@@ -56,6 +56,7 @@ struct DocumentOfferView<Router: RouterHost>: View {
           ) { }
         ]
       )
+      .noInternetDialog($viewModel.noInternetDialog)
       .task {
         await viewModel.initialize()
       }

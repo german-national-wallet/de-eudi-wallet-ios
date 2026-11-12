@@ -28,14 +28,11 @@ private enum Constants {
   static let inlineIconSize: CGFloat = 18
 }
 
-struct IssuanceProcessOverviewView<Router: RouterHost>: View {
-  let router: Router
-  let issuanceInteractor: IssuanceVerificationInteractor?
+struct IssuanceProcessOverviewView: View {
   var onBack: () -> Void = {}
   var onClose: () -> Void = {}
   var onContinue: () -> Void = {}
 
-  @State private var isPinInfoSheetPresented = false
   @State private var privacyPolicyLink: PrivacyPolicyLink?
   @State private var isCancelDialogPresented = false
 
@@ -54,8 +51,7 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onBack: onBack,
-        onClose: { isCancelDialogPresented = true },
-        onHelp: { isPinInfoSheetPresented = true }
+        onClose: { isCancelDialogPresented = true }
       )
       .accessibilitySortPriority(A11ySortPriority.header)
 
@@ -87,18 +83,6 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
       .padding(.horizontal, DSStyle.Spacers.SPACING_MEDIUM)
       .padding(.top, DSStyle.Spacers.SPACING_SMALL)
       .padding(.bottom, DSStyle.Spacers.SPACING_LARGE)
-    }
-    .sheet(isPresented: $isPinInfoSheetPresented) {
-      PINIssuanceInfoView(
-        onFindNearbyBurgerAmt: openBurgeramtWebpage,
-        router: router,
-        isSheetPresented: $isPinInfoSheetPresented,
-        issuanceInteractor: issuanceInteractor
-      )
-      .background(DSColor.background)
-      .clipShape(RoundedCorner(radius: 20, corners: [.topLeft, .topRight]))
-      .ignoresSafeArea()
-      .presentationDetents([.fraction(0.9)])
     }
     .sheet(item: $privacyPolicyLink) { link in
       SafariView(url: link.url)
@@ -151,7 +135,7 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
   private var privacyPolicyButton: some View {
     Button(
       action: {
-        guard let url = AppEnvironment.privacyPolicyLink else { return }
+        guard let url = AppEnvironment.pidPrivacyPolicyLink else { return }
         privacyPolicyLink = PrivacyPolicyLink(url: url)
       },
       label: {
@@ -178,11 +162,5 @@ struct IssuanceProcessOverviewView<Router: RouterHost>: View {
       }
     )
     .accessibilityIdentifier("processOverviewPrivacyPolicyButton")
-  }
-
-  private func openBurgeramtWebpage() {
-    if let url = AppEnvironment.burgeramtServiceLink {
-      UIApplication.shared.open(url)
-    }
   }
 }

@@ -296,7 +296,47 @@ final class TestConsentViewModel: XCTestCase {
 
     XCTAssertFalse(recordingRouter.didPush)
     XCTAssertEqual(viewModel.errorDialog?.traceId, "trace-id")
-    verify(errorHandler).handle(any(), originator: any())
+    verify(errorHandler).handle(any(), originator: any(), retryAction: notNil())
+  }
+
+  func testOnNoInternetRetry_ThenRunsTheRetryOnceAndKeepsTheScreen() async {
+    var retryCount = 0
+    let retry = PresentationErrorDialogConfig.RetryAction { retryCount += 1 }
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.noInternet(retry: retry))
+    }
+    stubInteractor.deviceEngagementResult = .failure(TestNSError.generic)
+
+    let viewModel = makeViewModel()
+    await viewModel.doWork()
+
+    XCTAssertTrue(viewModel.isNoInternetDialogPresented)
+    XCTAssertNil(viewModel.errorDialog)
+
+    viewModel.onNoInternetRetry()
+    viewModel.onNoInternetRetry()
+
+    XCTAssertEqual(retryCount, 1)
+    XCTAssertFalse(recordingRouter.didPush)
+    XCTAssertEqual(recordingRouter.popCount, 0)
+  }
+
+  func testOnNoInternetCancel_ThenGoesBackOneScreenWithoutRetrying() async {
+    var retryCount = 0
+    let retry = PresentationErrorDialogConfig.RetryAction { retryCount += 1 }
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any(), retryAction: any())).thenReturn(.noInternet(retry: retry))
+    }
+    stubInteractor.deviceEngagementResult = .failure(TestNSError.generic)
+
+    let viewModel = makeViewModel()
+    await viewModel.doWork()
+
+    viewModel.onNoInternetCancel()
+    viewModel.onNoInternetRetry()
+
+    XCTAssertEqual(recordingRouter.popCount, 1)
+    XCTAssertEqual(retryCount, 0)
   }
 
   func testOnDecline_ThenSendsNothingBeforeConfirmation() async {
@@ -554,6 +594,7 @@ private final class RecordingRouterHost: RouterHost {
   private(set) var didPush = false
   private(set) var lastPushedRoute: AppRoute?
   private(set) var lastPoppedToRoute: AppRoute?
+  private(set) var popCount = 0
 
   func push(with route: AppRoute) {
     didPush = true
@@ -570,7 +611,9 @@ private final class RecordingRouterHost: RouterHost {
 
   func pop(animated: Bool) {}
 
-  func pop() {}
+  func pop() {
+    popCount += 1
+  }
 
   func composeApplication() -> AnyView {
     EmptyView().eraseToAnyView()

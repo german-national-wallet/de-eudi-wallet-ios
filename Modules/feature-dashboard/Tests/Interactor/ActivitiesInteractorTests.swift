@@ -12,6 +12,7 @@ import logic_core
 import logic_resources
 
 @testable import feature_dashboard
+@testable import feature_test
 
 struct ActivitiesInteractorTests {
 
@@ -252,6 +253,106 @@ struct ActivitiesInteractorTests {
     #expect(credential.display == display)
     #expect(credential.sharedClaims == ["Member ID"])
     #expect(!credential.isShared)
+  }
+
+  @Test
+  func fetchActivity_WhenTheSnapshotHasNestedClaims_ThenTotalCountsOnlyLeafClaims() async throws {
+    let presentation = TransactionEntry.presentation(
+      .init(
+        transactionIdentifier: "p",
+        time: Date(),
+        transactionResult: .completed,
+        reasonOfNoncompletion: nil,
+        listOfClaimsRequested: [],
+        listOfClaimsPresented: [
+          ClaimInfo(credentialIdentifier: "urn:eudi:eaa:loyalty-card:1", claims: [ClaimPath([.claim(name: "member_id")])])
+        ]
+      )
+    )
+    let snapshot = IssuanceSnapshot(
+      transactionIdentifier: "issuance:doc-1",
+      time: Date(),
+      credentialIdentifier: "urn:eudi:eaa:loyalty-card:1",
+      display: nil,
+      issuerDisplay: nil,
+      claims: [
+        IssuanceSnapshot.Claim(path: ["member_id"], displayName: "Member ID"),
+        IssuanceSnapshot.Claim(path: ["address"], displayName: "Address"),
+        IssuanceSnapshot.Claim(path: ["address", "street"], displayName: "Street"),
+        IssuanceSnapshot.Claim(path: ["address", "city"], displayName: "City"),
+        IssuanceSnapshot.Claim(path: ["age_equal_or_over"], displayName: "Age"),
+        IssuanceSnapshot.Claim(path: ["age_equal_or_over", "16"], displayName: "16"),
+        IssuanceSnapshot.Claim(path: ["age_equal_or_over", "18"], displayName: "18")
+      ],
+      registration: nil
+    )
+    let sut = ActivitiesInteractorImpl(
+      transactionLogController: FakeTransactionLogController(entries: [presentation], snapshots: [snapshot]),
+      walletKitController: makeWalletKitController()
+    )
+
+    guard case .success(let detail) = await sut.fetchActivity(with: "p") else {
+      Issue.record("Expected the activity to load")
+      return
+    }
+    let credential = try #require(detail.presentation?.credentials.first)
+
+    #expect(credential.totalClaimCount == 5)
+  }
+
+  @Test
+  func fetchActivity_WhenTheIssuedCredentialHasNestedClaims_ThenTotalCountsOnlyLeafClaims() async throws {
+    let credentialIdentifier = "urn:eudi:eaa:loyalty-card:1"
+    let presentation = TransactionEntry.presentation(
+      .init(
+        transactionIdentifier: "p",
+        time: Date(),
+        transactionResult: .completed,
+        reasonOfNoncompletion: nil,
+        listOfClaimsRequested: [],
+        listOfClaimsPresented: [
+          ClaimInfo(credentialIdentifier: credentialIdentifier, claims: [ClaimPath([.claim(name: "member_id")])])
+        ]
+      )
+    )
+    var document = Constants.euPidModel
+    document.docType = credentialIdentifier
+    document.docClaims = [
+      makeClaim("member_id"),
+      makeClaim("address", children: [makeClaim("street"), makeClaim("city")]),
+      makeClaim("age_equal_or_over", children: [makeClaim("16"), makeClaim("18")])
+    ]
+    let walletKitController = MockWalletKitController()
+    stub(walletKitController) { stub in
+      when(stub.fetchDocument(with: any())).thenReturn(nil)
+      when(stub.fetchIssuedDocuments()).thenReturn([document])
+    }
+    let sut = ActivitiesInteractorImpl(
+      transactionLogController: FakeTransactionLogController(entries: [presentation]),
+      walletKitController: walletKitController
+    )
+
+    guard case .success(let detail) = await sut.fetchActivity(with: "p") else {
+      Issue.record("Expected the activity to load")
+      return
+    }
+    let credential = try #require(detail.presentation?.credentials.first)
+
+    #expect(document.docClaims.count == 3)
+    #expect(credential.totalClaimCount == 5)
+  }
+
+  private func makeClaim(_ name: String, children: [DocClaim]? = nil) -> DocClaim {
+    DocClaim(
+      name: name,
+      displayName: name,
+      dataValue: .string(name),
+      stringValue: name,
+      isOptional: false,
+      order: 0,
+      namespace: nil,
+      children: children
+    )
   }
 
   private func makePidIssuance(id: String, time: Date, type: String) -> TransactionEntry {

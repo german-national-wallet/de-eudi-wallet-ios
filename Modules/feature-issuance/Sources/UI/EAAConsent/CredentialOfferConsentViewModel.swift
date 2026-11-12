@@ -6,6 +6,7 @@
 import logic_ui
 import logic_resources
 import feature_common
+import logic_api
 
 @Copyable
 struct CredentialOfferConsentViewState: ViewState {
@@ -20,6 +21,7 @@ struct CredentialOfferConsentViewState: ViewState {
 
 final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Router, CredentialOfferConsentViewState> {
   private let interactor: DocumentOfferInteractor
+  private let connectivityMonitor: NetworkConnectivityMonitor
 
   @Published var documentName: String = ""
   @Published var issuerImageUrl: URL?
@@ -27,12 +29,14 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
   @Published var showCancelConfirmationPopup: Bool = false
   @Published var showCloseConfirmationPopup: Bool = false
   @Published var showIssuanceFailurePopup: Bool = false
+  @Published var noInternetDialog = NoInternetDialogState()
   var txCode: DocumentOfferUIModel.TxCode?
 
   init(
     router: Router,
     config: any UIConfigType,
-    interactor: DocumentOfferInteractor
+    interactor: DocumentOfferInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor
   ) {
     guard
       let config = config as? UIConfig.Generic,
@@ -41,6 +45,7 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
       fatalError("DocumentOfferViewModel:: Invalid configuraton")
     }
     self.interactor = interactor
+    self.connectivityMonitor = connectivityMonitor
     super.init(
       router: router,
       initialState: .init(
@@ -80,6 +85,12 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
             initialized: true
           )
       }
+    case .failure(let error) where connectivityMonitor.isNoInternet(error):
+      setState { $0.copy(isLoading: false) }
+      noInternetDialog.present(
+        retry: { [weak self] in self?.retryInitialize() },
+        cancel: { [weak self] in self?.cancelIssuance() }
+      )
     case .failure(let error):
       setState {
         $0
@@ -90,14 +101,17 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
               description: .custom(error.localizedDescription),
               cancelAction: self.cancelIssuance(),
               action: { [weak self] in
-                guard let self else { return }
-                self.setState { $0.copy(isLoading: true, initialized: false, error: nil) }
-                Task { await self.initialize() }
+                self?.retryInitialize()
               }
             )
           )
       }
     }
+  }
+
+  private func retryInitialize() {
+    setState { $0.copy(isLoading: true, initialized: false, error: nil) }
+    Task { await initialize() }
   }
 
   func handleNotification(with info: [AnyHashable: Any]) {
@@ -145,13 +159,26 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
             successNavigation: viewState.config.navigationSuccessType,
             navigationCancelType: viewState.config.navigationCancelType
           ),
-          onFailure: { [weak self] _ in
+          onFailure: { [weak self] error in
             Task { @MainActor in
-              self?.showIssuanceFailurePopup = true
+              self?.onIssuanceFailed(error)
             }
           }
         )
       )
+    )
+  }
+
+  private func onIssuanceFailed(_ error: Error) {
+    guard connectivityMonitor.isNoInternet(error) else {
+      showIssuanceFailurePopup = true
+      return
+    }
+    noInternetDialog.present(
+      retry: { [weak self] in
+        Task { await self?.issueDocuments() }
+      },
+      cancel: {}
     )
   }
 
@@ -177,9 +204,5 @@ final class CredentialOfferConsentViewModel<Router: RouterHost>: ViewModel<Route
 
   func cancelIssuance() {
     router.pop()
-  }
-
-  func onHelp() {
-    // will be added later when the functionality is finalized
   }
 }

@@ -34,8 +34,7 @@ struct OfferCodeView<Router: RouterHost>: View {
     ) {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
-        onClose: viewModel.closeButtonAction,
-        onHelp: viewModel.onHelp
+        onClose: viewModel.closeButtonAction
       )
 
       content(
@@ -69,6 +68,7 @@ struct OfferCodeView<Router: RouterHost>: View {
       guard !isPresented else { return }
       viewModel.codeIsFocused = true
     }
+    .noInternetDialog($viewModel.noInternetDialog)
     .task {
       await viewModel.checkPendingIssuance()
     }

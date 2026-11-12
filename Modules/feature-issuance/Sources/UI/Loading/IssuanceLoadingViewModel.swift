@@ -21,10 +21,12 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
   private let mdvmInteractor: MDVMInteractor
   private let rwscaInteractor: RWSCAInteractor
   private let pinSessionInteractor: PinSessionInteractor
+  private let connectivityMonitor: NetworkConnectivityMonitor
   private let logger: Logging?
 
   @Published var isErrorPopupVisible = false
   @Published var isIssued = false
+  @Published var noInternetDialog = NoInternetDialogState()
 
   private var hasLeftSuccessState = false
 
@@ -47,6 +49,7 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
     mdvmInteractor: MDVMInteractor,
     rwscaInteractor: RWSCAInteractor,
     pinSessionInteractor: PinSessionInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor,
     logger: Logging?
   ) {
     self.secureEnclaveController = secureEnclaveController
@@ -55,6 +58,7 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
     self.mdvmInteractor = mdvmInteractor
     self.rwscaInteractor = rwscaInteractor
     self.pinSessionInteractor = pinSessionInteractor
+    self.connectivityMonitor = connectivityMonitor
     self.logger = logger
 
     guard let config = config as? UIConfig.IssuanceLoadingUiConfig else {
@@ -86,6 +90,27 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
     }
   }
 
+  func configureErrorPopupViewModel(transportFailure: TransportFailure) {
+    // No retry here <- the PIN session is gone
+    errorPopupViewModel.configure(transportFailure: transportFailure) { [weak self] in
+      self?.isErrorPopupVisible = false
+      self?.cancelToDashboard()
+    }
+  }
+
+  func configureIssuanceRestartPopupViewModel() {
+    errorPopupViewModel.configureIssuanceRestart(
+      startAgain: { [weak self] in
+        self?.isErrorPopupVisible = false
+        self?.router.restartIssuance()
+      },
+      cancel: { [weak self] in
+        self?.isErrorPopupVisible = false
+        self?.cancelToDashboard()
+      }
+    )
+  }
+
   func issueCredentials() async {
     do {
       guard let privateKey = secureEnclaveController.createPrivateKey(with: .credentialPrivKey),
@@ -115,6 +140,37 @@ final class IssuanceLoadingViewModel<Router: RouterHost>: ViewModel<Router, Issu
           errorDescription: "No credentials were issued"
         )
       }
+    } catch where connectivityMonitor.isNoInternet(error) {
+      logger?.e("Wallet registration failed: no internet")
+      noInternetDialog.present(
+        retry: { [weak self] in
+          Task { await self?.issueCredentials() }
+        },
+        cancel: { [weak self] in
+          self?.pinSessionInteractor.clear()
+          self?.router.pop()
+        }
+      )
+    } catch let error where TransportFailure.find(in: error) != nil {
+      guard let failure = TransportFailure.find(in: error) else { return }
+      logger?.e("Wallet registration failed (transport): \(failure)")
+      pinSessionInteractor.clear()
+      var errorAttributes: [String: String] = [:]
+      if let statusCode = failure.statusCode {
+        errorAttributes[AnalyticsConstants.TraceAttribute.errorCode] = String(statusCode)
+      }
+      analyticsController.endTrace(
+        finalAttributes: errorAttributes,
+        errorDescription: String(describing: failure)
+      )
+      isErrorPopupVisible = true
+      configureErrorPopupViewModel(transportFailure: failure)
+    } catch let error where error.isGrantRejection {
+      logger?.e("Wallet registration failed: authorization grant rejected, PAR expired")
+      pinSessionInteractor.clear()
+      _ = analyticsController.endTrace(finalAttributes: [:], errorDescription: "PAR expired")
+      isErrorPopupVisible = true
+      configureIssuanceRestartPopupViewModel()
     } catch let error as RWSCARepositoryError {
       logger?.e("Wallet registration failed (RWSCARepositoryError): \(error)")
       pinSessionInteractor.clear()

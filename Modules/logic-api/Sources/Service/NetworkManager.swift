@@ -39,6 +39,7 @@ public actor NetworkManagerImpl: NetworkManager {
 
   private let baseHost: String
   private let debugConfigController: DebugConfigController?
+  private let connectivityMonitor: NetworkConnectivityMonitor
   nonisolated private let networkLogger: NetworkLogger
 
   let session: Session
@@ -46,11 +47,13 @@ public actor NetworkManagerImpl: NetworkManager {
   public init(
     baseHost: String,
     logger: Logging?,
+    connectivityMonitor: NetworkConnectivityMonitor,
     debugConfigController: DebugConfigController? = nil,
     certificatePinner: CertificatePinner = .shared
   ) {
     self.baseHost = baseHost
     self.debugConfigController = debugConfigController
+    self.connectivityMonitor = connectivityMonitor
     self.networkLogger = NetworkLogger(logger: logger)
     self.session = Session(
       configuration: URLSessionConfiguration.default,
@@ -63,6 +66,10 @@ public actor NetworkManagerImpl: NetworkManager {
     with request: R,
     parameters: [NetworkParameter]?
   ) async throws -> NetworkResponse {
+    guard !connectivityMonitor.isOffline else {
+      throw NetworkError.noInternet
+    }
+
     let request = try await self.prepare(
       request: request,
       parameters: parameters,
@@ -80,7 +87,7 @@ public actor NetworkManagerImpl: NetworkManager {
           )
           guard let statusCode = response.response?.statusCode else {
             if let error = response.error {
-              continuation.resume(throwing: NetworkError.internetFailure(error))
+              continuation.resume(throwing: Self.transportError(from: error))
             } else {
               continuation.resume(throwing: NetworkError.invalidResponse)
             }
@@ -92,6 +99,10 @@ public actor NetworkManagerImpl: NetworkManager {
             return
           }
           let data = response.data
+          if NetworkError.transportStatusCodes.contains(statusCode) {
+            continuation.resume(throwing: NetworkError.httpError(code: statusCode, data: data, headers: headers))
+            return
+          }
           if !(200..<300).contains(statusCode) {
             continuation.resume(returning: NetworkResponse(data: data, headers: headers, statusCode: statusCode))
             return
@@ -111,6 +122,10 @@ public actor NetworkManagerImpl: NetworkManager {
           }
         }
     }
+  }
+
+  static func transportError(from error: AFError) -> NetworkError {
+    (error.underlyingError ?? error).isNoInternet ? .noInternet : .internetFailure(error)
   }
 
   public func prepare<R: NetworkRequest>(

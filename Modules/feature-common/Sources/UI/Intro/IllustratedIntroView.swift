@@ -20,8 +20,7 @@ public struct IllustratedIntroView: View {
       VStack(spacing: 0) {
         HeaderContentView(
           onBack: config.onBack,
-          onClose: config.onClose,
-          onHelp: config.onHelp
+          onClose: config.onClose
         )
 
         ScrollView {
@@ -67,7 +66,6 @@ public struct IllustratedIntroView: View {
       primaryAction: .init(title: "Label", handler: {}),
       secondaryAction: .init(title: "Label", handler: {}),
       onBack: {},
-      onHelp: {},
       onClose: {}
     )
   )

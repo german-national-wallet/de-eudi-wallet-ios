@@ -111,6 +111,18 @@ struct SecureEnclaveControllerTests {
     }
   }
 
+  @Test
+  func storeEncryptedString_ThrowsWhenEncryptionKeyCannotBeStored() {
+    let secureEnclaveController = SecureEnclaveControllerImpl(
+      logger: nil,
+      walletDataEncryptionController: KeyStoreFailingEncryptionController()
+    )
+
+    #expect(throws: SecureEnclaveControllerError.encryptionKeyUnavailable) {
+      try secureEnclaveController.storeEncryptedString(value: "salt", keyTag: .rwscaAuthPrivateKeySalt)
+    }
+  }
+
   private func makePrivateKey() throws -> SecKey {
     let attributes: [String: Any] = [
       kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
@@ -122,6 +134,12 @@ struct SecureEnclaveControllerTests {
     }
     return key
   }
+}
+
+private struct KeyStoreFailingEncryptionController: WalletDataEncryptionController {
+  func encrypt(_ data: Data) throws -> Data { throw WalletDataEncryptionError.keyUnavailable }
+  func decrypt(_ data: Data) throws -> Data { data }
+  func deleteKey() {}
 }
 
 // Local fake keeps retrieval/creation/storage outcomes deterministic for guardrail tests.

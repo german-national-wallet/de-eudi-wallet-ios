@@ -17,6 +17,11 @@ import Foundation
 import logic_resources
 
 public extension DocClaim {
+  var leafCount: Int {
+    guard let children else { return 1 }
+    return children.leafCount
+  }
+
   func parseDate(parser: (String) -> String) -> DocClaim {
     switch self.dataValue {
     case .date:
@@ -55,6 +60,12 @@ public extension DocClaim {
     } else {
       return self
     }
+  }
+}
+
+public extension Sequence where Element == DocClaim {
+  var leafCount: Int {
+    reduce(0) { $0 + $1.leafCount }
   }
 }
 

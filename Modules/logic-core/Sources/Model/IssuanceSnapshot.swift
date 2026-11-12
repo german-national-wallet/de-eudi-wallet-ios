@@ -73,6 +73,13 @@ public extension IssuanceSnapshot {
     Self.documentId(fromTransactionIdentifier: transactionIdentifier)
   }
 
+  var leafClaimCount: Int {
+    let parentPaths = Set(claims.flatMap { claim in
+      (0..<claim.path.count).map { Array(claim.path.prefix($0)) }
+    })
+    return claims.filter { !parentPaths.contains($0.path) }.count
+  }
+
   private static let issuancePrefix = "issuance:"
 
   init(document: any DocClaimsDecodable, registration: WrpRegistrationPolicy?, time: Date = Date()) {

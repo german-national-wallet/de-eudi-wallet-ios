@@ -21,13 +21,18 @@ public struct FeatureFlagRepositoryImpl: FeatureFlagRepository {
   private let store: FlagStore
   private let updateService: UpdateService
 
-  public init(prefsController: PrefsController, logger: Logging?) {
+  public init(
+    prefsController: PrefsController,
+    logger: Logging?,
+    connectivityMonitor: NetworkConnectivityMonitor
+  ) {
     self.init(
       prefsController: prefsController,
       logger: logger,
       networkManager: NetworkManagerImpl(
         baseHost: Constants.API.baseURLKey.valueFromBundle,
-        logger: logger
+        logger: logger,
+        connectivityMonitor: connectivityMonitor
       )
     )
   }

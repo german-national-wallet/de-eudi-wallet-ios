@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 
+import UIKit
 import feature_common
 import logic_core
 import logic_analytics
@@ -37,6 +38,7 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
   private var hasPresentedError = false
   @Published var showWebView = false
   @Published var errorDialog: PresentationErrorDialogConfig?
+  @Published var isNoInternetDialogPresented = false
   @Published var showPIDResetConfirmationPopup: Bool = false
 
   var url: URL?
@@ -208,8 +210,8 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       logger?.d("presentation is successful")
     case .failure(let error):
       publisherTask?.cancel()
-      clearPinSessionIfNeeded()
       if let presentationError = error as? PresentationError {
+        clearPinSessionIfNeeded()
         switch presentationError {
         case .invalidPassword(let response):
           logger?.d("invalidPassword")
@@ -224,6 +226,9 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
         }
       } else {
         presentError(error)
+        if !isNoInternetDialogPresented {
+          clearPinSessionIfNeeded()
+        }
       }
     }
   }
@@ -244,15 +249,31 @@ final class PresentationLoadingViewModel<Router: RouterHost, RequestItem: Sendab
       router.popTo(with: route)
     case .addDigitalIDAgain:
       showPIDResetConfirmationPopup = true
-    case .dismiss, .retry:
+    case .dismiss:
       break
+    case .openExternal(let url):
+      UIApplication.shared.open(url)
+      router.popTo(with: getOriginator())
     }
+  }
+
+  func onNoInternetRetry() {
+    hasPresentedError = false
+    Task { await doWork() }
+  }
+
+  func onNoInternetCancel() {
+    publisherTask?.cancel()
+    clearPinSessionIfNeeded()
+    router.pop()
   }
 
   private func presentError(_ error: Error) {
     guard !hasPresentedError else { return }
     hasPresentedError = true
     switch errorHandler.handle(error, originator: getOriginator()) {
+    case .noInternet:
+      isNoInternetDialogPresented = true
     case .notice(let config):
       router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
     case .dialog(let config):

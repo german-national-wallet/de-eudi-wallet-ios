@@ -39,7 +39,7 @@ public struct SettingsTabItemUIModel: Identifiable {
     trailingIcon: TrailingIcon = .arrow,
     showDivider: Bool = true,
     isShareLink: Bool = false,
-    action: @autoclosure @escaping () -> Void
+    action: @escaping () -> Void
   ) {
     self.id = id
     self.title = title

@@ -14,10 +14,14 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import Combine
+import UIKit
 import logic_ui
 import logic_business
 import logic_core
+import logic_api
 import logic_analytics
+import logic_authentication
 import feature_common
 import feature_issuance
 
@@ -73,22 +77,30 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
   private let deepLinkController: DeepLinkController
   private let secureEnclaveController: SecureEnclaveController
   private let configLogic: ConfigLogic
+  private let deviceOwnerAuthenticationController: DeviceOwnerAuthenticationController
 
   @Published var selectedTab: DashboardTab = .overview
   @Published var shouldPresentQRReader: Bool = false
-  
+  @Published private(set) var isActivityUnlocked: Bool = false
+
+  private var tabBeforeActivity: DashboardTab = .overview
+  private var isAuthenticating: Bool = false
+
   init(
     router: Router,
     dashboardInteractor: DashboardInteractor,
     settingsTabInteractor: SettingsTabInteractor,
     secureEnclaveController: SecureEnclaveController,
     configLogic: ConfigLogic,
-    deepLinkController: DeepLinkController
+    deepLinkController: DeepLinkController,
+    deviceOwnerAuthenticationController: DeviceOwnerAuthenticationController,
+    notificationCenter: NotificationCenter = .default
   ) {
     self.dashboardInteractor = dashboardInteractor
     self.deepLinkController = deepLinkController
     self.secureEnclaveController = secureEnclaveController
     self.configLogic = configLogic
+    self.deviceOwnerAuthenticationController = deviceOwnerAuthenticationController
     
       super.init(
         router: router,
@@ -110,7 +122,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
         secureEnclaveController: secureEnclaveController,
         configLogic: configLogic
       )
-
+      observeAppLifecycle(notificationCenter: notificationCenter)
   }
 
     private func createTabs(
@@ -146,6 +158,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
               deepLinkController: deepLinkController,
               secureEnclaveController: secureEnclaveController,
               analyticsController: DIGraph.resolver.force(AnalyticsController.self),
+              connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
               config: IssuanceFlowUiConfig(flow: .noDocument)
             )
           ),
@@ -177,6 +190,57 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
         deepLinkExecutable: deepLink,
         remoteSessionCoordinator: await dashboardInteractor.getWalletKitController().startSameDevicePresentation(deepLink: deepLink.link)
       )
+    }
+
+    func onTabRequested(_ tab: DashboardTab) async {
+      guard tab != selectedTab else { return }
+      guard tab == .activity else {
+        isActivityUnlocked = false
+        selectedTab = tab
+        return
+      }
+      guard await unlockActivity() == .authenticated else { return }
+      tabBeforeActivity = selectedTab
+      selectedTab = .activity
+    }
+
+    func onAppDidEnterBackground() {
+      isActivityUnlocked = false
+    }
+
+    func onAppDidBecomeActive() async {
+      guard selectedTab == .activity, !isActivityUnlocked, !isAuthenticating else { return }
+      // An interrupted prompt keeps the tab locked and is shown again on the next activation
+      guard await unlockActivity() == .denied else { return }
+      let dashboard: AppRoute = .featureDashboardModule(.dashboard)
+      if !router.isScreenForeground(with: dashboard) {
+        router.popTo(with: dashboard)
+      }
+      selectedTab = tabBeforeActivity
+    }
+
+    private func unlockActivity() async -> DeviceOwnerAuthenticationResult? {
+      guard !isAuthenticating else { return nil }
+      isAuthenticating = true
+      defer { isAuthenticating = false }
+      let result = await deviceOwnerAuthenticationController.authenticate(
+        localizedReason: LocalizableStringKey.globalPaUsageParagraphActivities.toString
+      )
+      isActivityUnlocked = result == .authenticated
+      return result
+    }
+
+    // Background, not resign-active: the authentication prompt itself makes the app inactive,
+    // so locking on resign-active would prompt again as soon as the prompt closes
+    private func observeAppLifecycle(notificationCenter: NotificationCenter) {
+      notificationCenter.publisher(for: UIApplication.didEnterBackgroundNotification)
+        .sink { [weak self] _ in self?.onAppDidEnterBackground() }
+        .store(in: &cancellables)
+      notificationCenter.publisher(for: UIApplication.didBecomeActiveNotification)
+        .sink { [weak self] _ in
+          Task { await self?.onAppDidBecomeActive() }
+        }
+        .store(in: &cancellables)
     }
 
     func onAppear() {

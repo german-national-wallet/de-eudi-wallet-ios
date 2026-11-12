@@ -25,8 +25,7 @@ struct IssuanceOnboardingPinCardView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onBack: onBack,
-        onClose: { isCancelDialogPresented = true },
-        onHelp: { isPinInfoSheetPresented = true }
+        onClose: { isCancelDialogPresented = true }
       )
 
       ScrollView {

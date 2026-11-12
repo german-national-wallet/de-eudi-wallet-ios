@@ -14,12 +14,12 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
-      revision: "59e1e8cc2dde82734b6059a17754fb7a1016e171"
+      revision: "ffa947404a6974244e253e0735b6690980257691"
     ),
-    .package(
-      url: "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vp-swift.git",
-      exact: "0.43.2"
-    ),
+    .package(url: "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vp-swift.git", exact: "0.44.1"),
+    .package(url: "https://github.com/eu-digital-identity-wallet/eudi-lib-ios-openid4vci-swift.git", exact: "0.55.6"),
+    .package(url: "https://github.com/apple/swift-asn1.git", exact: "1.7.3"),
+    .package(url: "https://github.com/apple/swift-certificates.git", exact: "1.21.0"),
     .package(
       name: "logic-resources",
       path: "../logic-resources"
@@ -61,7 +61,13 @@ let package = Package(
         .product(
             name: "OpenID4VP",
             package: "eudi-lib-ios-openid4vp-swift"
-        )
+        ),
+        .product(
+            name: "OpenID4VCI",
+            package: "eudi-lib-ios-openid4vci-swift"
+        ),
+        .product(name: "SwiftASN1", package: "swift-asn1"),
+        .product(name: "X509", package: "swift-certificates")
       ],
       path: "./Sources"
     ),
@@ -81,9 +87,16 @@ let package = Package(
         .product(
             name: "OpenID4VP",
             package: "eudi-lib-ios-openid4vp-swift"
-        )
+        ),
+        .product(
+            name: "OpenID4VCI",
+            package: "eudi-lib-ios-openid4vci-swift"
+        ),
+        .product(name: "SwiftASN1", package: "swift-asn1"),
+        .product(name: "X509", package: "swift-certificates")
       ],
-      path: "./Tests"
+      path: "./Tests",
+      resources: [.process("Trust/Fixtures")]
     )
   ]
 )

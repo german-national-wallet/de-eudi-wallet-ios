@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import feature_common
 import logic_analytics
 import logic_api
 import logic_business
@@ -29,16 +30,19 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
   private let classifier: PresentationErrorClassifier
   private let analyticsController: AnalyticsController
   private let walletKitController: WalletKitController
+  private let presentationOriginStore: PresentationOriginStore
   private let maxInnerErrorDepth = 8
 
   init(
     classifier: PresentationErrorClassifier,
     analyticsController: AnalyticsController,
     walletKitController: WalletKitController,
+    presentationOriginStore: PresentationOriginStore
   ) {
     self.classifier = classifier
     self.analyticsController = analyticsController
     self.walletKitController = walletKitController
+    self.presentationOriginStore = presentationOriginStore
   }
 
   func handle(_ error: any Error, originator: AppRoute) -> PresentationErrorPresentation {
@@ -57,6 +61,10 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
       )
     }
     let classified = classifier.classify(error)
+
+    if classified.errorClass == .networkUnavailable {
+      return .noInternet(retry: retryAction)
+    }
     let traceId = endTrace(classified: classified)
     return presentation(for: classified, traceId: traceId, originator: originator, retryAction: retryAction)
   }
@@ -71,7 +79,24 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
   ) -> PresentationErrorPresentation {
     switch classified.errorClass {
     case .unclassified:
-      return .dialog(PresentationErrorHandlerImpl.genericDialog(traceId: traceId, originator: originator))
+      return .dialog(PresentationErrorHandlerImpl.genericDialog(
+        traceId: traceId,
+        originator: originator,
+        errorCode: classified.diagnosticCode
+      ))
+    case .relyingPartyUnreachable:
+      return .dialog(PresentationErrorHandlerImpl.timeoutDialog(
+        traceId: traceId,
+        originator: originator,
+        serviceProviderURL: presentationOriginStore.getServiceProviderURL()
+      ))
+    case .connectionTimedOut:
+      return .dialog(PresentationErrorHandlerImpl.slowInternetDialog(traceId: traceId, originator: originator))
+    case .rateLimited:
+      return .dialog(PresentationErrorHandlerImpl.rateLimitDialog(
+        retryAfter: classified.transportFailure?.retryAfter,
+        originator: originator
+      ))
     case .relyingPartyRequestInvalid:
       return .dialog(PresentationErrorHandlerImpl.codedDialog(classified: classified, traceId: traceId, originator: originator))
     case .walletInternal:
@@ -81,27 +106,7 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
         errorCode: PresentationErrorHandlerImpl.diagnosticLabel(classified)
       ))
     case .networkUnavailable:
-      let dismissButton = PresentationErrorDialogConfig.Button(
-        title: .globalNoInternetErrorPrimButton,
-        action: .popTo(originator)
-      )
-      let retryButton = retryAction.map { action in
-        PresentationErrorDialogConfig.Button(
-          title: .globalTryAgainButton,
-          action: .retry(action)
-        )
-      }
-      return .dialog(
-        .init(
-          title: .globalNoInternetErrorTitle,
-          titleIcon: Theme.shared.image.warning,
-          message: .globalNoInternetErrorParagraph,
-          errorCode: nil,
-          traceId: traceId,
-          primary: retryButton ?? dismissButton,
-          secondary: retryButton != nil ? dismissButton : nil
-        )
-      )
+      return .noInternet(retry: retryAction)
     case .relyingPartyNotTrusted:
       return .notice(PresentationErrorHandlerImpl.notTrustedNotice(originator: originator))
     case .credentialNotAvailable:
@@ -140,7 +145,7 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
     var attributes = [
       AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.failure,
       AnalyticsConstants.TraceAttribute.errorClass: classified.errorClass.rawValue,
-      AnalyticsConstants.TraceAttribute.errorOrigin: classified.errorClass.origin.rawValue
+      AnalyticsConstants.TraceAttribute.errorOrigin: classified.origin.rawValue
     ]
     if let code = classified.diagnosticCode {
       attributes[AnalyticsConstants.TraceAttribute.errorCode] = code
@@ -151,7 +156,7 @@ final class PresentationErrorHandlerImpl: PresentationErrorHandler {
     let activeTraceId = analyticsController.currentTraceID
     let endedTraceId = analyticsController.endTrace(
       finalAttributes: attributes,
-      errorDescription: String(describing: classified.underlying)
+      errorDescription: String(describing: classified.transportFailure ?? classified.underlying)
     )
     return endedTraceId ?? activeTraceId ?? ""
   }
@@ -254,6 +259,63 @@ extension PresentationErrorHandlerImpl {
     default:
       return genericDialog(traceId: traceId, originator: originator, errorCode: error.errorCode)
     }
+  }
+
+  static func timeoutDialog(
+    traceId: String,
+    originator: AppRoute,
+    serviceProviderURL: URL?
+  ) -> PresentationErrorDialogConfig {
+    let cancel = PresentationErrorDialogConfig.Button(
+      title: .pidPresentationTimeoutRpSecButton,
+      action: .popTo(originator)
+    )
+    let backToServiceProvider = serviceProviderURL.map { url in
+      PresentationErrorDialogConfig.Button(
+        title: .pidPresentationTimeoutRpPrimButton,
+        action: .openExternal(url),
+        trailingIcon: Theme.shared.image.externalLink
+      )
+    }
+    return .init(
+      title: .pidPresentationTimeoutRpTitle,
+      titleIcon: Theme.shared.image.warning,
+      message: .pidPresentationTimeoutRpParagraph,
+      errorCode: nil,
+      traceId: traceId,
+      primary: backToServiceProvider ?? cancel,
+      secondary: backToServiceProvider != nil ? cancel : nil
+    )
+  }
+
+  /// The start-up 429 dialog with a presentation-specific title: no trace ID, no error code, a plain
+  /// "Got it" that leaves the flow. The duration line only appears when the failing endpoint
+  /// delivered a Retry-After.
+  static func rateLimitDialog(retryAfter: TimeInterval?, originator: AppRoute) -> PresentationErrorDialogConfig {
+    let message: LocalizableStringKey = retryAfter
+      .flatMap { ConfirmationPopupViewModel.retryDuration($0) }
+      .map { .globalTimeoutTooManyRequestsParagraph([$0]) } ?? .globalErrorParagraph
+    return .init(
+      title: .pidPresentationTimeoutTooManyRequestsTitle,
+      titleIcon: Theme.shared.image.warning,
+      message: message,
+      errorCode: nil,
+      traceId: "",
+      primary: .init(title: .globalNoInternetErrorPrimButton, action: .popTo(originator)),
+      secondary: nil
+    )
+  }
+
+  static func slowInternetDialog(traceId: String, originator: AppRoute) -> PresentationErrorDialogConfig {
+    .init(
+      title: .pidPresentationTimeoutSlowInternetTitle,
+      titleIcon: Theme.shared.image.warning,
+      message: .pidPresentationTimeoutSlowInternetParagraph,
+      errorCode: nil,
+      traceId: traceId,
+      primary: .init(title: .pidPresentationTimeoutSlowInternetPrimButton, action: .popTo(originator)),
+      secondary: nil
+    )
   }
 
   static func notTrustedNotice(

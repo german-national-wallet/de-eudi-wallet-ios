@@ -7,6 +7,7 @@ import Foundation
 import logic_api
 import logic_business
 import CryptoKit
+import JOSESwift
 
 public protocol RWSCAInteractor: Sendable {
   func register(mdvmStoredRegistration: MDVMStoredRegistration) async throws
@@ -94,20 +95,20 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
       challenge: context.challenge,
       privateKey: context.mdvmPrivateKey,
       pinPrivateKey: context.pinPrivKey,
-      rwscaID: context.rwscaID
+      rwscaID: context.rwscaID,
+      pinEncryptionKey: context.pinEncryptionKey
     )
   }
 
   private func initializePinSession(pin: String) async throws -> RWSCAPinSessionResponse {
     let context = try await preparePinSessionContext(pin: pin)
-    let pinPublicKey = try secureEnclaveController.getPublicKeyInfo(from: context.pinPrivKey).derBase64
     let pinSession = try await rwscaRepository.initializePinAndStartPinSession(
       mdvmToken: context.mdvmToken,
       challenge: context.challenge,
       rwscaID: context.rwscaID,
       pinPrivateKey: context.pinPrivKey,
       mdvmPrivateKey: context.mdvmPrivateKey,
-      payload: RWSCAInitializePinAndStartPinSessionPayload(wiRwscaPinPubk: pinPublicKey)
+      pinEncryptionKey: context.pinEncryptionKey
     )
     prefsController.setValue(true, forKey: .isPinInitialized)
     return pinSession
@@ -149,6 +150,7 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
       throw RWSCARepositoryError.notRegistered
     }
 
+    let pinEncryptionKey = try await rwscaRepository.fetchPinEncryptionKey()
     let challenge = try await rwscaRepository.fetchChallenge()
     // This private key is the MDVM-attested possession factor used for HTTP message signing
     let mdvmPrivateKey = try secureEnclaveController.getOrCreatePrivateKey(with: .wiMdvmAuthPrivateKey)
@@ -159,7 +161,8 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
       rwscaID: rwscaID,
       challenge: challenge,
       mdvmPrivateKey: mdvmPrivateKey,
-      pinPrivKey: pinPrivKey
+      pinPrivKey: pinPrivKey,
+      pinEncryptionKey: pinEncryptionKey
     )
   }
 
@@ -185,5 +188,6 @@ public final class RWSCAInteractorImpl: RWSCAInteractor, @unchecked Sendable {
     let mdvmPrivateKey: SecKey
     // This private key is derived from the user PIN and proves the knowledge factor during PIN session setup
     let pinPrivKey: SecKey
+    let pinEncryptionKey: ECPublicKey
   }
 }

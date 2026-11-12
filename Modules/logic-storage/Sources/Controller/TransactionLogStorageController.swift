@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import logic_business
 
 public protocol TransactionLogStorageController: Sendable {
   func store(_ value: TransactionLog) async throws
@@ -25,13 +26,19 @@ public protocol TransactionLogStorageController: Sendable {
 final actor TransactionLogStorageControllerImpl: TransactionLogStorageController {
 
   private let storeURL: URL
+  private let encryption: WalletDataEncryptionController
   private var context: ModelContext?
 
-  init(storeURL: URL = TransactionLogStorageControllerImpl.defaultStoreURL) {
+  init(
+    storeURL: URL = TransactionLogStorageControllerImpl.defaultStoreURL,
+    encryption: WalletDataEncryptionController = WalletDataEncryptionControllerImpl(logger: nil)
+  ) {
     self.storeURL = storeURL
+    self.encryption = encryption
   }
 
   func store(_ value: TransactionLog) throws {
+    let encryptedValue = try encrypt(value.value)
     let context = try openContext()
     let identifier = value.identifier
     let existing = try context.fetch(
@@ -39,9 +46,9 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     )
     if let stored = existing.first {
       stored.time = value.time
-      stored.value = value.value
+      stored.value = encryptedValue
     } else {
-      context.insert(SDTransactionLog(identifier: value.identifier, time: value.time, value: value.value))
+      context.insert(SDTransactionLog(identifier: value.identifier, time: value.time, value: encryptedValue))
     }
     try context.save()
   }
@@ -52,15 +59,16 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     guard let log = try openContext().fetch(descriptor).first else {
       throw StorageError.itemNotFound
     }
-    return log.toTransactionLog()
+    return try decrypt(log.toTransactionLog())
   }
 
   func retrieveAll() throws -> [TransactionLog] {
     let descriptor = FetchDescriptor<SDTransactionLog>(sortBy: [SortDescriptor(\.time, order: .reverse)])
-    return try openContext().fetch(descriptor).map { $0.toTransactionLog() }
+    return try openContext().fetch(descriptor).compactMap { try? decrypt($0.toTransactionLog()) }
   }
 
   func storeSnapshot(_ value: IssuanceSnapshotRecord) throws {
+    let encryptedValue = try encrypt(value.value)
     let context = try openContext()
     let identifier = value.identifier
     let existing = try context.fetch(
@@ -68,16 +76,16 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     )
     if let stored = existing.first {
       stored.time = value.time
-      stored.value = value.value
+      stored.value = encryptedValue
     } else {
-      context.insert(SDIssuanceSnapshot(identifier: value.identifier, time: value.time, value: value.value))
+      context.insert(SDIssuanceSnapshot(identifier: value.identifier, time: value.time, value: encryptedValue))
     }
     try context.save()
   }
 
   func retrieveAllSnapshots() throws -> [IssuanceSnapshotRecord] {
     let descriptor = FetchDescriptor<SDIssuanceSnapshot>(sortBy: [SortDescriptor(\.time, order: .reverse)])
-    return try openContext().fetch(descriptor).map { $0.toRecord() }
+    return try openContext().fetch(descriptor).compactMap { try? decrypt($0.toRecord()) }
   }
 
   func delete(_ identifiers: [String]) throws {
@@ -111,6 +119,26 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     let context = ModelContext(container)
     self.context = context
     return context
+  }
+
+  private func encrypt(_ value: String) throws -> String {
+    try encryption.encrypt(Data(value.utf8)).base64EncodedString()
+  }
+
+  private func decrypt(_ value: String) throws -> String {
+    guard let data = Data(base64Encoded: value),
+          let plaintext = try String(data: encryption.decrypt(data), encoding: .utf8) else {
+      throw WalletDataEncryptionError.invalidCiphertextFormat
+    }
+    return plaintext
+  }
+
+  private func decrypt(_ log: TransactionLog) throws -> TransactionLog {
+    TransactionLog(identifier: log.identifier, time: log.time, value: try decrypt(log.value))
+  }
+
+  private func decrypt(_ record: IssuanceSnapshotRecord) throws -> IssuanceSnapshotRecord {
+    IssuanceSnapshotRecord(identifier: record.identifier, time: record.time, value: try decrypt(record.value))
   }
 
   private func excludeFromBackup(_ directory: URL) throws {

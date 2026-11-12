@@ -50,6 +50,9 @@
          <TestPlanReference
             reference = "container:WalletUITests.xctestplan">
          </TestPlanReference>
+         <TestPlanReference
+            reference = "container:WalletAmborUITests.xctestplan">
+         </TestPlanReference>
       </TestPlans>
    </TestAction>
    <LaunchAction

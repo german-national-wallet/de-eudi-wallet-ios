@@ -406,12 +406,16 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidIssuanceLoadingTitle
   case nfcSystemSheetTitleStart
   case nfcSystemSheetParagraphStart
+  case nfcSystemSheetTitleProgress
+  case nfcSystemSheetParagraphProgress
   case nfcSystemSheetTitleSuccess
   case nfcSystemSheetParagraphSuccessOneTimePin
   case nfcSystemSheetParagraphSuccessCardPin
   case nfcSystemSheetTitleError
   case nfcSystemSheetParagraphErrorOneTimePin
   case nfcSystemSheetParagraphErrorCardPin
+  case nfcSystemSheetParagraphErrorRetry
+  case nfcSystemSheetParagraphErrorButton
   case pidEidFunctionInfoTitle
   case pidEidFunctionInfoHeading1
   case pidEidFunctionInfoParagraph1
@@ -442,6 +446,10 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case toWallet
   case dashboardScreenSecondaryText
   case dashboardPrimaryButtonTitle
+  case initialPidTeaserTitle
+  case initialPidTeaserPrimaryButton
+  case initialCredentialTeaserLabel
+  case initialCredentialTeaserButtonA11y
   case issuanceConsentViewTitle
   case issuanceDigitalID
   case issuanceConsentViewPrimaryButtonTitle
@@ -619,6 +627,24 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case pidPresentationRwscdAuthVerificationFailedTitle
   case pidPresentationRwscdAuthVerificationFailedParagraph
   case pidPresentationRwscdAuthVerificationFailedPrimButton
+  case pidPresentationTimeoutRpTitle
+  case pidPresentationTimeoutRpParagraph
+  case pidPresentationTimeoutRpPrimButton
+  case pidPresentationTimeoutRpSecButton
+  case pidPresentationTimeoutSlowInternetTitle
+  case pidPresentationTimeoutSlowInternetParagraph
+  case pidPresentationTimeoutSlowInternetPrimButton
+  case pidPresentationTimeoutTooManyRequestsTitle
+  case globalTimeoutSlowInternetErrorTitle
+  case globalTimeoutSlowInternetErrorParagraph
+  case globalTimeoutSlowInternetErrorPrimButton
+  case globalTimeoutTooManyRequestsTitle
+  case globalTimeoutTooManyRequestsParagraph([String])
+  case globalTimeoutTooManyRequestsPrimButton
+  case pidIssuanceTimeoutParRequestExpiredTitle
+  case pidIssuanceTimeoutParRequestExpiredParagraph
+  case pidIssuanceTimeoutParRequestExpiredPrimButton
+  case pidIssuanceTimeoutParRequestExpiredSecButton
   case eaaPresentationCredentialNotFoundParagraphCredentalNotAvailable
   case globalGenericPresentationErrorTitle
   case globalGenericPresentationErrorParagraph
@@ -742,6 +768,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
 
   // MARK: Activities
 
+  case globalPaUsageParagraphActivities
   case activitiesOverviewTitle
   case activitiesOverviewEmptyHeadline
   case activitiesOverviewEmptyParagraph

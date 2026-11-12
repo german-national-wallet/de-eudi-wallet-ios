@@ -98,36 +98,48 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
       // so reading `pinString` inside the Task below would race with that clear.
       let enteredPin = pinString
       Task {
-        do {
-          setState { $0.copy(isLoading: true) }
-          try await pinSessionInteractor.set(pin: enteredPin)
-          setState { $0.copy(isLoading: false) }
-          doNavigation(navigationType: viewState.config.navigationSuccessType)
-        } catch {
-          setState { $0.copy(isLoading: false) }
-          logger?.e("setPin failed (1) \(error.logDescriptor) code=\((error as? BackendError)?.errorCode ?? "")")
+        await verifyWalletPin(enteredPin)
+        pin.removeAll()
+      }
+    }
+  }
 
-          if (error as? BackendError)?.errorCode == RWSCAServerErrorCode.accountLocked {
-            router.push(
-              with: .featurePresentationModule(
-                .pinRetryCounterView(
-                  config: UIConfig.InvalidPinRetryMessageConfig(
-                    mainTitle: .walletPinForgotten,
-                    retryMessage: .walletPinBlockedMessage,
-                    primaryButtonTitle: .pidPresentationRetryCounterRouteToOverview
-                  )
-                )
+  private func verifyWalletPin(_ enteredPin: String) async {
+    do {
+      setState { $0.copy(isLoading: true) }
+      try await pinSessionInteractor.set(pin: enteredPin)
+      setState { $0.copy(isLoading: false) }
+      doNavigation(navigationType: viewState.config.navigationSuccessType)
+    } catch where connectivityMonitor.isNoInternet(error) {
+      setState { $0.copy(isLoading: false) }
+      presentNoInternetDialog { [weak self] in
+        await self?.verifyWalletPin(enteredPin)
+      }
+    } catch let error where TransportFailure.find(in: error) != nil {
+      setState { $0.copy(isLoading: false) }
+      presentTransportFailureDialog(for: error)
+    } catch {
+      setState { $0.copy(isLoading: false) }
+      logger?.e("setPin failed (1) \(error.logDescriptor) code=\((error as? BackendError)?.errorCode ?? "")")
+
+      if (error as? BackendError)?.errorCode == RWSCAServerErrorCode.accountLocked {
+        router.push(
+          with: .featurePresentationModule(
+            .pinRetryCounterView(
+              config: UIConfig.InvalidPinRetryMessageConfig(
+                mainTitle: .walletPinForgotten,
+                retryMessage: .walletPinBlockedMessage,
+                primaryButtonTitle: .pidPresentationRetryCounterRouteToOverview
               )
             )
-          } else if error.isIOSAttestationFailure {
-            showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
-          } else if error is SecureEnclaveControllerError {
-            showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
-          } else {
-            showInlinePinError(LocalizableStringKey.walletPinWrongEntry.toString)
-          }
-        }
-        pin.removeAll()
+          )
+        )
+      } else if error.isIOSAttestationFailure {
+        showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
+      } else if error is SecureEnclaveControllerError {
+        showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
+      } else {
+        showInlinePinError(LocalizableStringKey.walletPinWrongEntry.toString)
       }
     }
   }
@@ -138,39 +150,60 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
       // so reading `pinString` after the await below would yield an empty string.
       let enteredPin = pinString
       Task {
-        do {
-          setState { $0.copy(isLoading: true) }
-
-          let pendingDoc = try await parInteractor.fetchPushAuthorisationRequest()
-
-          guard let parURI = pendingDoc?.authorizePresentationUrl else {
-            throw PARGenerationError.wiaParCreationFailed
-          }
-          router.push(
-            with: .featureIssuanceCardModule(
-              .issuanceCard(
-                config: IssuanceFlowUiConfig(
-                  flow: .noDocument,
-                ),
-                requestURI: parURI, eidPin: enteredPin, delegate: self
-              )
-            )
-          )
-          setState { $0.copy(isLoading: false) }
-        } catch {
-          logger?.e("setPin failed (2): \(error.logDescriptor)")
-          setState { $0.copy(isLoading: false) }
-          showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
-        }
+        await startEidPinIssuance(with: enteredPin)
       }
     }
   }
-  
+
+  private func startEidPinIssuance(with enteredPin: String) async {
+    do {
+      setState { $0.copy(isLoading: true) }
+
+      let pendingDoc = try await parInteractor.fetchPushAuthorisationRequest()
+
+      guard let parURI = pendingDoc?.authorizePresentationUrl else {
+        throw PARGenerationError.wiaParCreationFailed
+      }
+      router.push(
+        with: .featureIssuanceCardModule(
+          .issuanceCard(
+            config: IssuanceFlowUiConfig(
+              flow: .noDocument,
+            ),
+            requestURI: parURI, eidPin: enteredPin, delegate: self
+          )
+        )
+      )
+      setState { $0.copy(isLoading: false) }
+    } catch where connectivityMonitor.isNoInternet(error) {
+      setState { $0.copy(isLoading: false) }
+      presentNoInternetDialog { [weak self] in
+        await self?.startEidPinIssuance(with: enteredPin)
+      }
+    } catch let error where TransportFailure.find(in: error) != nil {
+      setState { $0.copy(isLoading: false) }
+      presentTransportFailureDialog(for: error)
+    } catch {
+      logger?.e("setPin failed (2): \(error.logDescriptor)")
+      setState { $0.copy(isLoading: false) }
+      showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
+    }
+  }
+
   func transportPinFlow() {
     let enteredPin = pinString
     Task {
-      let parURI = try await parInteractor.fetchPushAuthorisationRequest()
-      guard let parURI = parURI?.authorizePresentationUrl else { return }
+      await startTransportPinIssuance(with: enteredPin)
+    }
+  }
+
+  private func startTransportPinIssuance(with enteredPin: String) async {
+    do {
+      setState { $0.copy(isLoading: true) }
+      let pendingDoc = try await parInteractor.fetchPushAuthorisationRequest()
+      guard let parURI = pendingDoc?.authorizePresentationUrl else {
+        throw PARGenerationError.wiaParCreationFailed
+      }
       router.push(
         with: .featureIssuanceCardModule(
           .issuanceCard(
@@ -180,9 +213,25 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
           )
         )
       )
+      setState { $0.copy(isLoading: false) }
+    } catch where connectivityMonitor.isNoInternet(error) {
+      setState { $0.copy(isLoading: false) }
+      presentNoInternetDialog { [weak self] in
+        await self?.startTransportPinIssuance(with: enteredPin)
+      }
+    } catch let error where TransportFailure.find(in: error) != nil {
+      setState { $0.copy(isLoading: false) }
+      presentTransportFailureDialog(for: error)
+    } catch {
+      logger?.e("transport PIN PAR failed: \(error.logDescriptor)")
+      setState { $0.copy(isLoading: false) }
+      showInlinePinError(LocalizableStringKey.genericErrorDesc.toString)
     }
   }
   func transportPinRetryFlow() {
+    onPinEntered?.onEntered(pinString)
+  }
+  func eidPinRetryFlow() {
     onPinEntered?.onEntered(pinString)
   }
   func setupNewEidPinFlow() {
@@ -240,7 +289,6 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
       invalidPinTitle: .setupWalletPinIncorrectRetypeEntry,
       pinScreenType: .confirmNewWalletPinFlow,
       progressSteps: .init(current: 4, total: 4),
-      showsHelpButton: true,
       imageIcon: Theme.shared.image.setupWalletPin,
       imageSize: CGSize(width: 60, height: 96),
       quickPinSize: 6,
@@ -264,6 +312,10 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
       logger?.e("PINViewModel:: confirmNewWalletPinFlow: missing authResponseDTO")
       return
     }
+    await setWalletPin(enteredPin, authResponseDTO: authResponseDTO)
+  }
+
+  private func setWalletPin(_ enteredPin: String, authResponseDTO: FinishAuthorizationResponse) async {
     setState { $0.copy(isLoading: true) }
     do {
       try await pinSessionInteractor.set(pin: enteredPin)
@@ -277,6 +329,14 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
           )
         )
       )
+    } catch where connectivityMonitor.isNoInternet(error) {
+      setState { $0.copy(isLoading: false) }
+      presentNoInternetDialog { [weak self] in
+        await self?.setWalletPin(enteredPin, authResponseDTO: authResponseDTO)
+      }
+    } catch let error where TransportFailure.find(in: error) != nil {
+      setState { $0.copy(isLoading: false) }
+      presentTransportFailureDialog(for: error)
     } catch {
       logger?.e("PINViewModel:: failed to set pin: \(error)")
       setState { $0.copy(isLoading: false) }
@@ -288,6 +348,73 @@ extension PINViewModel: IssuanceVerificationInteractorDelegate {
         showInlinePinError(LocalizableStringKey.walletPinWrongEntry.toString)
       }
     }
+  }
+
+  private func presentNoInternetDialog(retry: @escaping () async -> Void) {
+    noInternetDialog.present(
+      retry: { Task { await retry() } },
+      cancel: { [weak self] in self?.router.pop() }
+    )
+  }
+  private func presentTransportFailureDialog(for error: Error) {
+    guard let failure = TransportFailure.find(in: error) else { return }
+    logger?.e("PINViewModel:: transport failure: \(failure)")
+    isErrorPopupVisible = true
+
+    guard failure.kind != .rateLimited else {
+      errorPopupViewModel.configure(
+        transportFailure: failure,
+        dismiss: { [weak self] in
+          self?.isErrorPopupVisible = false
+          self?.canFocus = true
+        }
+      )
+      return
+    }
+
+    if viewState.config.pinScreenType == .verifyWalletPinFlow {
+      configurePresentationTimeout()
+    } else {
+      errorPopupViewModel.configureIssuanceRestart(
+        startAgain: { [weak self] in
+          self?.isErrorPopupVisible = false
+          self?.router.restartIssuance()
+        },
+        cancel: { [weak self] in
+          self?.isErrorPopupVisible = false
+          self?.handleCloseButton()
+        }
+      )
+    }
+  }
+
+  private func configurePresentationTimeout() {
+    let cancel: () -> Void = { [weak self] in
+      self?.isErrorPopupVisible = false
+      self?.handleCloseButton()
+    }
+    let serviceProviderURL = presentationOriginStore.getServiceProviderURL()
+    let backToServiceProvider: (() -> Void)? = serviceProviderURL.map { url in
+      { [weak self] in
+        self?.isErrorPopupVisible = false
+        UIApplication.shared.open(url)
+        self?.handleCloseButton()
+      }
+    }
+    errorPopupViewModel.configure(
+      title: LocalizableStringKey.pidPresentationTimeoutRpTitle.toString,
+      detail: LocalizableStringKey.pidPresentationTimeoutRpParagraph.toString,
+      titleIcon: Theme.shared.image.warning,
+      primaryButtontitle: backToServiceProvider != nil
+        ? LocalizableStringKey.pidPresentationTimeoutRpPrimButton.toString
+        : LocalizableStringKey.pidPresentationTimeoutRpSecButton.toString,
+      primaryButtonTrailingIcon: backToServiceProvider != nil ? Theme.shared.image.externalLink : nil,
+      secondaryButtontitle: backToServiceProvider != nil
+        ? LocalizableStringKey.pidPresentationTimeoutRpSecButton.toString
+        : nil,
+      primaryAction: backToServiceProvider ?? cancel,
+      secondaryAction: backToServiceProvider != nil ? cancel : nil
+    )
   }
 
   private func showInlinePinError(_ message: String) {

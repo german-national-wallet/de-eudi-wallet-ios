@@ -29,6 +29,7 @@ public struct OnlineAuthenticationRequestSuccessModel: Sendable {
   var isOverAsking: Bool = false
   var supervisoryAuthorityURI: URL?
   var hasUnreadableRegistration: Bool = false
+  var purpose: String?
 }
 
 extension BaseRequestViewModel {
@@ -89,6 +90,7 @@ public protocol PresentationInteractor: Sendable {
 final class PresentationInteractorImpl: PresentationInteractor {
 
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
+  private let presentationOriginStore: PresentationOriginStore
   private let walletKitController: WalletKitController
   private let walletPoPController: WalletPoPController
   private let secureEnclaveController: SecureEnclaveController
@@ -103,6 +105,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
     and secureEnclaveController: SecureEnclaveController,
     and credentialsInteractor: CredentialsInteractor,
     also sessionCoordinatorHolder: SessionCoordinatorHolder,
+    presentationOriginStore: PresentationOriginStore,
     logger: Logging? = nil
   ) {
     self.walletKitController = walletKitController
@@ -110,6 +113,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
     self.secureEnclaveController = secureEnclaveController
     self.credentialsInteractor = credentialsInteractor
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
+    self.presentationOriginStore = presentationOriginStore
     self.logger = logger
     self.sessionCoordinatorHolder.setActiveRemoteCoordinator(presentationCoordinator)
   }
@@ -124,7 +128,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
     }
   
     public func getClaimCount(documentID: String) -> Int {
-      return walletKitController.fetchDocument(with: documentID)?.docClaims.count ?? 0
+      return walletKitController.fetchDocument(with: documentID)?.docClaims.leafCount ?? 0
     }
 
     public func getSessionStatePublisher() -> RemotePublisherPartialState {
@@ -155,6 +159,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
     public func onRequestReceived() async -> Result<OnlineAuthenticationRequestSuccessModel, Error> {
       do {
         let response = try await sessionCoordinatorHolder.getActiveRemoteCoordinator().requestReceived()
+        presentationOriginStore.setServiceProviderURL(response.serviceProviderURL)
         return .success(
           .init(
             requestDataCells: (response.itemSets.first ?? []).toUiModels(
@@ -165,7 +170,8 @@ final class PresentationInteractorImpl: PresentationInteractor {
             isTrusted: response.isTrusted,
             isOverAsking: response.isOverAsking,
             supervisoryAuthorityURI: response.supervisoryAuthorityURI,
-            hasUnreadableRegistration: response.hasUnreadableRegistration
+            hasUnreadableRegistration: response.hasUnreadableRegistration,
+            purpose: response.purpose
           )
         )
       } catch {

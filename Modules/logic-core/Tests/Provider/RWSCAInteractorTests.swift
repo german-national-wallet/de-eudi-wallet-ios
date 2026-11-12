@@ -9,6 +9,7 @@ import Testing
 import Foundation
 import Security
 import CryptoKit
+import JOSESwift
 
 @testable import logic_core
 @testable import logic_business
@@ -122,16 +123,15 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.initializePinAndStartPinSession(
         mdvmToken: any(), challenge: any(), rwscaID: any(),
-        pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+        pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
       )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(prefsController) { mock in
       when(mock.getBool(forKey: equal(to: Prefs.Key.isPinInitialized))).thenReturn(false)
@@ -167,19 +167,19 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.startPinSession(
         mdvmToken: any(),
         challenge: any(),
         privateKey: any(),
         pinPrivateKey: any(),
-        rwscaID: any()
+        rwscaID: any(),
+        pinEncryptionKey: any()
       )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(walletPinRepository) { mock in
       when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
@@ -196,7 +196,8 @@ struct RWSCAInteractorTests {
       challenge: "mock_challenge",
       privateKey: any(),
       pinPrivateKey: any(),
-      rwscaID: "mock_rwscaID"
+      rwscaID: "mock_rwscaID",
+      pinEncryptionKey: any()
     )
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(),
@@ -204,7 +205,7 @@ struct RWSCAInteractorTests {
       rwscaID: any(),
       pinPrivateKey: any(),
       mdvmPrivateKey: any(),
-      payload: any()
+      pinEncryptionKey: any()
     )
     verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -225,7 +226,7 @@ struct RWSCAInteractorTests {
     verify(rwscaRepository, never()).fetchChallenge()
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
   }
 
@@ -255,6 +256,7 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenThrow(RWSCARepositoryError.invalidResponse)
     }
     stub(prefsController) { mock in
@@ -267,7 +269,7 @@ struct RWSCAInteractorTests {
 
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
     verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -279,6 +281,7 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
     }
     stub(secureEnclaveController) { mock in
@@ -297,7 +300,7 @@ struct RWSCAInteractorTests {
 
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
     verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -309,16 +312,15 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.initializePinAndStartPinSession(
         mdvmToken: any(), challenge: any(), rwscaID: any(),
-        pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+        pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
       )).thenThrow(RWSCARepositoryError.signingFailed)
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(walletPinRepository) { mock in
       when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
@@ -342,16 +344,15 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.startPinSession(
         mdvmToken: any(), challenge: any(),
-        privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+        privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
       )).thenThrow(RWSCARepositoryError.signingFailed)
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(walletPinRepository) { mock in
       when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
@@ -366,7 +367,7 @@ struct RWSCAInteractorTests {
 
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
     verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -378,22 +379,21 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.initializePinAndStartPinSession(
         mdvmToken: any(), challenge: any(), rwscaID: any(),
-        pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+        pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
       )).thenThrow(RWSCARepositoryError.serverError(
         code: RWSCAServerErrorCode.pinAlreadyInitialized, description: "", traceID: ""
       ))
       when(mock.startPinSession(
         mdvmToken: any(), challenge: any(),
-        privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+        privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
       )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(walletPinRepository) { mock in
       when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
@@ -408,7 +408,7 @@ struct RWSCAInteractorTests {
     #expect(response.rwscaPinSessionToken == "mock_pin_session_token")
     verify(rwscaRepository).startPinSession(
       mdvmToken: any(), challenge: any(),
-      privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+      privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
     )
     verify(prefsController).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -420,22 +420,21 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.startPinSession(
         mdvmToken: any(), challenge: any(),
-        privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+        privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
       )).thenThrow(RWSCARepositoryError.serverError(
         code: RWSCAServerErrorCode.pinNotInitialized, description: "", traceID: ""
       ))
       when(mock.initializePinAndStartPinSession(
         mdvmToken: any(), challenge: any(), rwscaID: any(),
-        pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+        pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
       )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
     }
     stub(secureEnclaveController) { mock in
       when(mock.getOrCreatePrivateKey(with: any())).thenReturn(makePrivateKey())
-      when(mock.getPublicKeyInfo(from: any()))
-        .thenReturn(PublicKeyInfo(x963: Data(), derBase64: "mock_public_key"))
     }
     stub(walletPinRepository) { mock in
       when(mock.getPinPrivateKey(pin: any())).thenReturn(makePrivateKey())
@@ -450,7 +449,7 @@ struct RWSCAInteractorTests {
     #expect(response.rwscaPinSessionToken == "mock_pin_session_token")
     verify(rwscaRepository).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
     verify(prefsController).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -482,6 +481,7 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
     }
     stub(secureEnclaveController) { mock in
@@ -502,7 +502,7 @@ struct RWSCAInteractorTests {
 
     verify(rwscaRepository, never()).initializePinAndStartPinSession(
       mdvmToken: any(), challenge: any(), rwscaID: any(),
-      pinPrivateKey: any(), mdvmPrivateKey: any(), payload: any()
+      pinPrivateKey: any(), mdvmPrivateKey: any(), pinEncryptionKey: any()
     )
     verify(prefsController, never()).setValue(any(), forKey: equal(to: Prefs.Key.isPinInitialized))
   }
@@ -754,9 +754,10 @@ struct RWSCAInteractorTests {
     }
     stub(rwscaRepository) { mock in
       when(mock.getRWSCAID()).thenReturn("mock_rwscaID")
+      when(mock.fetchPinEncryptionKey()).thenReturn(makePinEncryptionKey())
       when(mock.fetchChallenge()).thenReturn("mock_challenge")
       when(mock.startPinSession(
-        mdvmToken: any(), challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+        mdvmToken: any(), challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
       )).thenReturn(RWSCAPinSessionResponse(rwscaPinSessionToken: "mock_pin_session_token"))
     }
     stub(secureEnclaveController) { mock in
@@ -773,7 +774,7 @@ struct RWSCAInteractorTests {
 
     verify(mdvmInteractor).ensureFreshMDVMToken()
     verify(rwscaRepository).startPinSession(
-      mdvmToken: "renewed_token", challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any()
+      mdvmToken: "renewed_token", challenge: any(), privateKey: any(), pinPrivateKey: any(), rwscaID: any(), pinEncryptionKey: any()
     )
   }
 
@@ -857,6 +858,10 @@ struct RWSCAInteractorTests {
     verify(rwscaRepository, never()).deleteAccount(
       mdvmToken: any(), challenge: any(), rwscaID: any(), mdvmPrivateKey: any()
     )
+  }
+
+  private func makePinEncryptionKey() -> ECPublicKey {
+    ECPublicKey(crv: .P256, x: "qQNMuzMT08YiDVgoayr6glNk_uaIQ2DAJli7ybBOJJA", y: "kehDTJKvD16PZ4QRE7Te-Ecm99y8plrLaINnqabvjj8")
   }
 
   private func makePrivateKey() -> SecKey {

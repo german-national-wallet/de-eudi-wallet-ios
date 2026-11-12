@@ -86,7 +86,10 @@ public final class LogicCoreAssembly: Assembly {
       .inObjectScope(ObjectScope.container)
 
       container.register(PinnedCertificateNetworking.self) { r in
-        PinnedCertificateNetworking(logger: r.force(Logging.self))
+        PinnedCertificateNetworking(
+          logger: r.force(Logging.self),
+          connectivityMonitor: r.force(NetworkConnectivityMonitor.self)
+        )
       }
       .inObjectScope(ObjectScope.container)
       
@@ -110,6 +113,7 @@ public final class LogicCoreAssembly: Assembly {
           keyChainController: r.force(KeyChainController.self),
           featureFlagRepository: r.force(FeatureFlagRepository.self),
           sessionCoordinatorHolder: r.force(SessionCoordinatorHolder.self),
+          presentationOriginStore: r.force(PresentationOriginStore.self),
           secureAreas: [
             r.force(RemoteWSCAService.self, name: RemoteWSCAService.name),
             r.force(SecureArea.self, name: SoftwareSecureArea.name)
@@ -136,6 +140,11 @@ public final class LogicCoreAssembly: Assembly {
       SessionCoordinatorHolderImpl()
     }
     .inObjectScope(ObjectScope.transient)
+
+    container.register(PresentationOriginStore.self) { _ in
+      PresentationOriginStoreImpl()
+    }
+    .inObjectScope(ObjectScope.container)
 
     container.register(PlatformAttestationInteractor.self) { r in
       PlatformAttestationInteractorImpl(
@@ -202,7 +211,7 @@ public final class LogicCoreAssembly: Assembly {
       
     container.register(PresentationErrorClassifier.self) { r in
         PresentationErrorClassifierImpl(
-            reachabilityController: r.force(ReachabilityController.self)
+            connectivityMonitor: r.force(NetworkConnectivityMonitor.self)
         )
     }
     .inObjectScope(ObjectScope.container)

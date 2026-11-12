@@ -5,19 +5,23 @@
 
 import Foundation
 import Security
+import CryptoKit
+import JOSESwift
 import logic_business
 
 /// Endpoint documentation for each method: see `wiki/backend-api.md`.
 public protocol RWSCARepository {
   func fetchChallenge() async throws -> String
 
+  func fetchPinEncryptionKey() async throws -> ECPublicKey
+
   func register(mdvmToken: String, authChallenge: String, privateKey: SecKey) async throws
 
   func getRWSCAID() throws -> String?
 
-  func startPinSession(mdvmToken: String, challenge: String, privateKey: SecKey, pinPrivateKey: SecKey, rwscaID: String) async throws -> RWSCAPinSessionResponse
+  func startPinSession(mdvmToken: String, challenge: String, privateKey: SecKey, pinPrivateKey: SecKey, rwscaID: String, pinEncryptionKey: ECPublicKey) async throws -> RWSCAPinSessionResponse
 
-  func initializePinAndStartPinSession(mdvmToken: String, challenge: String, rwscaID: String, pinPrivateKey: SecKey, mdvmPrivateKey: SecKey, payload: RWSCAInitializePinAndStartPinSessionPayload) async throws -> RWSCAPinSessionResponse
+  func initializePinAndStartPinSession(mdvmToken: String, challenge: String, rwscaID: String, pinPrivateKey: SecKey, mdvmPrivateKey: SecKey, pinEncryptionKey: ECPublicKey) async throws -> RWSCAPinSessionResponse
 
   func createKeys(mdvmToken: String, challenge: String, rwscaID: String, mdvmPrivateKey: SecKey, payload: RWSCACreateKeysPayload) async throws -> RWSCACreateKeysResponse
 
@@ -32,6 +36,9 @@ public final class RWSCARepositoryImpl: RWSCARepository {
   private let httpSignatureService: HTTPSignatureService
   private let secureEnclaveController: SecureEnclaveController
   private let logger: Logging?
+  private let lock = NSLock()
+  /// Caching the rwsca public key for pin public key encryption during app run to only fetch it once
+  private var cachedPinEncryptionKey: ECPublicKey?
 
   init(
     networkManager: NetworkManager,
@@ -48,6 +55,14 @@ public final class RWSCARepositoryImpl: RWSCARepository {
   public func fetchChallenge() async throws -> String {
     let result = try await networkManager.execute(with: RWSCAChallengeRequest(), parameters: nil)
     return try (decodeResponse(from: result.data) as RWSCAChallengeResponse).rwscaAuthChallenge
+  }
+
+  public func fetchPinEncryptionKey() async throws -> ECPublicKey {
+    if let key = lock.withLock({ cachedPinEncryptionKey }) { return key }
+    let result = try await networkManager.execute(with: RWSCAWiMetaDataRequest(), parameters: nil)
+    let key = try (decodeResponse(from: result.data) as RWSCAWiMetaDataResponse).rwscaPinEncPubk
+    lock.withLock { cachedPinEncryptionKey = key }
+    return key
   }
 
   public func register(mdvmToken: String, authChallenge: String, privateKey: SecKey) async throws {
@@ -78,13 +93,13 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     )
 
     let response: RWSCARegistrationResponse = try decodeResponse(from: result.data)
-    _ = try secureEnclaveController.storeEncryptedString(
+    try secureEnclaveController.storeEncryptedString(
       value: response.rwscaAccountID,
       keyTag: .rwscaAccountID
     )
   }
 
-  public func startPinSession(mdvmToken: String, challenge: String, privateKey: SecKey, pinPrivateKey: SecKey, rwscaID: String) async throws -> RWSCAPinSessionResponse {
+  public func startPinSession(mdvmToken: String, challenge: String, privateKey: SecKey, pinPrivateKey: SecKey, rwscaID: String, pinEncryptionKey: ECPublicKey) async throws -> RWSCAPinSessionResponse {
     let headers = try makeSignatureHeaders(
       context: HTTPMessageSigningContext(
         method: RWSCAConstants.Header.Method.post,
@@ -109,7 +124,8 @@ public final class RWSCARepositoryImpl: RWSCARepository {
           keyID: RWSCAConstants.Signature.keyIDPin,
           algorithm: RWSCAConstants.Signature.algorithm,
           fields: RWSCAConstants.Signature.startPinSessionFields,
-          privateKey: pinPrivateKey
+          privateKey: pinPrivateKey,
+          encryptSignature: { try Data(self.encrypt($0, type: RWSCAConstants.JWEType.pinSignature, with: pinEncryptionKey).utf8) }
         )
       ]
     )
@@ -127,7 +143,15 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     return response
   }
 
-  public func initializePinAndStartPinSession(mdvmToken: String, challenge: String, rwscaID: String, pinPrivateKey: SecKey, mdvmPrivateKey: SecKey, payload: RWSCAInitializePinAndStartPinSessionPayload) async throws -> RWSCAPinSessionResponse {
+  public func initializePinAndStartPinSession(mdvmToken: String, challenge: String, rwscaID: String, pinPrivateKey: SecKey, mdvmPrivateKey: SecKey, pinEncryptionKey: ECPublicKey) async throws -> RWSCAPinSessionResponse {
+    let pinPublicKey = try secureEnclaveController.getPublicKeyInfo(from: pinPrivateKey)
+    let payload = RWSCAInitializePinAndStartPinSessionPayload(
+      wiRwscaPinPubk: try encrypt(
+        P256.Signing.PublicKey(x963Representation: pinPublicKey.x963).derRepresentation,
+        type: RWSCAConstants.JWEType.pinPublicKey,
+        with: pinEncryptionKey
+      )
+    )
     let body = try JSONEncoder().encode(payload)
     let contentDigest = httpSignatureService.createContentDigest(for: body)
     let headers = try makeSignatureHeaders(
@@ -158,7 +182,8 @@ public final class RWSCARepositoryImpl: RWSCARepository {
           keyID: RWSCAConstants.Signature.keyIDPin,
           algorithm: RWSCAConstants.Signature.algorithm,
           fields: RWSCAConstants.Signature.initializePinAndStartPinSessionFields,
-          privateKey: pinPrivateKey
+          privateKey: pinPrivateKey,
+          encryptSignature: { try Data(self.encrypt($0, type: RWSCAConstants.JWEType.pinSignature, with: pinEncryptionKey).utf8) }
         )
       ]
     )
@@ -321,6 +346,9 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     }
 
     if let errorResponse = try? JSONDecoder().decode(MDVMErrorResponse.self, from: data) {
+      if [RWSCAServerErrorCode.signatureVerificationFailure, RWSCAServerErrorCode.malformedPinPubKey].contains(errorResponse.code) {
+        lock.withLock { cachedPinEncryptionKey = nil }
+      }
       logger?.e("RWSCA serverError code=\(errorResponse.code) traceID=\(errorResponse.traceID ?? "")")
       throw RWSCARepositoryError.serverError(
         code: errorResponse.code,
@@ -334,6 +362,17 @@ public final class RWSCARepositoryImpl: RWSCARepository {
     } catch {
       throw RWSCARepositoryError.decodingFailed
     }
+  }
+
+  private func encrypt(_ data: Data, type: String, with key: ECPublicKey) throws -> String {
+    var header = JWEHeader(keyManagementAlgorithm: .ECDH_ES, contentEncryptionAlgorithm: .A256GCM)
+    header.typ = type
+    header.kid = key["kid"]
+    guard let encrypter = Encrypter(keyManagementAlgorithm: .ECDH_ES, contentEncryptionAlgorithm: .A256GCM, encryptionKey: key),
+          let jwe = try? JWE(header: header, payload: Payload(data), encrypter: encrypter) else {
+      throw RWSCARepositoryError.signingFailed
+    }
+    return jwe.compactSerializedString
   }
 
   private func makeSignatureHeaders(

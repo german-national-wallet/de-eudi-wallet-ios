@@ -14,19 +14,13 @@
  * governing permissions and limitations under the Licence.
  */
 
+import UIKit
 import feature_common
 import logic_analytics
 import logic_core
 import logic_resources
 
-final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
-
-  @Published var errorDialog: PresentationErrorDialogConfig?
-
-  private let interactor: PresentationInteractor
-  private let pinSessionInteractor: PinSessionInteractor
-  private let analyticsController: AnalyticsController
-  private let errorHandler: PresentationErrorHandler
+final class PresentationRequestViewModel<Router: RouterHost>: PresentationRequestBaseViewModel<Router> {
 
   init(
     router: Router,
@@ -36,18 +30,24 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     errorHandler: PresentationErrorHandler,
     originator: AppRoute
   ) {
-    self.interactor = interactor
-    self.pinSessionInteractor = pinSessionInteractor
-    self.analyticsController = analyticsController
-    self.errorHandler = errorHandler
-    super.init(router: router, originator: originator)
+    super.init(
+      router: router,
+      interactor: interactor,
+      pinSessionInteractor: pinSessionInteractor,
+      analyticsController: analyticsController,
+      errorHandler: errorHandler,
+      originator: originator
+    )
   }
 
   override func doWork() async {
-    self.onStartLoading()
     // Force starting presentation trace because no RPInfo in previous flow
     analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
+    await fetchRequest()
+  }
 
+  private func fetchRequest() async {
+    self.onStartLoading()
     let result = await Task.detached { () -> Result<OnlineAuthenticationRequestSuccessModel, Error> in
       return await self.interactor.onDeviceEngagement()
     }.value
@@ -66,36 +66,9 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
       )
       self.onPresentationDoWorkSuccess()
     case .failure(let error):
-      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: retryAction))
-    }
-  }
-
-  override func onShare() {
-    Task {
-
-      let items = self.viewState.items
-      let documentIDs = items.map(\.section.id)
-      let isPIDRequest = interactor.isPIDPresentation(documentIDs: documentIDs)
-
-      let result = await Task.detached { () -> Result<RequestItemConvertible, Error> in
-        return await self.interactor.onResponsePrepare(requestItems: items)
-      }.value
-
-      switch result {
-      case .success:
-        if let route = isPIDRequest ? self.getPinRoute() : self.getSuccessRoute() {
-          self.router.push(with: route)
-        } else {
-          self.router.popTo(
-            with: self.getPopRoute() ?? .featureDashboardModule(.dashboard)
-          )
-        }
-      case .failure(let error):
-        if isPIDRequest {
-          pinSessionInteractor.clear()
-        }
-        self.presentError(self.errorHandler.handle(error, originator: self.getOriginator()))
-      }
+      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: .init { [weak self] in
+        Task { await self?.fetchRequest() }
+      }))
     }
   }
 
@@ -133,7 +106,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     }
   }
 
-  func getPinRoute() -> AppRoute? {
+  override func getPinRoute() -> AppRoute? {
     return switch interactor.getCoordinator() {
     case .success(let remoteSessionCoordinator):
       .featurePresentationModule(
@@ -216,26 +189,8 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     Task { await doWork() }
   }
 
-  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
-    errorDialog = nil
-    switch action {
-    case .popTo(let route):
-      router.popTo(with: route)
-    case .addDigitalIDAgain:
-      router.popTo(with: getOriginator())
-    case .dismiss:
-      break
-    case .retry(let retryAction):
-      retryAction.action()
-    }
-  }
-
-  private func presentError(_ presentation: PresentationErrorPresentation) {
-    switch presentation {
-    case .notice(let config):
-      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
-    case .dialog(let config):
-      errorDialog = config
-    }
+  override func onNoInternetCancel() {
+    interactor.stopPresentation()
+    super.onNoInternetCancel()
   }
 }

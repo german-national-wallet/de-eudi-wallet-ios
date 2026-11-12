@@ -13,6 +13,7 @@ let package = Package(
   ],
   dependencies: [
     .package(name: "feature-common", path: "../feature-common"),
+    .package(name: "logic-authentication", path: "../logic-authentication"),
     .package(name: "feature-issuance", path: "../feature-issuance"),
     .package(name: "feature-startup", path: "../feature-startup"),
     .package(name: "feature-test", path: "../feature-test")
@@ -23,7 +24,8 @@ let package = Package(
       dependencies: [
         "feature-common",
         "feature-issuance",
-        "feature-startup"
+        "feature-startup",
+        "logic-authentication"
       ],
       path: "./Sources"
     ),

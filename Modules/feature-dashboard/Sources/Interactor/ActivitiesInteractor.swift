@@ -162,11 +162,11 @@ final class ActivitiesInteractorImpl: ActivitiesInteractor {
     var counts: [String: Int] = [:]
     for identifier in identifiers {
       if let snapshot = snapshots.latestByCredential[identifier] {
-        counts[identifier] = snapshot.claims.filter { $0.path.count == 1 }.count
+        counts[identifier] = snapshot.leafClaimCount
       }
     }
     for document in walletKitController.fetchIssuedDocuments() where identifiers.contains(document.docType) {
-      counts[document.docType] = document.docClaims.count
+      counts[document.docType] = document.docClaims.leafCount
     }
     return counts
   }

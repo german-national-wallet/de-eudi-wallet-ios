@@ -21,10 +21,16 @@ public final class LogicApiAssembly: Assembly {
   public init() {}
 
   public func assemble(container: Container) {
+    container.register(NetworkConnectivityMonitor.self) { _ in
+      NetworkConnectivityMonitorImpl()
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(NetworkManager.self) { r in
       NetworkManagerImpl(
         baseHost: r.force(ConfigLogic.self).walletHostUrl,
         logger: r.force(Logging.self),
+        connectivityMonitor: r.force(NetworkConnectivityMonitor.self),
         debugConfigController: r.force(DebugConfigController.self)
       )
     }
@@ -46,7 +52,8 @@ public final class LogicApiAssembly: Assembly {
       secureEnclaveController: r.force(SecureEnclaveController.self),
       logger: r.force(Logging.self))
     }
-    .inObjectScope(ObjectScope.transient)
+    /// Singleton to hold rwsca public key in-memory during app run
+    .inObjectScope(ObjectScope.container)
 
     container.register(HTTPSignatureService.self) { _ in
       HTTPSignatureServiceImpl()

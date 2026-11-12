@@ -21,11 +21,10 @@ public enum WalletDataEncryptionError: Error {
 /// the device passcode (Platform Authentication) is removed. Any data encrypted with it then
 /// becomes unreadable without relying on an app-driven wipe.
 public protocol WalletDataEncryptionController: Sendable {
-  /// Generates and stores `wi_data_enc_symk` if it is not already present. Idempotent.
-  /// Silently fails when no device passcode is set, since the key requires one to be stored.
-  func generateKeyIfNeeded()
-  /// Encrypts plaintext using AES-GCM with `wi_data_enc_symk`. The returned data is the
-  /// combined representation (nonce + ciphertext + tag).
+  /// Encrypts plaintext using AES-GCM with `wi_data_enc_symk`, generating and storing the key
+  /// first if it is not already present. The returned data is the combined representation
+  /// (nonce + ciphertext + tag). Throws `keyUnavailable` when the key cannot be stored, for
+  /// example when no device passcode is set.
   func encrypt(_ data: Data) throws -> Data
   /// Decrypts data previously produced by `encrypt(_:)`.
   func decrypt(_ data: Data) throws -> Data
@@ -37,7 +36,8 @@ public protocol WalletDataEncryptionController: Sendable {
 /// encryption logic can be unit tested without touching the Keychain.
 protocol SymmetricKeyStorage: Sendable {
   func loadKey() -> CryptoKit.SymmetricKey?
-  func storeKey(_ key: CryptoKit.SymmetricKey)
+  /// Never replaces an existing key, so a key that is only temporarily unreadable (for example on a locked device) is not lost.
+  func storeKey(_ key: CryptoKit.SymmetricKey) throws -> CryptoKit.SymmetricKey
   func deleteKey()
 }
 
@@ -55,15 +55,15 @@ public final class WalletDataEncryptionControllerImpl: WalletDataEncryptionContr
     self.keyStorage = keyStorage
   }
 
-  public func generateKeyIfNeeded() {
-    guard keyStorage.loadKey() == nil else { return }
-    keyStorage.storeKey(CryptoKit.SymmetricKey(size: .bits256))
+  func loadOrCreateKey() throws -> CryptoKit.SymmetricKey {
+    if let key = keyStorage.loadKey() {
+      return key
+    }
+    return try keyStorage.storeKey(CryptoKit.SymmetricKey(size: .bits256))
   }
 
   public func encrypt(_ data: Data) throws -> Data {
-    guard let key = keyStorage.loadKey() else {
-      throw WalletDataEncryptionError.keyUnavailable
-    }
+    let key = try loadOrCreateKey()
     do {
       let sealedBox = try AES.GCM.seal(data, using: key)
       guard let combined = sealedBox.combined else {
@@ -130,7 +130,7 @@ final class KeychainSymmetricKeyStorage: SymmetricKeyStorage {
     return CryptoKit.SymmetricKey(data: keyData)
   }
 
-  func storeKey(_ key: CryptoKit.SymmetricKey) {
+  func storeKey(_ key: CryptoKit.SymmetricKey) throws -> CryptoKit.SymmetricKey {
     let keyData = key.withUnsafeBytes { Data($0) }
 
     let query: [String: Any] = [
@@ -144,13 +144,16 @@ final class KeychainSymmetricKeyStorage: SymmetricKeyStorage {
       kSecValueData as String: keyData
     ]
 
-    SecItemDelete(query as CFDictionary)
     let status = SecItemAdd(query as CFDictionary, nil)
-    if status != errSecSuccess {
-      logger?.e("Failed to store wi_data_enc_symk: \(status)")
-    } else {
+    if status == errSecSuccess {
       logger?.d("[STORAGE] store key=\(Self.keyAccount) dest=keychain")
+      return key
     }
+    if status == errSecDuplicateItem, let existingKey = loadKey() {
+      return existingKey
+    }
+    logger?.e("Failed to store wi_data_enc_symk: \(status)")
+    throw WalletDataEncryptionError.keyUnavailable
   }
 
   func deleteKey() {

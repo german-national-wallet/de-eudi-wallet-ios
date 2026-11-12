@@ -21,7 +21,6 @@ struct IssuancePidPreviewView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       HeaderContentView(
         onClose: { isCancelDialogPresented = true },
-        onHelp: viewModel.helpTapped,
         progress: (current: 4, total: 4)
       )
 

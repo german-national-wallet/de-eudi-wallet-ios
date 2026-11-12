@@ -12,7 +12,7 @@ struct PresentationErrorDialogConfig: Equatable {
     case popTo(AppRoute)
     case addDigitalIDAgain
     case dismiss
-    case retry(RetryAction)
+    case openExternal(URL)
   }
   
   struct RetryAction: Identifiable, Equatable {
@@ -32,6 +32,17 @@ struct PresentationErrorDialogConfig: Equatable {
   struct Button: Equatable {
     let title: LocalizableStringKey
     let action: Action
+    let trailingIcon: Image?
+
+    init(title: LocalizableStringKey, action: Action, trailingIcon: Image? = nil) {
+      self.title = title
+      self.action = action
+      self.trailingIcon = trailingIcon
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+      lhs.title == rhs.title && lhs.action == rhs.action
+    }
   }
 
   let title: LocalizableStringKey
@@ -58,5 +69,12 @@ struct PresentationErrorDialogConfig: Equatable {
     self.traceId = traceId
     self.primary = primary
     self.secondary = secondary
+  }
+}
+
+extension PresentationErrorDialogConfig.Action {
+  var opensExternalLink: Bool {
+    if case .openExternal = self { return true }
+    return false
   }
 }

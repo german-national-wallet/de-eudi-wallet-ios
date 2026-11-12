@@ -9,4 +9,6 @@ public enum RWSCAServerErrorCode {
   public static let accountLocked = "ACCOUNT_LOCKED"
   public static let accountUnknown = "ACCOUNT_UNKNOWN"
   public static let authVerificationFailed = "AUTH_VERIFICATION_FAILED"
+  public static let signatureVerificationFailure = "SIGNATURE_VERIFICATION_FAILURE"
+  public static let malformedPinPubKey = "MALFORMED_PIN_PUB_KEY"
 }

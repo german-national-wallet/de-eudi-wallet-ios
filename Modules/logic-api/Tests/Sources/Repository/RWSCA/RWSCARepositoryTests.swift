@@ -7,8 +7,10 @@
 
 import Foundation
 import Security
+import CryptoKit
 import Testing
 import Cuckoo
+import JOSESwift
 
 @testable import logic_api
 @testable import logic_business
@@ -169,6 +171,35 @@ struct RWSCARepositoryImplTests {
   }
 
   // MARK: register
+
+  @Suite("fetchPinEncryptionKey")
+  struct FetchPinEncryptionKeyTests {
+
+    @Test("fetches the key once and reuses it")
+    func fetchesOnce() async throws {
+      class SpyNetworkManager: FakeNetworkManager {
+        var executeCount = 0
+        override func execute<R: NetworkRequest>(
+          with request: R,
+          parameters: [NetworkParameter]?
+        ) async throws -> NetworkResponse {
+          executeCount += 1
+          return try await super.execute(with: request, parameters: parameters)
+        }
+      }
+      let spy = SpyNetworkManager()
+      spy.mockResponse = NetworkResponse(
+        data: Data(#"{"rwsca_pin_enc_pubk":{"kty":"EC","crv":"P-256","x":"qQNMuzMT08YiDVgoayr6glNk_uaIQ2DAJli7ybBOJJA","y":"kehDTJKvD16PZ4QRE7Te-Ecm99y8plrLaINnqabvjj8","kid":"1"}}"#.utf8),
+        headers: nil
+      )
+      let sut = makeSUT(networkManager: spy)
+
+      _ = try await sut.fetchPinEncryptionKey()
+      _ = try await sut.fetchPinEncryptionKey()
+
+      #expect(spy.executeCount == 1)
+    }
+  }
 
   @Suite("register")
   struct RegisterTests {
@@ -369,10 +400,8 @@ struct RWSCARepositoryImplTests {
       ))
     }
 
-    private func makePayload() -> RWSCAInitializePinAndStartPinSessionPayload {
-      RWSCAInitializePinAndStartPinSessionPayload(
-        wiRwscaPinPubk: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDO+n/vG9XUk3MnMqzGdb+SL5MUIMyF6laK/tvNqHSe16Hfzp4U7ZZRR3J/g3YPS1sGCbAbWKRmZz4yYq4C2KOA=="
-      )
+    private func makePinEncryptionKey(from privateKey: SecKey = makeMockPrivateKey()) throws -> ECPublicKey {
+      try ECPublicKey(publicKey: SecKeyCopyPublicKey(privateKey)!, additionalParameters: ["kid": "1"])
     }
 
     private func makeECKey() -> SecKey {
@@ -397,14 +426,14 @@ struct RWSCARepositoryImplTests {
         rwscaID: "mock-rwsca-id",
         pinPrivateKey: makeECKey(),
         mdvmPrivateKey: makeECKey(),
-        payload: makePayload()
+        pinEncryptionKey: makePinEncryptionKey()
       )
 
       #expect(response.rwscaPinSessionToken.isEmpty == false)
     }
 
-    @Test("encodes payload as request body")
-    func success_encodesPayloadAsBody() async throws {
+    @Test("encrypts the PIN public key to the PIN encryption key")
+    func success_encryptsPinPublicKey() async throws {
       class SpyNetworkManager: FakeNetworkManager {
         var capturedBody: Data?
         override func execute<R: NetworkRequest>(
@@ -418,22 +447,32 @@ struct RWSCARepositoryImplTests {
       let spy = SpyNetworkManager()
       spy.mockResponse = NetworkResponse(data: try makeValidPinSessionResponseData(), headers: nil)
       let sut = makeSUT(networkManager: spy)
-      let payload = makePayload()
+      let pinPrivateKey = makeECKey()
+      let recipientPrivateKey = makeECKey()
 
       _ = try await sut.initializePinAndStartPinSession(
         mdvmToken: "token",
         challenge: "challenge",
         rwscaID: "id",
-        pinPrivateKey: makeECKey(),
+        pinPrivateKey: pinPrivateKey,
         mdvmPrivateKey: makeECKey(),
-        payload: payload
+        pinEncryptionKey: makePinEncryptionKey(from: recipientPrivateKey)
       )
 
       let capturedPayload = try JSONDecoder().decode(
         RWSCAInitializePinAndStartPinSessionPayload.self,
         from: spy.capturedBody!
       )
-      #expect(capturedPayload.wiRwscaPinPubk == payload.wiRwscaPinPubk)
+      let jwe = try JWE(compactSerialization: capturedPayload.wiRwscaPinPubk)
+      let decrypter = try #require(Decrypter(
+        keyManagementAlgorithm: .ECDH_ES,
+        contentEncryptionAlgorithm: .A256GCM,
+        decryptionKey: try ECPrivateKey(privateKey: recipientPrivateKey)
+      ))
+      let pinPublicKey = SecKeyCopyExternalRepresentation(SecKeyCopyPublicKey(pinPrivateKey)!, nil)! as Data
+      #expect(jwe.header.typ == RWSCAConstants.JWEType.pinPublicKey)
+      #expect(jwe.header.kid == "1")
+      #expect(try jwe.decrypt(using: decrypter).data() == P256.Signing.PublicKey(x963Representation: pinPublicKey).derRepresentation)
     }
 
     @Test("sends both rwsca-auth-sig and rwsca-pin-sig in Signature header")
@@ -464,7 +503,7 @@ struct RWSCARepositoryImplTests {
         rwscaID: "rwsca-id",
         pinPrivateKey: makeECKey(),
         mdvmPrivateKey: makeECKey(),
-        payload: makePayload()
+        pinEncryptionKey: makePinEncryptionKey()
       )
 
       let signatureHeader = spy.capturedHeaders[MDVMConstants.Header.signature] ?? ""
@@ -499,7 +538,7 @@ struct RWSCARepositoryImplTests {
         rwscaID: "rwsca-id",
         pinPrivateKey: makeECKey(),
         mdvmPrivateKey: makeECKey(),
-        payload: makePayload()
+        pinEncryptionKey: makePinEncryptionKey()
       )
 
       #expect(spy.capturedHeaders[MDVMConstants.Header.contentDigest] != nil)
@@ -524,7 +563,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -546,7 +585,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -564,7 +603,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -588,7 +627,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -606,7 +645,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -624,7 +663,7 @@ struct RWSCARepositoryImplTests {
           rwscaID: "id",
           pinPrivateKey: makeECKey(),
           mdvmPrivateKey: makeECKey(),
-          payload: makePayload()
+          pinEncryptionKey: makePinEncryptionKey()
         )
       }
     }
@@ -1176,6 +1215,6 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
 
   func getPublicKeyInfo(from privateKey: SecKey) throws -> PublicKeyInfo {
-    throw NSError(domain: "unused", code: -1)
+    PublicKeyInfo(x963: SecKeyCopyExternalRepresentation(SecKeyCopyPublicKey(privateKey)!, nil)! as Data, derBase64: "")
   }
 }

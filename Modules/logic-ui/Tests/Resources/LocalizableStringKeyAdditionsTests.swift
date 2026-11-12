@@ -71,6 +71,22 @@ final class LocalizableStringKeyAdditionsTests: XCTestCase {
     }
   }
 
+  func test_overviewTeaserKeys_resolveToTranslatedValues() {
+    let keys: [(LocalizableStringKey, String)] = [
+      (.initialPidTeaserTitle, "overview.initial_pid_teaser.title"),
+      (.initialPidTeaserPrimaryButton, "overview.initial_pid_teaser.prim_button"),
+      (.initialCredentialTeaserLabel, "overview.initial_credential_teaser.label"),
+      (.initialCredentialTeaserButtonA11y, "overview.initial_credential_teaser.sec_button_a11y")
+    ]
+
+    for (key, rawKey) in keys {
+      let value = key.toString
+
+      XCTAssertFalse(value.isEmpty, "Expected a non-empty localized value for \(rawKey)")
+      XCTAssertNotEqual(value, rawKey, "Expected a translated value, not the raw key for \(rawKey)")
+    }
+  }
+
   func test_pidPresentationDialogCancelKeys_resolveToTranslatedValues() {
     let keys: [(LocalizableStringKey, String)] = [
       (.pidPresentationDialogCancelTitle, "pid_presentation.dialog_cancel.title"),

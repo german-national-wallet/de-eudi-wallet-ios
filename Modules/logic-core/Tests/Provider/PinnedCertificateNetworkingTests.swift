@@ -5,6 +5,7 @@
 //  Created by Tamas Dancsi on 04.05.26.
 //
 
+import Foundation
 import Testing
 import logic_api
 @testable import logic_core
@@ -15,6 +16,7 @@ struct PinnedCertificateNetworkingTests {
   private func makeSUT() -> PinnedCertificateNetworking {
     PinnedCertificateNetworking(
       logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false),
       certificatePinner: CertificatePinner(letsEncryptHostSuffixes: ["nwb.youniqx.com", "eudiw.gov.de"])
     )
   }
@@ -53,4 +55,21 @@ struct PinnedCertificateNetworkingTests {
     #expect(sut.pinnedHostSuffix(for: "notnwb.youniqx.com") == nil)
     #expect(sut.pinnedHostSuffix(for: "fhd.eudi-wallet.org") == nil)
   }
+
+  @Test
+  func shouldThrowNotConnectedToInternet_WhenOffline() async {
+    let sut = PinnedCertificateNetworking(
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: true),
+      certificatePinner: CertificatePinner(letsEncryptHostSuffixes: [])
+    )
+
+    await #expect(throws: URLError(.notConnectedToInternet)) {
+      _ = try await sut.data(for: URLRequest(url: URL(string: "https://example.com")!))
+    }
+  }
+}
+
+private struct StubConnectivityMonitor: NetworkConnectivityMonitor {
+  let isOffline: Bool
 }

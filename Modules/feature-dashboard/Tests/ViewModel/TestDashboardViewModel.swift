@@ -6,11 +6,14 @@
 //
 
 import XCTest
+import UIKit
 import Cuckoo
 import Swinject
 import logic_core
+import logic_api
 import logic_business
 import logic_analytics
+import logic_authentication
 @testable import logic_ui
 @testable import feature_dashboard
 @testable import feature_issuance
@@ -28,6 +31,8 @@ final class TestDashboardViewModel: XCTestCase {
   private var mockLogging: MockLogging!
   private var mockAnalyticsController: MockAnalyticsController!
   private var mockaddDocumentInteractor: MockAddDocumentInteractor!
+  private var authenticationSpy: DeviceOwnerAuthenticationSpy!
+  private var notificationCenter: NotificationCenter!
 
   override func setUp() {
     super.setUp()
@@ -40,6 +45,8 @@ final class TestDashboardViewModel: XCTestCase {
     mockLogging = MockLogging()
     mockAnalyticsController = MockAnalyticsController()
     mockaddDocumentInteractor = MockAddDocumentInteractor()
+    authenticationSpy = DeviceOwnerAuthenticationSpy()
+    notificationCenter = NotificationCenter()
 
     registerGraphDependencies()
     stubTabDependencies()
@@ -55,6 +62,8 @@ final class TestDashboardViewModel: XCTestCase {
     mockLogging = nil
     mockAnalyticsController = nil
     mockaddDocumentInteractor = nil
+    authenticationSpy = nil
+    notificationCenter = nil
     super.tearDown()
   }
 
@@ -68,6 +77,171 @@ final class TestDashboardViewModel: XCTestCase {
     XCTAssertNotNil(viewModel.viewState.addDocumentTab)
     XCTAssertNotNil(viewModel.viewState.activitiesTab)
     XCTAssertNotNil(viewModel.viewState.settingsTab)
+  }
+
+  // MARK: - Activity tab authentication
+
+  func testOnTabRequested_WhenActivityAndAuthenticationSucceeds_ThenSelectsActivity() async {
+    authenticationSpy.result = .authenticated
+    let viewModel = makeViewModel()
+
+    await viewModel.onTabRequested(.activity)
+
+    XCTAssertEqual(authenticationSpy.callCount, 1)
+    XCTAssertEqual(viewModel.selectedTab, .activity)
+    XCTAssertTrue(viewModel.isActivityUnlocked)
+  }
+
+  func testOnTabRequested_WhenActivityAndAuthenticationFails_ThenStaysOnPreviousTab() async {
+    authenticationSpy.result = .denied
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.settings)
+
+    await viewModel.onTabRequested(.activity)
+
+    XCTAssertEqual(viewModel.selectedTab, .settings)
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+  }
+
+  func testOnTabRequested_WhenOtherTab_ThenDoesNotAuthenticate() async {
+    let viewModel = makeViewModel()
+
+    await viewModel.onTabRequested(.settings)
+
+    XCTAssertEqual(authenticationSpy.callCount, 0)
+    XCTAssertEqual(viewModel.selectedTab, .settings)
+  }
+
+  func testOnTabRequested_WhenReturningToActivity_ThenAuthenticatesAgain() async {
+    let viewModel = makeViewModel()
+
+    await viewModel.onTabRequested(.activity)
+    await viewModel.onTabRequested(.overview)
+
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+
+    await viewModel.onTabRequested(.activity)
+
+    XCTAssertEqual(authenticationSpy.callCount, 2)
+    XCTAssertEqual(viewModel.selectedTab, .activity)
+  }
+
+  func testOnAppDidBecomeActive_WhenActivityWasBackgrounded_ThenAuthenticatesAgain() async {
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+
+    viewModel.onAppDidEnterBackground()
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(authenticationSpy.callCount, 2)
+    XCTAssertEqual(viewModel.selectedTab, .activity)
+    XCTAssertTrue(viewModel.isActivityUnlocked)
+  }
+
+  func testOnAppDidBecomeActive_WhenAuthenticationFails_ThenReturnsToPreviousTab() async {
+    stubDashboardIsForeground(true)
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.settings)
+    await viewModel.onTabRequested(.activity)
+    authenticationSpy.result = .denied
+
+    viewModel.onAppDidEnterBackground()
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(viewModel.selectedTab, .settings)
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+    verify(mockRouter, never()).popTo(with: any())
+  }
+
+  func testOnAppDidBecomeActive_WhenAuthenticationFailsOnActivityDetail_ThenPopsToDashboard() async {
+    stubDashboardIsForeground(false)
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+    authenticationSpy.result = .denied
+
+    viewModel.onAppDidEnterBackground()
+    await viewModel.onAppDidBecomeActive()
+
+    let captor = ArgumentCaptor<AppRoute>()
+    verify(mockRouter).popTo(with: captor.capture())
+    guard case .featureDashboardModule(.dashboard) = captor.value else {
+      return XCTFail("Expected the dashboard to be popped to")
+    }
+    XCTAssertEqual(viewModel.selectedTab, .overview)
+  }
+
+  func testOnAppDidBecomeActive_WhenPromptIsInterrupted_ThenStaysLockedOnActivityAndPromptsAgain() async {
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+    authenticationSpy.result = .interrupted
+
+    viewModel.onAppDidEnterBackground()
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(viewModel.selectedTab, .activity)
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+
+    authenticationSpy.result = .authenticated
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(authenticationSpy.callCount, 3)
+    XCTAssertTrue(viewModel.isActivityUnlocked)
+  }
+
+  func testOnTabRequested_WhenPromptIsInterrupted_ThenStaysOnPreviousTab() async {
+    authenticationSpy.result = .interrupted
+    let viewModel = makeViewModel()
+
+    await viewModel.onTabRequested(.activity)
+
+    XCTAssertEqual(viewModel.selectedTab, .overview)
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+  }
+
+  func testAppLifecycleNotifications_WhenBackgroundedOnActivity_ThenLocksAndPromptsOnReturn() async {
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+    let prompted = expectation(description: "prompted after returning to the foreground")
+    authenticationSpy.onAuthenticate = { prompted.fulfill() }
+
+    notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+    XCTAssertFalse(viewModel.isActivityUnlocked)
+    notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+    await fulfillment(of: [prompted], timeout: 1)
+    XCTAssertEqual(authenticationSpy.callCount, 2)
+  }
+
+  func testOnAppDidBecomeActive_WhenNotBackgrounded_ThenDoesNotAuthenticateAgain() async {
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(authenticationSpy.callCount, 1)
+  }
+
+  func testOnAppDidBecomeActive_WhenPromptIsStillOpen_ThenStaysOnActivity() async {
+    let viewModel = makeViewModel()
+    await viewModel.onTabRequested(.activity)
+    viewModel.onAppDidEnterBackground()
+    authenticationSpy.onAuthenticate = { await viewModel.onAppDidBecomeActive() }
+
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(authenticationSpy.callCount, 2)
+    XCTAssertEqual(viewModel.selectedTab, .activity)
+    XCTAssertTrue(viewModel.isActivityUnlocked)
+  }
+
+  func testOnAppDidBecomeActive_WhenActivityNotSelected_ThenDoesNotAuthenticate() async {
+    let viewModel = makeViewModel()
+
+    viewModel.onAppDidEnterBackground()
+    await viewModel.onAppDidBecomeActive()
+
+    XCTAssertEqual(authenticationSpy.callCount, 0)
   }
 
   // MARK: - handleDeepLink
@@ -127,8 +301,17 @@ final class TestDashboardViewModel: XCTestCase {
       settingsTabInteractor: mockSettingsTabInteractor,
       secureEnclaveController: mockSecureEnclaveController,
       configLogic: mockConfigLogic,
-      deepLinkController: mockDeepLinkController
+      deepLinkController: mockDeepLinkController,
+      deviceOwnerAuthenticationController: authenticationSpy,
+      notificationCenter: notificationCenter
     )
+  }
+
+  private func stubDashboardIsForeground(_ isForeground: Bool) {
+    stub(mockRouter) { mock in
+      when(mock.isScreenForeground(with: any())).thenReturn(isForeground)
+      when(mock.popTo(with: any())).thenDoNothing()
+    }
   }
 
   private func registerGraphDependencies() {
@@ -196,7 +379,14 @@ private final class DashboardViewModelTestAssembly: Assembly {
     container.register(ActivitiesInteractor.self) { _ in
       EmptyActivitiesInteractor()
     }
+    container.register(NetworkConnectivityMonitor.self) { _ in
+      OnlineConnectivityMonitor()
+    }
   }
+}
+
+private struct OnlineConnectivityMonitor: NetworkConnectivityMonitor {
+  let isOffline = false
 }
 
 private struct EmptyActivitiesInteractor: ActivitiesInteractor {
@@ -204,4 +394,18 @@ private struct EmptyActivitiesInteractor: ActivitiesInteractor {
   func fetchActivity(with id: String) async -> ActivityDetailPartialState { .failure(CancellationError()) }
   func deleteActivity(with id: String) async throws {}
   func deleteAllActivities() async throws {}
+}
+
+private final class DeviceOwnerAuthenticationSpy: DeviceOwnerAuthenticationController, @unchecked Sendable {
+  var result: DeviceOwnerAuthenticationResult = .authenticated
+  var onAuthenticate: (@MainActor () async -> Void)?
+  private(set) var callCount = 0
+
+  func authenticate(localizedReason: String) async -> DeviceOwnerAuthenticationResult {
+    callCount += 1
+    let onAuthenticate = onAuthenticate
+    self.onAuthenticate = nil
+    await onAuthenticate?()
+    return result
+  }
 }

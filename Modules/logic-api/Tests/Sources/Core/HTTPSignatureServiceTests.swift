@@ -145,6 +145,55 @@ struct HTTPSignatureServiceTests {
   }
 
   @Test
+  func makeSignatureHeaders_SendsEncryptedSignatureWhenEncrypterIsProvided() throws {
+    let service = HTTPSignatureServiceImpl()
+    let privateKey = try makePrivateKey()
+    var plainSignature: Data?
+    let headers = try service.makeSignatureHeaders(
+      context: HTTPMessageSigningContext(
+        method: RWSCAConstants.Header.Method.post,
+        path: RWSCAConstants.Path.startPinSession,
+        headers: [
+          RWSCAConstants.Header.authChallenge: "challenge",
+          RWSCAConstants.Header.mdvmToken: "mdvm-token",
+          RWSCAConstants.Header.rwscaAccountId: "rwsca-id"
+        ],
+        contentTypeHeader: nil
+      ),
+      signatures: [
+        HTTPMessageSignature(
+          name: RWSCAConstants.Signature.namePinSig,
+          keyID: RWSCAConstants.Signature.keyIDPin,
+          algorithm: RWSCAConstants.Signature.algorithm,
+          fields: RWSCAConstants.Signature.startPinSessionFields,
+          privateKey: privateKey,
+          encryptSignature: {
+            plainSignature = $0
+            return Data("encrypted".utf8)
+          }
+        )
+      ]
+    )
+
+    let signatureInput = try #require(headers[MDVMConstants.Header.signatureInput])
+      .replacingOccurrences(of: "\(RWSCAConstants.Signature.namePinSig)=", with: "")
+    let base = service.createSignatureBase(
+      method: RWSCAConstants.Header.Method.post,
+      path: "/\(RWSCAConstants.Path.startPinSession)",
+      signedHeaders: [
+        (RWSCAConstants.Header.rwscaAccountId, "rwsca-id"),
+        (RWSCAConstants.Header.authChallenge, "challenge"),
+        (RWSCAConstants.Header.mdvmToken, "mdvm-token")
+      ],
+      signatureInput: signatureInput
+    )
+    let publicKey = try #require(SecKeyCopyPublicKey(privateKey))
+    let signature = try #require(plainSignature)
+    #expect(headers[MDVMConstants.Header.signature] == "\(RWSCAConstants.Signature.namePinSig)=:\(Data("encrypted".utf8).base64EncodedString()):")
+    #expect(SecKeyVerifySignature(publicKey, .ecdsaSignatureMessageX962SHA256, Data(base.utf8) as CFData, signature as CFData, nil))
+  }
+
+  @Test
   func makeSignatureHeaders_ThrowsWhenRequiredHeaderIsMissingForSingleSignature() throws {
     let service = HTTPSignatureServiceImpl()
 

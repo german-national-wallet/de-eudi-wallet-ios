@@ -10,7 +10,6 @@ import feature_common
 
 struct IssuanceOnboardingCardView: View {
   var onBack: () -> Void = {}
-  var onHelp: () -> Void = {}
   var onPrimaryOptionTapped: () -> Void = {}
   var onSecondaryOptionTapped: () -> Void = {}
 
@@ -18,7 +17,7 @@ struct IssuanceOnboardingCardView: View {
 
   var body: some View {
     ContentScreenView(padding: .zero) {
-      HeaderContentView(onBack: onBack, onHelp: onHelp)
+      HeaderContentView(onBack: onBack)
 
       VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_LARGE) {
         DSTitleLabel(.pidOnboardingCardsTitle)

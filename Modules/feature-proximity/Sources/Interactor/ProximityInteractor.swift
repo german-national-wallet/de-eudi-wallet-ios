@@ -29,7 +29,7 @@ public enum ProximityResponsePreparationPartialState: Sendable {
 }
 
 public enum ProximityRequestPartialState: Sendable {
-  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool, isOverAsking: Bool, hasUnreadableRegistration: Bool)
+  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool, isOverAsking: Bool, hasUnreadableRegistration: Bool, purpose: String?)
   case failure(Error)
 }
 
@@ -118,7 +118,8 @@ final class ProximityInteractorImpl: ProximityInteractor {
         dataRequestInfo: response.dataRequestInfo,
         isTrusted: response.isTrusted,
         isOverAsking: response.isOverAsking,
-        hasUnreadableRegistration: response.hasUnreadableRegistration
+        hasUnreadableRegistration: response.hasUnreadableRegistration,
+        purpose: response.purpose
       )
     } catch {
       return .failure(error)

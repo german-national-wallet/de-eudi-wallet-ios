@@ -58,6 +58,101 @@ struct MDVMRepositoryTests {
   }
 
   @Test
+  func register_WhenTokenCannotBeStored_ThrowsAndClearsRegistration() async throws {
+    let mockNetworkManager = FakeNetworkManager()
+    let secureEnclaveController = FakeSecureEnclaveController()
+    secureEnclaveController.storeStringInKeychain(value: "old-mdvm-id", keyTag: .mdvmWIID)
+    secureEnclaveController.storeStringInKeychain(value: "old-mdvm-token", keyTag: .mdvmToken)
+    secureEnclaveController.failingStoreKeyTag = .mdvmToken
+    let sut: MDVMRepository = MDVMRepositoryImpl(
+      networkManager: mockNetworkManager,
+      httpSignatureService: HTTPSignatureServiceImpl(),
+      secureEnclaveController: secureEnclaveController
+    )
+
+    let responseData = """
+      {
+        "mdvm_wi_id": "mdvm-id-123",
+        "mdvm_token": "mdvm-token-xyz"
+      }
+      """.data(using: .utf8)
+    mockNetworkManager.mockResponse = NetworkResponse(data: responseData, headers: nil)
+
+    let payload = MDVMRegistrationPayload(
+      wiDeviceClass: MDVMDeviceClass(
+        systemVersion: "18.0",
+        model: "iPhone",
+        hardwareModel: "iPhone17,1",
+        identifierForVendor: "vendor-id",
+        uname: "iPhone17,1",
+        osVersion: "Version 18.0"
+      ),
+      wiMDVMAuthPubk: "public-key",
+      papDeviceCheckAttestation: "attestation",
+      papDeviceCheckAssertion: "assertion"
+    )
+
+    await #expect(throws: SecureEnclaveControllerError.keychainWriteFailed) {
+      try await sut.register(
+        payload: payload,
+        authChallenge: "challenge-value",
+        skipIntegrityChecks: false,
+        privateKey: makePrivateKey()
+      )
+    }
+
+    #expect(secureEnclaveController.retrieveStringFromKeychain(keyTag: .mdvmWIID) == nil)
+    #expect(secureEnclaveController.retrieveStringFromKeychain(keyTag: .mdvmToken) == nil)
+  }
+
+  @Test
+  func register_WhenWIIDCannotBeStored_ThrowsAndKeepsPreviousRegistration() async throws {
+    let mockNetworkManager = FakeNetworkManager()
+    let secureEnclaveController = FakeSecureEnclaveController()
+    secureEnclaveController.storeStringInKeychain(value: "old-mdvm-id", keyTag: .mdvmWIID)
+    secureEnclaveController.storeStringInKeychain(value: "old-mdvm-token", keyTag: .mdvmToken)
+    secureEnclaveController.failingStoreKeyTag = .mdvmWIID
+    let sut: MDVMRepository = MDVMRepositoryImpl(
+      networkManager: mockNetworkManager,
+      httpSignatureService: HTTPSignatureServiceImpl(),
+      secureEnclaveController: secureEnclaveController
+    )
+
+    let responseData = """
+      {
+        "mdvm_wi_id": "mdvm-id-123",
+        "mdvm_token": "mdvm-token-xyz"
+      }
+      """.data(using: .utf8)
+    mockNetworkManager.mockResponse = NetworkResponse(data: responseData, headers: nil)
+
+    let payload = MDVMRegistrationPayload(
+      wiDeviceClass: MDVMDeviceClass(
+        systemVersion: "18.0",
+        model: "iPhone",
+        hardwareModel: "iPhone17,1",
+        identifierForVendor: "vendor-id",
+        uname: "iPhone17,1",
+        osVersion: "Version 18.0"
+      ),
+      wiMDVMAuthPubk: "public-key",
+      papDeviceCheckAttestation: "attestation",
+      papDeviceCheckAssertion: "assertion"
+    )
+
+    await #expect(throws: SecureEnclaveControllerError.keychainWriteFailed) {
+      try await sut.register(
+        payload: payload,
+        authChallenge: "challenge-value",
+        skipIntegrityChecks: false,
+        privateKey: makePrivateKey()
+      )
+    }
+
+    #expect(try sut.getStoredRegistration() == MDVMStoredRegistration(mdvmWIID: "old-mdvm-id", mdvmToken: "old-mdvm-token"))
+  }
+
+  @Test
   func renew_WhenResponseIsValid_UpdatesStoredToken() async throws {
     let mockNetworkManager = FakeNetworkManager()
     let secureEnclaveController = FakeSecureEnclaveController()
@@ -229,6 +324,7 @@ struct MDVMRepositoryTests {
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
   var decryptionError: Error?
+  var failingStoreKeyTag: SecureEnclaveKeys?
   private(set) var storeEncryptedCallCount = 0
 
   func createPrivateKey(with keyTag: SecureEnclaveKeys) -> SecKey? { nil }
@@ -248,6 +344,8 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
 
   // The fake does not actually encrypt; it shares the same backing store as the plain variants.
   func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
+    storeEncryptedCallCount += 1
+    if keyTag == failingStoreKeyTag { throw SecureEnclaveControllerError.keychainWriteFailed }
     stringStorage[keyTag] = value
   }
 
@@ -257,7 +355,6 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
   }
 
   func deleteKeychainItem(keyTag: SecureEnclaveKeys) {
-    storeEncryptedCallCount += 1
     stringStorage.removeValue(forKey: keyTag)
   }
 

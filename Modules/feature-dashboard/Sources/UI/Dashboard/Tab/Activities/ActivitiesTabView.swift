@@ -39,7 +39,6 @@ struct ActivitiesTabView<Router: RouterHost>: View {
     ContentScreenView(padding: .zero) {
       header(
         showsMenu: !viewModel.viewState.sections.isEmpty,
-        onHelp: viewModel.onHelpTapped,
         onDeleteAll: viewModel.onDeleteAllRequested
       )
       ScrollView {
@@ -74,19 +73,9 @@ struct ActivitiesTabView<Router: RouterHost>: View {
 
 @MainActor
 @ViewBuilder
-private func header(showsMenu: Bool, onHelp: @escaping () -> Void, onDeleteAll: @escaping () -> Void) -> some View {
+private func header(showsMenu: Bool, onDeleteAll: @escaping () -> Void) -> some View {
   HStack(spacing: DSStyle.Spacers.SPACING_SMALL) {
     Spacer()
-    Button(action: onHelp) {
-      Theme.shared.image.help
-        .resizable()
-        .scaledToFit()
-        .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
-        .foregroundColor(DSColor.onBackground)
-        .iconButtonSlot()
-    }
-    .accessibilityLabel(Text(LocalizableStringKey.headerAccessibilityHelp.toLocalizedStringKey))
-    .accessibilityIdentifier("activitiesHelpButton")
     if showsMenu {
       Menu {
         Button(role: .destructive, action: onDeleteAll) {
@@ -144,7 +133,7 @@ private func content(
 @MainActor
 private func emptyView(onHowToUse: @escaping () -> Void) -> some View {
   VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM) {
-    ActivityBannerView(
+    DSBannerView(
       style: .info,
       headline: .activitiesOverviewEmptyHeadline,
       message: .activitiesOverviewEmptyParagraph

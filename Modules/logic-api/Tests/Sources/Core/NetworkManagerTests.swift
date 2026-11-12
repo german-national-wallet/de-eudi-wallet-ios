@@ -5,6 +5,7 @@
 //  Created by Tamas Dancsi on 26.02.26.
 //
 
+import Alamofire
 import Foundation
 import Testing
 
@@ -24,7 +25,11 @@ struct NetworkManagerTests {
 
   @Test
   func prepare_UsesBaseHostPathAndParameters_WhenRequestHasNoBaseURL() async throws {
-    let manager = NetworkManagerImpl(baseHost: "https://example.com", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://example.com",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(path: "v1/test", baseURL: nil, requiresAuthToken: false)
 
     let urlRequest = try await manager.prepare(
@@ -39,7 +44,11 @@ struct NetworkManagerTests {
 
   @Test
   func prepare_UsesRequestBaseURL_WhenProvided() async throws {
-    let manager = NetworkManagerImpl(baseHost: "https://wallet.example", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://wallet.example",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(path: "v1/test", baseURL: "https://feature.example", requiresAuthToken: false)
 
     let urlRequest = try await manager.prepare(request: request, parameters: nil, baseHost: "https://wallet.example")
@@ -52,7 +61,11 @@ struct NetworkManagerTests {
     setenv("API_KEY", "test-api-key", 1)
     defer { unsetenv("API_KEY") }
 
-    let manager = NetworkManagerImpl(baseHost: "https://example.com", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://example.com",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(path: "v1/test", baseURL: nil, requiresAuthToken: true)
 
     let urlRequest = try await manager.prepare(request: request, parameters: nil, baseHost: "https://example.com")
@@ -65,7 +78,11 @@ struct NetworkManagerTests {
     setenv("API_KEY", "test-api-key", 1)
     defer { unsetenv("API_KEY") }
 
-    let manager = NetworkManagerImpl(baseHost: "https://wallet.example", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://wallet.example",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(path: "nonce", baseURL: "https://pid-provider.example", requiresAuthToken: true)
 
     let urlRequest = try await manager.prepare(request: request, parameters: nil, baseHost: "https://wallet.example")
@@ -79,7 +96,11 @@ struct NetworkManagerTests {
     setenv("API_KEY", "test-api-key", 1)
     defer { unsetenv("API_KEY") }
 
-    let manager = NetworkManagerImpl(baseHost: "https://wallet.example", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://wallet.example",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(path: "v1/test", baseURL: "https://wallet.example", requiresAuthToken: true)
 
     let urlRequest = try await manager.prepare(request: request, parameters: nil, baseHost: "https://wallet.example")
@@ -92,7 +113,11 @@ struct NetworkManagerTests {
     setenv("FEATURE_FLAG_API_KEY", "ff-key", 1)
     defer { unsetenv("FEATURE_FLAG_API_KEY") }
 
-    let manager = NetworkManagerImpl(baseHost: "https://example.com", logger: nil)
+    let manager = NetworkManagerImpl(
+      baseHost: "https://example.com",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: false)
+    )
     let request = TestRequest(
       path: "features",
       baseURL: nil,
@@ -105,6 +130,34 @@ struct NetworkManagerTests {
 
     #expect(components?.queryItems?.contains(URLQueryItem(name: "apiKey", value: "ff-key")) == true)
     #expect(urlRequest.value(forHTTPHeaderField: Constants.Key.authToken) == nil)
+  }
+
+  @Test
+  func execute_ThrowsNoInternet_WhenOffline() async {
+    let manager = NetworkManagerImpl(
+      baseHost: "https://example.com",
+      logger: nil,
+      connectivityMonitor: StubConnectivityMonitor(isOffline: true)
+    )
+    let request = TestRequest(path: "v1/test", baseURL: nil, requiresAuthToken: false)
+
+    await #expect(throws: NetworkError.noInternet) {
+      _ = try await manager.execute(with: request, parameters: nil)
+    }
+  }
+
+  @Test
+  func transportError_IsNoInternet_WhenAlamofireWrapsAnOfflineURLError() {
+    let error = AFError.sessionTaskFailed(error: URLError(.notConnectedToInternet))
+
+    #expect(NetworkManagerImpl.transportError(from: error) == .noInternet)
+  }
+
+  @Test
+  func transportError_IsInternetFailure_ForOtherURLErrors() {
+    let error = AFError.sessionTaskFailed(error: URLError(.timedOut))
+
+    #expect(NetworkManagerImpl.transportError(from: error) == .internetFailure(error))
   }
 }
 

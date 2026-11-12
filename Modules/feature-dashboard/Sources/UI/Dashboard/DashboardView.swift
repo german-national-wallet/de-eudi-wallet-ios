@@ -38,8 +38,14 @@ struct DashboardView<Router: RouterHost>: View {
             case .overview:
               overviewContent.eraseToAnyView()
             case .activity:
-              viewModel.viewState.activitiesTab
-                .eraseToAnyView()
+              if viewModel.isActivityUnlocked {
+                viewModel.viewState.activitiesTab
+                  .eraseToAnyView()
+              } else {
+                Theme.shared.color.surface
+                  .ignoresSafeArea()
+                  .eraseToAnyView()
+              }
             case .settings:
               viewModel.viewState.settingsTab
                 .eraseToAnyView()
@@ -55,7 +61,10 @@ struct DashboardView<Router: RouterHost>: View {
                 viewModel.shouldPresentQRReader = true
                 return
               }
-              viewModel.selectedTab = requestedTab
+              viewModel.selectedTab = viewModel.selectedTab
+              Task {
+                await viewModel.onTabRequested(requestedTab)
+              }
             }),
           qrPresentationBinding: $viewModel.shouldPresentQRReader
         )
@@ -70,10 +79,14 @@ struct DashboardView<Router: RouterHost>: View {
   
   @ViewBuilder
   private var overviewContent: some View {
+    VStack(spacing: 0) {
+      DashboardOverviewHeader()
+
       if viewModel.viewState.hasIssuedDocuments {
-      viewModel.viewState.credentialsTab.eraseToAnyView()
-    } else {
-      viewModel.viewState.addDocumentTab?.eraseToAnyView()
+        viewModel.viewState.credentialsTab.eraseToAnyView()
+      } else {
+        viewModel.viewState.addDocumentTab?.eraseToAnyView()
+      }
     }
   }
 }

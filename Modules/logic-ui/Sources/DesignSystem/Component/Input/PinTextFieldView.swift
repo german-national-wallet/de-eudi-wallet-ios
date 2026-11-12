@@ -312,7 +312,14 @@ public struct PinTextFieldView: View {
       self.focused = true
     }
     .onChange(of: canFocus) { canFocus in
-      self.focused = canFocus
+      guard canFocus else {
+        self.focused = false
+        return
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(250)) {
+        guard self.isOnScreen, self.canFocus else { return }
+        self.focused = true
+      }
     }
     .onAppear { self.isOnScreen = true }
     .onDisappear {

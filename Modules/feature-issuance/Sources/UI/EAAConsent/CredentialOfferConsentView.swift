@@ -19,7 +19,7 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
       canScroll: true,
       errorConfig: viewModel.viewState.error
     ) {
-      HeaderContentView(onClose: viewModel.closeButtonAction, onHelp: viewModel.onHelp)
+      HeaderContentView(onClose: viewModel.closeButtonAction)
 
       content(
         viewState: viewModel.viewState,
@@ -27,7 +27,6 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
         subTitle: .eaaOfferViewSubTitle,
         issuerName: viewModel.viewState.documentOfferUiModel.issuerName,
         documentName: viewModel.documentName,
-        issuerImageUrl: viewModel.issuerImageUrl?.absoluteString ?? "",
         action: viewModel.primaryButtonAction,
         primaryButtonTitle: viewModel.primaryButtonTitle,
         secondaryAction: viewModel.secondaryButtonAction,
@@ -94,6 +93,7 @@ struct CredentialOfferConsentView<Router: RouterHost>: View {
         ) { }
       ]
     )
+    .noInternetDialog($viewModel.noInternetDialog)
     .task {
       await viewModel.initialize()
     }
@@ -114,7 +114,6 @@ private func content(
   subTitle: LocalizableStringKey,
   issuerName: String,
   documentName: String,
-  issuerImageUrl: String,
   action: @escaping () -> Void,
   primaryButtonTitle: String,
   secondaryAction: @escaping () -> Void,
@@ -128,7 +127,7 @@ private func content(
       viewHeight: DSStyle.Spacers.SPACING_XXL,
       credentialTitle: documentName,
       issuer: issuerName,
-      logoURL: issuerImageUrl,
+      logoURL: viewState.documentOfferUiModel.credentialLogoUrl,
       backgroundColor: viewState.documentOfferUiModel.backgroundColor,
       onViewData: onViewData
     )
@@ -201,7 +200,6 @@ private func content(
       subTitle: .eaaOfferViewSubTitle,
       issuerName: state.documentOfferUiModel.issuerName,
       documentName: "Document Name",
-      issuerImageUrl: "https://eudiplo.eudi-wallet.org/storage/f5ec0db5-38e3-4f42-822b-b3c0b638c478",
       action: {}, primaryButtonTitle: "Next",
       secondaryAction: {},
       issuerDetailsAction: {},

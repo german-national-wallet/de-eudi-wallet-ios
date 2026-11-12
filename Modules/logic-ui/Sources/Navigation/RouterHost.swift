@@ -49,6 +49,29 @@ public extension RouterHost {
       popTo(with: .featureIssuanceModule(.issuanceAddDocument(config: NoConfig())))
     }
   }
+
+  /// Unwinds a failed PID issuance back to where the user starts adding the ID again.
+  ///
+  /// Both ways into PID issuance push the onboarding card (from add-document on first use,
+  /// straight from the overview when the PID is re-added), so the card is the common restart
+  /// point. Add-document is the fallback for a flow that skipped the card, and `cancelToStart()`
+  /// covers anything else, so the button never ends up doing nothing.
+  ///
+  /// No server-side cleanup here: every way back into PID issuance goes through
+  /// `PARInteractor.fetchPushAuthorisationRequest()`, which removes all pending documents
+  /// before requesting a fresh PAR.
+  @MainActor func restartIssuance() {
+    let onboardingCard = AppRoute.featureIssuanceModule(.issuanceOnboardingCardView)
+    let addDocument = AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig()))
+
+    if isScreenOnBackStack(with: onboardingCard) {
+      popTo(with: onboardingCard)
+    } else if isScreenOnBackStack(with: addDocument) {
+      popTo(with: addDocument)
+    } else {
+      cancelToStart()
+    }
+  }
 }
 
 public final class PreviewRouter: RouterHost {

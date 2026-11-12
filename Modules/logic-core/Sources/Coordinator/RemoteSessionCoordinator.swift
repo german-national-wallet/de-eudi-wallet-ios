@@ -42,6 +42,8 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
 
   private let sendableAnyCancellable: SendableAnyCancellable = .init()
 
+  private let requestFetched: SendableCurrentValueSubject<Bool> = .init(false)
+
   private let session: PresentationSession
 
   init(session: PresentationSession) {
@@ -70,7 +72,11 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   public func initialize() async {
-    _ = await session.receiveRequest()
+    guard requestFetched.getValue() == false else { return }
+    let request = await session.receiveRequest()
+    if request != nil || session.uiError?.code == .noDocumentsAvailable {
+      requestFetched.setValue(true)
+    }
   }
 
   public func requestReceived() async throws -> PresentationRequest {

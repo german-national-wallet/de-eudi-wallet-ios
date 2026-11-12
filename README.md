@@ -18,8 +18,8 @@ supply your own — see
 
 ### Requirements
 
-- **Xcode 16 or newer.** The project is `objectVersion` 70.
-- **iOS 18.0** deployment target for the app; module targets go back to 16.6.
+- **Xcode 26.4 or newer.** The project is `objectVersion` 70.
+- **iOS 26.4** deployment target for the app; module targets go back to 16.6.
 - **Swift 5** language mode.
 - Dependencies resolve through Swift Package Manager from the published
   `Package.resolved`; all of them are public.
@@ -79,7 +79,12 @@ internal one, so this list cannot silently rot.
 | `WALLET_OTLP_HOST_URL`, `WALLET_OTLP_SERVICE_NAME` | OpenTelemetry collector and per-variant service name |
 | `FEATURE_FLAG_BASE_URL` | Feature-flag service |
 | `APP_UPDATE_URL` | Target of the force-upgrade screen |
-| `PRIVACY_POLICY_LINK` | Privacy policy shown in-app |
+| `PRIVACY_POLICY_LINK_EN`, `PRIVACY_POLICY_LINK_DE` | Privacy policy shown in-app, picked by the app's UI language |
+| `PID_PRIVACY_POLICY_LINK_EN`, `PID_PRIVACY_POLICY_LINK_DE` | Privacy policy shown on the PID issuance overview screen, picked by the app's UI language |
+| `TERMS_AND_CONDITIONS_LINK_EN`, `TERMS_AND_CONDITIONS_LINK_DE` | Terms of use shown in-app, picked by the app's UI language |
+| `FAQ_LINK_EN`, `FAQ_LINK_DE` | FAQ opened from Settings → Support, picked by the app's UI language |
+| `ABOUT_LINK_EN`, `ABOUT_LINK_DE` | About page shown in-app, picked by the app's UI language |
+| `IMPRINT_LINK_EN`, `IMPRINT_LINK_DE` | Imprint shown in-app, picked by the app's UI language |
 
 Values left real are structural and identify nothing: `BUILD_VARIANT`,
 `CORE_USER_AUTH`, `BATCH_COUNT`, `APS_ENVIRONMENT`, `VCI_REDIRECT_URI`
@@ -98,6 +103,7 @@ them with your own:
 | `API_KEY` | Authenticates the app against your wallet backend |
 | `X_AUTH_API_TOKEN` | Bearer token for the telemetry/analytics endpoint |
 | `FEATURE_FLAG_API_KEY` | Auth for the feature-flag service |
+| `RASP_KEY_ID` | Id of the app attestation key a shielded build carries; empty in an unshielded build |
 
 ### Telemetry
 
@@ -212,6 +218,7 @@ preserved in the files that carry them.
 ## Related documentation
 
 - [Architecture reference docs](https://bmi.usercontent.opencode.de/eudi-wallet/wallet-development-documentation-public/latest/)
+- [Release Notes](./release-notes/)
 
 ## Design System
 
@@ -221,10 +228,14 @@ This Design System is a work in progress and will keep evolving through future i
 
 ## Contributing and issues
 
-Issue tracking and pull requests are **not** enabled on this mirror right now.
-Issue tracking is planned to be enabled in October, 2026. For more details, see
-[CONTRIBUTING.md](CONTRIBUTING.md). For security reports, see
-[SECURITY.md](SECURITY.md).
+Issue tracking is enabled on this mirror. Bug reports and questions about the
+published source are welcome as
+[GitHub issues](https://github.com/german-national-wallet/de-eudi-wallet-ios/issues).
+Pull requests are still **not** accepted. For details, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+Security findings do not belong in issues. Report them through our bug bounty
+program, see [SECURITY.md](SECURITY.md).
 
 ## Licence
 

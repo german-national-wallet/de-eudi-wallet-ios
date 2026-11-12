@@ -200,7 +200,7 @@ struct PNSRepositoryTests {
     let secureEnclave = FakeSecureEnclaveController()
     let sut = makeSUT(secureEnclave: secureEnclave)
     /// Guards the migration case: before this record existed the tag could hold a bare token.
-    _ = try secureEnclave.storeEncryptedString(value: "bare-legacy-token", keyTag: .mppRegistrationToken)
+    try secureEnclave.storeEncryptedString(value: "bare-legacy-token", keyTag: .mppRegistrationToken)
 
     #expect(sut.getStoredRegistration() == nil)
   }

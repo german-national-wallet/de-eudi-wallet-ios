@@ -1,0 +1,34 @@
+{
+  "configurations": [
+    {
+      "id": "FAFC1973-FE12-45F5-B00D-B948798F1A20",
+      "name": "Configuration 1",
+      "options": {
+        "language": "en",
+        "region": "US"
+      }
+    }
+  ],
+  "defaultOptions": {
+    "environmentVariableEntries": [
+      {
+        "key": "AMBOR_URL",
+        "value": "https://localhost:8443"
+      }
+    ],
+    "testTimeoutsEnabled": true
+  },
+  "testTargets": [
+    {
+      "selectedTests": [
+        "AmborEAAUITests"
+      ],
+      "target": {
+        "containerPath": "container:IDGo.xcodeproj",
+        "identifier": "2CFFD8EA2E70293800688AC7",
+        "name": "EudiWalletDEUITests"
+      }
+    }
+  ],
+  "version": 1
+}

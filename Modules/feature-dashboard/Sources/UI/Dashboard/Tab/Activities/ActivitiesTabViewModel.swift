@@ -59,10 +59,6 @@ final class ActivitiesTabViewModel<Router: RouterHost>: ViewModel<Router, Activi
     await onAppear()
   }
 
-  func onHelpTapped() {
-    // Intentionally empty: the app has no help destination yet
-  }
-
   func onHowToUseTapped() {
     // Intentionally empty: the how-to page doesn't exist yet
   }

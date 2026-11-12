@@ -17,6 +17,7 @@ import logic_ui
 import logic_business
 import feature_common
 import logic_core
+import logic_api
 import logic_analytics
 
 @MainActor
@@ -137,6 +138,8 @@ public final class PresentationRouter {
           onPinEntered: nil,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
+          connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
+          presentationOriginStore: DIGraph.resolver.force(PresentationOriginStore.self),
           logger: DIGraph.resolver.force(Logging.self),
           onClose: presentationCoordinator.map { coordinator in
             PresentationCancellation(

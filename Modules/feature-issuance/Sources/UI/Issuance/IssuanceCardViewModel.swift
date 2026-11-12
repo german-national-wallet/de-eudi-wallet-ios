@@ -39,6 +39,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
   var interactor: IssuanceCardInteractor
   var parInteractor: PARInteractor
   let issuanceCancellationInteractor: IssuanceCancellationInteractor
+  let connectivityMonitor: NetworkConnectivityMonitor
   var promptData = PromptData(
     title: "Lets get you started",
     description: "Press the NFC button to start"
@@ -48,6 +49,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
   @Published var enteredCan = String()
   @Published var showHelpAndTipsActionSheet: Bool = false
   @Published var isErrorPopupVisible = false
+  @Published var noInternetDialog = NoInternetDialogState()
   
   var finishAuthorizationResponseDTO: FinishAuthorizationResponse?
   var credentialsFound = false
@@ -62,6 +64,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
     quickPinInteractor: QuickPinInteractor,
     analyticsController: AnalyticsController,
     issuanceCancellationInteractor: IssuanceCancellationInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor,
     config: any UIConfigType,
     requestURI: String,
     eidPin: String,
@@ -82,6 +85,7 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
     self.delegate = delegate
     self.analyticsController = analyticsController
     self.issuanceCancellationInteractor = issuanceCancellationInteractor
+    self.connectivityMonitor = connectivityMonitor
     self.logger = logger
 
     super.init(
@@ -125,10 +129,6 @@ final class IssuanceCardViewModel<Router: RouterHost>: ViewModel<Router, Issuanc
     showHelpAndTipsActionSheet = true
   }
 
-  func walletPinSetupHelpTapped() {
-    // TODO: - Provide action here
-  }
-  
   func startEidScanning() {
     
     guard let requestURL = URL(string: viewState.requestURI) else {

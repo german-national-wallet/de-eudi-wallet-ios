@@ -49,6 +49,7 @@ struct StartupView<Router: RouterHost>: View {
         }
       }
     }
+    .noInternetDialog($viewModel.noInternetDialog)
     .onAppear {
       Task {
         await viewModel.registerWallet()

@@ -1,17 +1,16 @@
 //
-//  ActivityBannerView.swift
-//  feature-dashboard
+//  DSBannerView.swift
+//  logic-ui
 //
 //  Created by Pankaj Sachdeva on 09.10.26.
 //
 
 import SwiftUI
-import logic_ui
 import logic_resources
 
-struct ActivityBannerView: View {
+public struct DSBannerView: View {
 
-  enum Style {
+  public enum Style {
     case info
     case warning
   }
@@ -22,11 +21,24 @@ struct ActivityBannerView: View {
     static let accentInset: CGFloat = 3
   }
 
-  let style: Style
-  var headline: LocalizableStringKey?
-  let message: LocalizableStringKey
+  private let style: Style
+  private let headline: LocalizableStringKey?
+  private let message: LocalizableStringKey
+  private let messageLineLimit: Int?
 
-  var body: some View {
+  public init(
+    style: Style,
+    headline: LocalizableStringKey? = nil,
+    message: LocalizableStringKey,
+    messageLineLimit: Int? = nil
+  ) {
+    self.style = style
+    self.headline = headline
+    self.message = message
+    self.messageLineLimit = messageLineLimit
+  }
+
+  public var body: some View {
     HStack(alignment: .top, spacing: DSStyle.Spacers.SPACING_SMALL) {
       icon
         .renderingMode(.template)
@@ -46,6 +58,7 @@ struct ActivityBannerView: View {
         Text(message)
           .font(DSTypography.Body.large)
           .foregroundStyle(DSColor.onSurface)
+          .lineLimit(messageLineLimit)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }

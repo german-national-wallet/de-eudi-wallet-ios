@@ -64,6 +64,10 @@ public struct HTTPSignatureServiceImpl: HTTPSignatureService {
   }
 
   public func createSignature(base: String, privateKey: SecKey, algorithm: SecKeyAlgorithm) throws -> String {
+    try sign(base: base, privateKey: privateKey, algorithm: algorithm).base64EncodedString()
+  }
+
+  private func sign(base: String, privateKey: SecKey, algorithm: SecKeyAlgorithm) throws -> Data {
     guard SecKeyIsAlgorithmSupported(privateKey, .sign, algorithm) else {
       throw HTTPMessageSigningError.signingFailed
     }
@@ -79,7 +83,7 @@ public struct HTTPSignatureServiceImpl: HTTPSignatureService {
       throw HTTPMessageSigningError.signingFailed
     }
 
-    return signature.base64EncodedString()
+    return signature
   }
 
   public func makeSignatureHeaders(
@@ -124,12 +128,13 @@ public struct HTTPSignatureServiceImpl: HTTPSignatureService {
     )
 
     do {
-      let signature = try createSignature(
+      let signatureData = try sign(
         base: signatureBase,
         privateKey: signature.privateKey,
         algorithm: .ecdsaSignatureMessageX962SHA256
       )
-      return SigningResult(signatureInput: signatureInput, signature: signature)
+      let signatureValue = try signature.encryptSignature?(signatureData) ?? signatureData
+      return SigningResult(signatureInput: signatureInput, signature: signatureValue.base64EncodedString())
     } catch {
       throw HTTPMessageSigningError.signingFailed
     }

@@ -15,7 +15,6 @@ struct DashboardCredentialView<Router: RouterHost>: View {
   private let verticalStackSpacing: CGFloat = -44
   
   @State private var showWebView = false
-  private let verifier: String = "https://playground.eudi-wallet.org/"
 
   public init(with viewModel: DashboardCredentialViewModel<Router>) {
     self.viewModel = viewModel
@@ -39,7 +38,9 @@ struct DashboardCredentialView<Router: RouterHost>: View {
               }
               .padding()
             } else {
-              AddPIDCredentialView(action: viewModel.performIssuance)
+              PIDTeaserView(action: viewModel.performIssuance)
+                .padding(.horizontal)
+                .padding(.top)
             }
 
             if viewModel.showAdditionalDocuments {
@@ -62,8 +63,12 @@ struct DashboardCredentialView<Router: RouterHost>: View {
               }
               .padding(.horizontal)
               .padding(.top, 20)
-              .padding(.bottom, 150)
             }
+
+            CredentialTeaserView()
+              .padding(.horizontal)
+              .padding(.top)
+              .padding(.bottom, 150)
 
           Spacer()
 
@@ -77,7 +82,7 @@ struct DashboardCredentialView<Router: RouterHost>: View {
         }
         .background(DisableSwipeBackGesture())
         .sheet(isPresented: $showWebView) {
-          if let url = URL(string: verifier) {
+          if let url = AppEnvironment.uiTestWebURL {
             NavigationView {
               VStack {
                 Text("Loading: \(url.absoluteString)")

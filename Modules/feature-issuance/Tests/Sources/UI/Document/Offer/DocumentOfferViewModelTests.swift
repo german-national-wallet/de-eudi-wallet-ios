@@ -8,6 +8,7 @@
 import XCTest
 import Cuckoo
 import logic_core
+import logic_api
 import logic_ui
 @testable import feature_test
 @testable import feature_issuance
@@ -19,6 +20,7 @@ final class DocumentOfferViewModelTests: XCTestCase {
   private var interactor: MockDocumentOfferInteractor!
   private var secureEnclaveController: MockSecureEnclaveController!
   private var credentialsInteractor: MockCredentialsInteractor!
+  private var connectivityMonitor: MockNetworkConnectivityMonitor!
   private var sut: DocumentOfferViewModel<MockRouterHost>!
 
   override func setUp() {
@@ -28,11 +30,13 @@ final class DocumentOfferViewModelTests: XCTestCase {
     interactor = MockDocumentOfferInteractor()
     secureEnclaveController = MockSecureEnclaveController()
     credentialsInteractor = MockCredentialsInteractor()
+    connectivityMonitor = .stubbed()
     sut = DocumentOfferViewModel(
       router: router,
       interactor: interactor,
       secureEnclaveController: secureEnclaveController,
       credentialsInteractor: credentialsInteractor,
+      connectivityMonitor: connectivityMonitor,
       config: makeConfig()
     )
   }
@@ -40,6 +44,7 @@ final class DocumentOfferViewModelTests: XCTestCase {
   override func tearDown() {
     sut = nil
     credentialsInteractor = nil
+    connectivityMonitor = nil
     secureEnclaveController = nil
     interactor = nil
     router = nil
@@ -149,6 +154,76 @@ final class DocumentOfferViewModelTests: XCTestCase {
       successNavigation: any(),
       txCodeValue: any()
     )
+  }
+
+  func testInitialize_WhenOffline_ThenShowsNoInternetDialogInsteadOfError() async {
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+
+    await sut.initialize()
+
+    XCTAssertTrue(sut.noInternetDialog.isPresented)
+    XCTAssertNil(sut.viewState.error)
+    XCTAssertFalse(sut.viewState.initialized)
+  }
+
+  func testInitialize_WhenOfflineAndRetryTapped_ThenProcessesTheOfferAgain() async {
+    let processed = expectation(description: "offer processed twice")
+    processed.expectedFulfillmentCount = 2
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).then { _ in
+        processed.fulfill()
+        return .failure(NetworkError.noInternet)
+      }
+    }
+
+    await sut.initialize()
+    sut.noInternetDialog.retry()
+
+    await fulfillment(of: [processed], timeout: 5)
+  }
+
+  func testInitialize_WhenOfflineAndCancelTapped_ThenGoesBack() async {
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    await sut.initialize()
+    sut.noInternetDialog.cancel()
+
+    verify(router).pop()
+  }
+
+  func testOnIssueDocuments_WhenOffline_ThenShowsNoInternetDialogAndRetriesTheIssuance() async {
+    let issued = expectation(description: "issuance requested twice")
+    issued.expectedFulfillmentCount = 2
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).thenReturn(.success(makeDocumentOfferUIModel()))
+      when(mock.issueDocuments(with: any(), issuerName: any(), docOffers: any(), successNavigation: any(), txCodeValue: any()))
+        .then { _ in
+          issued.fulfill()
+          return .failure(NetworkError.noInternet)
+        }
+    }
+    await sut.initialize()
+
+    sut.onIssueDocuments()
+    await waitUntil { self.sut.noInternetDialog.isPresented }
+    XCTAssertNil(sut.viewState.error)
+    XCTAssertFalse(sut.viewState.isLoading)
+
+    sut.noInternetDialog.retry()
+    await fulfillment(of: [issued], timeout: 5)
+  }
+
+  private func waitUntil(_ condition: () -> Bool) async {
+    for _ in 0..<200 where !condition() {
+      try? await Task.sleep(for: .milliseconds(10))
+    }
   }
 
   private func makeConfig() -> UIConfig.Generic {

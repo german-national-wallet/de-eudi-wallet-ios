@@ -56,13 +56,14 @@ struct PresentationErrorDialogView: View {
         }
 
         VStack(spacing: DSStyle.Spacers.SPACING_MEDIUM_SMALL) {
-          DSPrimaryButton(title: config.primary.title.toString) {
+          DSPrimaryButton(title: config.primary.title.toString, trailingIcon: config.primary.trailingIcon) {
             onAction(config.primary.action)
           }
           .accessibilityIdentifier("presentationErrorPrimaryButton")
-
+          .accessibilityAddTraits(config.primary.action.opensExternalLink ? .isLink : [])
+          
           if let secondary = config.secondary {
-            DSSecondaryButton(title: secondary.title.toString) {
+            DSSecondaryButton(title: secondary.title.toString, trailingIcon: secondary.trailingIcon) {
               onAction(secondary.action)
             }
             .accessibilityIdentifier("presentationErrorSecondaryButton")

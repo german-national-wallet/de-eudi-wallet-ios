@@ -48,18 +48,34 @@
 	</array>
 	<key>BURGERAMT_SERVICE_LINK</key>
 	<string>$(BURGERAMT_SERVICE_LINK)</string>
-	<key>PRIVACY_POLICY_LINK</key>
-	<string>$(PRIVACY_POLICY_LINK)</string>
-	<key>ABOUT_LINK</key>
-	<string>$(ABOUT_LINK)</string>
+	<key>PRIVACY_POLICY_LINK_EN</key>
+	<string>$(PRIVACY_POLICY_LINK_EN)</string>
+	<key>PRIVACY_POLICY_LINK_DE</key>
+	<string>$(PRIVACY_POLICY_LINK_DE)</string>
+	<key>PID_PRIVACY_POLICY_LINK_EN</key>
+	<string>$(PID_PRIVACY_POLICY_LINK_EN)</string>
+	<key>PID_PRIVACY_POLICY_LINK_DE</key>
+	<string>$(PID_PRIVACY_POLICY_LINK_DE)</string>
+	<key>FAQ_LINK_EN</key>
+	<string>$(FAQ_LINK_EN)</string>
+	<key>FAQ_LINK_DE</key>
+	<string>$(FAQ_LINK_DE)</string>
+	<key>ABOUT_LINK_EN</key>
+	<string>$(ABOUT_LINK_EN)</string>
+	<key>ABOUT_LINK_DE</key>
+	<string>$(ABOUT_LINK_DE)</string>
 	<key>ACCESSIBILITY_STATEMENT_LINK</key>
 	<string>$(ACCESSIBILITY_STATEMENT_LINK)</string>
 	<key>REPORT_ISSUE_URL</key>
 	<string>$(REPORT_ISSUE_URL)</string>
-	<key>TERMS_AND_CONDITIONS_LINK</key>
-	<string>$(TERMS_AND_CONDITIONS_LINK)</string>
-	<key>IMPRINT_LINK</key>
-	<string>$(IMPRINT_LINK)</string>
+	<key>TERMS_AND_CONDITIONS_LINK_EN</key>
+	<string>$(TERMS_AND_CONDITIONS_LINK_EN)</string>
+	<key>TERMS_AND_CONDITIONS_LINK_DE</key>
+	<string>$(TERMS_AND_CONDITIONS_LINK_DE)</string>
+	<key>IMPRINT_LINK_EN</key>
+	<string>$(IMPRINT_LINK_EN)</string>
+	<key>IMPRINT_LINK_DE</key>
+	<string>$(IMPRINT_LINK_DE)</string>
 	<key>CORE_USER_AUTH</key>
 	<string>$(CORE_USER_AUTH)</string>
 	<key>BATCH_COUNT</key>

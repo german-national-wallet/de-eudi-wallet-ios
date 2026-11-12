@@ -111,7 +111,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
         authFlowRedirectionURI: URL(string: vciRedirectURI)!,
         allowPlainJwtProof: true,
         requireDpop: true,
-        issuerMetadataPolicy: .requireSigned(issuerTrust: issuerMetadataTrust),
+        issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
         encryptionSupportConfig: Self.responseEncryptionConfig
       )
     ]
@@ -129,33 +129,27 @@ struct WalletKitConfigImpl: WalletKitConfig {
     }
   }
 
-  // RSA response encryption is disabled; credential responses are encrypted to EC P-256 keys only.
+  // HAIP: ECDH-ES on P-256 for alg, A256GCM or A128GCM for enc (the issuer's order picks between them). RSA is disabled.
   // Unregistered issuers get a copy of this configuration and inherit the setting.
-  static let responseEncryptionConfig = EncryptionSupportConfig(
-    credentialResponseEncryptionPolicy: .required,
-    ecConfig: EcConfig(ecKeyCurve: .P256),
-    rsaConfig: nil
-  )
+  static let responseEncryptionAlgorithms: [JWEAlgorithm] = [JWEAlgorithm(.ECDH_ES)]
+  static let responseEncryptionMethods: [JOSEEncryptionMethod] = [JOSEEncryptionMethod(.A256GCM), JOSEEncryptionMethod(.A128GCM)]
 
-  private var issuerMetadataTrust: IssuerTrust {
-    // Revocation off as before the 0.56.0 update: on iOS it requires an OCSP responder, which current access/registration certificates lack
-    let trustSource: TrustSource = .staticList(
-      StaticListTrustSource(rootCertificates: staticRootCertificates, isRevocationEnabled: false)
-    )
-    let trustManager = EtsiTrustManager(
-      source: trustSource.withContextTypeMappings(nil),
-      defaultVerificationContext: EtsiContextType.wrpac.verificationContext
-    )
-    return .byCertificateChain(certificateChainTrust: IssuerMetadataChainTrust(trustManager: trustManager))
-  }
+  static let responseEncryptionConfig = EncryptionSupportConfig(
+    credentialResponseEncryptionPolicy: .supported,
+    ecConfig: EcConfig(ecKeyCurve: .P256, supportedJWEAlgorithms: responseEncryptionAlgorithms),
+    rsaConfig: nil,
+    supportedEncryptionMethods: responseEncryptionMethods
+  )
 
   var vpConfig: OpenId4VpConfiguration {
     .init(
       clientIdSchemes: [.x509SanDns, .x509Hash],
       preferredResponseMode: .directPostJWT,
-      validateRegistrationCertificate: true
+      validateRegistrationCertificate: !AppEnvironment.skipsRegistrationCertificateValidation
     )
   }
+
+  private static let crlChecker = CRLRevocationChecker()
 
   var trustConfiguration: TrustConfiguration {
     let loteLocations = SupportedLists<NSString>(
@@ -172,22 +166,30 @@ struct WalletKitConfigImpl: WalletKitConfig {
       DocumentTypeIdentifier.mDocPid.rawValue: .pid,
       DocumentTypeIdentifier.sdJwtPid.rawValue: .pid
     ]
-    // Revocation off as before the 0.56.0 update: on iOS it requires an OCSP responder, which current access/registration certificates lack
     return TrustConfiguration(
       trustSource: .staticList(
-        StaticListTrustSource(rootCertificates: staticRootCertificates, isRevocationEnabled: false)
+        StaticListTrustSource(
+          rootCertificates: staticRootCertificates,
+          revocationPolicy: .crlOnly,
+          crlChecker: Self.crlChecker
+        )
       ),
       fallbackTrustSource: .etsi(
         EtsiTrustSource(
           loteLocations: loteLocations,
           contextTypeMappings: classifications,
-          isRevocationEnabled: false
+          revocationPolicy: .crlOnly,
+          crlChecker: Self.crlChecker
         )
       ),
+      // No trust anchor is configured for the PID signer yet, so issued-document chains are only logged
       defaultPolicy: .warning,
-      // Applies to credential offers, including EAA issuers; the PID issuer sets the same policy in `vciConfig`
+      // Applies to credential offers, including EAA issuers; the PID issuer reuses `issuerMetadataPolicy` in `vciConfig`
       requireSignedMetadata: true,
-      statusTrustPolicy: .warning
+      statusTrustPolicy: .enforce,
+      readerTrustPolicy: .enforce,
+      wrprcVpTrustPolicy: .enforce,
+      wrprcVciTrustPolicy: .enforce
     )
   }
 
@@ -255,17 +257,17 @@ struct WalletKitConfigImpl: WalletKitConfig {
       documentSpecificRules: [
         DocumentTypeIdentifier.mDocPid: DocumentIssuanceRule(
           policy: .oneTimeUse,
-          numberOfCredentials: getBundleValue(key: "BATCH_COUNT").toInteger() ?? 10
+          numberOfCredentials: getBundleValue(key: "BATCH_COUNT").toInteger() ?? 5
         ),
         DocumentTypeIdentifier.sdJwtPid: DocumentIssuanceRule(
           policy: .oneTimeUse,
-          numberOfCredentials: getBundleValue(key: "BATCH_COUNT").toInteger() ?? 10
+          numberOfCredentials: getBundleValue(key: "BATCH_COUNT").toInteger() ?? 5
         )
       ]
     )
   }
 
   var batchRefreshThreshold: Int {
-    2
+    1
   }
 }

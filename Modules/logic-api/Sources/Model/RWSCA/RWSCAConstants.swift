@@ -5,13 +5,19 @@
 
 enum RWSCAConstants {
   enum Path {
-    static let challenge = "v1/rwsca/challenge"
-    static let register = "v1/rwsca/register"
-    static let startPinSession = "v1/rwsca/startPinSession"
-    static let initializePinAndStartPinSession = "v1/rwsca/initializePinAndStartPinSession"
-    static let createKeys = "v1/rwsca/createKeys"
-    static let signData = "v1/rwsca/signData"
-    static let deleteAccount = "v1/rwsca/deleteAccount"
+    static let challenge = "v2/rwsca/challenge"
+    static let register = "v2/rwsca/register"
+    static let startPinSession = "v2/rwsca/startPinSession"
+    static let initializePinAndStartPinSession = "v2/rwsca/initializePinAndStartPinSession"
+    static let createKeys = "v2/rwsca/createKeys"
+    static let signData = "v2/rwsca/signData"
+    static let deleteAccount = "v2/rwsca/deleteAccount"
+    static let wiMetaData = "v2/rwsca/wiMetaData"
+  }
+
+  enum JWEType {
+    static let pinSignature = "rwsca-pin-signature+jwe"
+    static let pinPublicKey = "rwsca-pin-pubk+jwe"
   }
 
   enum Header {

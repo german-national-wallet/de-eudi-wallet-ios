@@ -20,11 +20,13 @@ final class CredentialDetailViewModel<Router: RouterHost>: ViewModel<Router, Use
   private let interactor: DashboardInteractor
   private let deepLinkController: DeepLinkController
   private let pidRevokeInteractor: PIDRevokeInteractor
+  private let connectivityMonitor: NetworkConnectivityMonitor
 
   @Published var documentName: String = ""
   @Published var validityDate: String = ""
   @Published var documentIssuanceDate: String = ""
   @Published var isErrorPopupVisible = false
+  @Published var noInternetDialog = NoInternetDialogState()
   var errorPopupViewModel = ConfirmationPopupViewModel()
 
   init(
@@ -32,11 +34,13 @@ final class CredentialDetailViewModel<Router: RouterHost>: ViewModel<Router, Use
     interactor: DashboardInteractor,
     document: DocClaimsDecodable,
     deepLinkController: DeepLinkController,
-    pidRevokeInteractor: PIDRevokeInteractor
+    pidRevokeInteractor: PIDRevokeInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor
   ) {
     self.interactor = interactor
     self.deepLinkController = deepLinkController
     self.pidRevokeInteractor = pidRevokeInteractor
+    self.connectivityMonitor = connectivityMonitor
 
     super.init(
       router: router,
@@ -88,6 +92,14 @@ final class CredentialDetailViewModel<Router: RouterHost>: ViewModel<Router, Use
       } else {
         try await interactor.deleteDocument(with: viewState.document.id)
       }
+    } catch where isCredentialPID() && connectivityMonitor.isNoInternet(error) {
+      noInternetDialog.present(
+        retry: { [weak self] in
+          Task { try await self?.deleteCredential() }
+        },
+        cancel: {}
+      )
+      return
     } catch let error as BackendError {
       errorPopupViewModel.configure(backendError: error) { [weak self] in
         self?.isErrorPopupVisible = false

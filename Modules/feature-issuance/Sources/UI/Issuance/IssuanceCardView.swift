@@ -33,7 +33,6 @@ struct IssuanceCardView<Router: RouterHost>: View {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
         onClose: { isCancelDialogPresented = true },
-        onHelp: viewModel.viewHelpAndTips,
         progress: progressSteps
       )
 
@@ -82,6 +81,7 @@ struct IssuanceCardView<Router: RouterHost>: View {
       viewModel.abandonIssuance()
       viewModel.closeButtonTapped()
     }
+    .noInternetDialog($viewModel.noInternetDialog)
 
     .background(EnableSwipeBackGesture())
   }

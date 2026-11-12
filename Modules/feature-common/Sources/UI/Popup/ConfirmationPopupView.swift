@@ -45,7 +45,8 @@ public struct ConfirmationPopupView: View {
                   .font(DSTypography.Body.medium)
                   .fontWeight(DSStyle.FontWeight.regular_400)
                   .foregroundStyle(DSColor.onSurface)
-                  .multilineTextAlignment(.leading)
+                  .multilineTextAlignment(.center)
+                  .frame(maxWidth: .infinity)
                 Spacer()
               }
           
@@ -90,7 +91,7 @@ public struct ConfirmationPopupView: View {
           
           VStack {
             if let primaryTitle = viewModel.primaryButtontitle {
-              DSPrimaryButton(title: primaryTitle) {
+              DSPrimaryButton(title: primaryTitle, trailingIcon: viewModel.primaryButtonTrailingIcon) {
                 viewModel.onConfirm()
               }
             }

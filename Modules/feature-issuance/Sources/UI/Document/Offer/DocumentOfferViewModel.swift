@@ -19,6 +19,7 @@ import logic_resources
 import logic_business
 import feature_common
 import logic_core
+import logic_api
 
 @Copyable
 struct DocumentOfferViewState: ViewState {
@@ -49,16 +50,19 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
   private let interactor: DocumentOfferInteractor
   private let secureEnclaveController: SecureEnclaveController
   private let credentialsInteractor: CredentialsInteractor
+  private let connectivityMonitor: NetworkConnectivityMonitor
     
   @Published var shouldFetchCredentials: Bool = false
   @Published var apiResult: String?
   @Published var showCloseConfirmationPopup: Bool = false
+  @Published var noInternetDialog = NoInternetDialogState()
 
   init(
     router: Router,
     interactor: DocumentOfferInteractor,
     secureEnclaveController: SecureEnclaveController,
     credentialsInteractor: CredentialsInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor,
     config: any UIConfigType
   ) {
     guard
@@ -70,6 +74,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     self.interactor = interactor
     self.secureEnclaveController = secureEnclaveController
     self.credentialsInteractor = credentialsInteractor
+    self.connectivityMonitor = connectivityMonitor
       
       super.init(
       router: router,
@@ -109,6 +114,15 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
           )
           .copy(error: nil)
       }
+    case .failure(let error) where connectivityMonitor.isNoInternet(error):
+      setState { $0.copy(isLoading: false) }
+      noInternetDialog.present(
+        retry: { [weak self] in
+          self?.setState { $0.copy(isLoading: true) }
+          Task { await self?.initialize() }
+        },
+        cancel: { [weak self] in self?.onPop() }
+      )
     case .failure(let error):
       setState {
         $0
@@ -136,7 +150,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         handler: onIssueDocuments
       ),
       onBack: onPop,
-      onHelp: onHelp,
       onClose: closeButtonAction
     )
   }
@@ -185,6 +198,12 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
             )
           )
         )
+      case .failure(let error) where connectivityMonitor.isNoInternet(error):
+        setState { $0.copy(isLoading: false) }
+        noInternetDialog.present(
+          retry: { [weak self] in self?.onIssueDocuments() },
+          cancel: {}
+        )
       case .failure(let error):
         setState {
           $0.copy(
@@ -212,10 +231,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     case .pop:
       router.pop()
     }
-  }
-
-  func onHelp() {
-    // TODO: Implement help action
   }
 
   func handleNotification(with info: [AnyHashable: Any]) {

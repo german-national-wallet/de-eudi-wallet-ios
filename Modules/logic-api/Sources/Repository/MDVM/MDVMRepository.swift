@@ -147,8 +147,14 @@ final class MDVMRepositoryImpl: MDVMRepository {
   }
 
   private func saveRegistration(mdvmWIID: String, mdvmToken: String) throws {
-    _ = try secureEnclaveController.storeEncryptedString(value: mdvmWIID, keyTag: .mdvmWIID)
-    _ = try secureEnclaveController.storeEncryptedString(value: mdvmToken, keyTag: .mdvmToken)
+    try secureEnclaveController.storeEncryptedString(value: mdvmWIID, keyTag: .mdvmWIID)
+    do {
+      try secureEnclaveController.storeEncryptedString(value: mdvmToken, keyTag: .mdvmToken)
+    } catch {
+      secureEnclaveController.deleteKeychainItem(keyTag: .mdvmWIID)
+      secureEnclaveController.deleteKeychainItem(keyTag: .mdvmToken)
+      throw error
+    }
   }
 
   // MARK: - Renewal

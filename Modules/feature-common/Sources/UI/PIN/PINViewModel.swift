@@ -19,7 +19,10 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
   @Published var isInvalidPin = false
   @Published var errorMessage = String()
   @Published var canFocus = true
-  
+  @Published var noInternetDialog = NoInternetDialogState()
+  @Published var isErrorPopupVisible = false
+  let errorPopupViewModel = ConfirmationPopupViewModel()
+
   public var onPinEntered: PinCallbackWrapper?
   var issuanceVarificationInteractor: IssuanceVerificationInteractor?
   var interactor: BiometryInteractor
@@ -28,6 +31,8 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
   let secureEnclaveController: SecureEnclaveController
   let pinSessionInteractor: PinSessionInteractor
   let issuanceCancellationInteractor: IssuanceCancellationInteractor
+  let connectivityMonitor: NetworkConnectivityMonitor
+  let presentationOriginStore: PresentationOriginStore
   let logger: Logging?
   private let onClose: (@MainActor () -> Void)?
 
@@ -43,6 +48,8 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     onPinEntered: PinCallbackWrapper?,
     pinSessionInteractor: PinSessionInteractor,
     issuanceCancellationInteractor: IssuanceCancellationInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor,
+    presentationOriginStore: PresentationOriginStore,
     logger: Logging?,
     onClose: (@MainActor () -> Void)? = nil
   ) {
@@ -59,6 +66,8 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
     self.parInteractor = parInteractor
     self.pinSessionInteractor = pinSessionInteractor
     self.issuanceCancellationInteractor = issuanceCancellationInteractor
+    self.connectivityMonitor = connectivityMonitor
+    self.presentationOriginStore = presentationOriginStore
     self.logger = logger
 
     super.init(
@@ -117,6 +126,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
       case .setupWalletPinflow: setupWalletPinFlow()
       case .confirmNewWalletPinFlow: await confirmNewWalletPinFlow()
       case .eidPinAfterCanFlow: eidPinAfterCanFlow()
+      case .eidPinRetryFlow: eidPinRetryFlow()
       }
     setState { $0.copy(isLoading: false) }
   }
@@ -223,7 +233,7 @@ public final class PINViewModel<Router: RouterHost>: ViewModel<Router, PINViewSt
       case .issueEidPinFlow:
         router.cancelToStart()
 
-      case .setupWalletPinflow, .confirmNewWalletPinFlow:
+      case .setupWalletPinflow, .confirmNewWalletPinFlow, .eidPinRetryFlow:
         abandonIssuance()
         router.cancelToStart()
 

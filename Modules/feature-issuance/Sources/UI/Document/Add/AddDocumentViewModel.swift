@@ -20,6 +20,7 @@ import logic_business
 import feature_common
 import logic_core
 import logic_analytics
+import logic_api
 
 @Copyable
 public struct AddDocumentViewState: ViewState {
@@ -41,9 +42,11 @@ public final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, A
   private let deepLinkController: DeepLinkController
   private let secureEnclaveController: SecureEnclaveController
   private let analyticsController: AnalyticsController
+  private let connectivityMonitor: NetworkConnectivityMonitor
 
   @Published var isPinAlertVisible = false
   @Published var isErrorPopupVisible = false
+  @Published var noInternetDialog = NoInternetDialogState()
   
   let errorPopupViewModel = ConfirmationPopupViewModel()
   
@@ -53,6 +56,7 @@ public final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, A
     deepLinkController: DeepLinkController,
     secureEnclaveController: SecureEnclaveController,
     analyticsController: AnalyticsController,
+    connectivityMonitor: NetworkConnectivityMonitor,
     config: any UIConfigType
   ) {
     guard let config = config as? IssuanceFlowUiConfig else {
@@ -62,6 +66,7 @@ public final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, A
     self.deepLinkController = deepLinkController
     self.secureEnclaveController = secureEnclaveController
     self.analyticsController = analyticsController
+    self.connectivityMonitor = connectivityMonitor
 
     super.init(
       router: router,
@@ -92,6 +97,20 @@ public final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, A
         } else {
           await handleResumeIssuance()
         }
+    case .failure(let error) where connectivityMonitor.isNoInternet(error):
+      noInternetDialog.present(
+        retry: { [weak self] in
+          Task { await self?.initialize() }
+        },
+        cancel: { [weak self] in
+          guard let self else { return }
+          if viewState.isFlowCancellable {
+            pop()
+          } else {
+            setState { $0.copy(addDocumentCellModels: self.transformCellLoadingState(with: false)) }
+          }
+        }
+      )
     case .failure(let error):
       setState {
         $0.copy(

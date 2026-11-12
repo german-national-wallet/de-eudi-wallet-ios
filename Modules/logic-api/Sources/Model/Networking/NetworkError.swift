@@ -4,10 +4,12 @@
 //
 
 import Foundation
+import Alamofire
 
 public enum NetworkError: LocalizedError, Equatable {
   case invalidUrl
   case apiKeyNotFound
+  case noInternet
   case internetFailure(Error)
   case invalidResponse
   case decodingError(Error)
@@ -18,6 +20,8 @@ public enum NetworkError: LocalizedError, Equatable {
     switch self {
     case .invalidUrl:
       return ".invalidUrl"
+    case .noInternet:
+      return ".noInternet"
     case .internetFailure(let error):
       return ".networkError \(error.localizedDescription)"
     case .invalidResponse:
@@ -36,6 +40,7 @@ public enum NetworkError: LocalizedError, Equatable {
   public static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
     switch (lhs, rhs) {
     case (.invalidUrl, .invalidUrl),
+      (.noInternet, .noInternet),
       (.invalidResponse, .invalidResponse):
       return true
     case (.internetFailure(let lhsError), .internetFailure(let rhsError)):
@@ -47,5 +52,53 @@ public enum NetworkError: LocalizedError, Equatable {
     default:
       return false
     }
+  }
+}
+
+public extension Error {
+  var isNoInternet: Bool {
+    var current: Error? = self
+    var depth = 0
+    while let error = current, depth < 8 {
+      if let urlError = error as? URLError {
+        return offlineURLErrorCodes.contains(urlError.code)
+      }
+      switch error {
+      case NetworkError.noInternet:
+        return true
+      case NetworkError.internetFailure(let underlying):
+        current = underlying
+      default:
+        current = (error as NSError).userInfo[NSUnderlyingErrorKey] as? Error
+      }
+      depth += 1
+    }
+    return false
+  }
+}
+
+private let offlineURLErrorCodes: Set<URLError.Code> = [
+  .notConnectedToInternet,
+  .dataNotAllowed,
+  .internationalRoamingOff
+]
+
+public extension NetworkError {
+  static let transportStatusCodes: Set<Int> = [408, 429, 504]
+
+  var transportCause: URLError? {
+    guard case .internetFailure(let error) = self else {
+      return nil
+    }
+    return (error.asAFError?.underlyingError ?? error) as? URLError
+  }
+
+  var retryAfter: TimeInterval? {
+    guard case .httpError(_, _, let headers) = self else {
+      return nil
+    }
+    return headers?
+      .first { $0.key.caseInsensitiveCompare("Retry-After") == .orderedSame }
+      .flatMap { TimeInterval($0.value.trimmingCharacters(in: .whitespaces)) }
   }
 }

@@ -50,7 +50,6 @@ public struct IntroConfig {
   public var primaryAction: Action?
   public var secondaryAction: Action?
   public var onBack: (() -> Void)?
-  public var onHelp: (() -> Void)?
   public var onClose: (() -> Void)?
 
   public init(
@@ -64,7 +63,6 @@ public struct IntroConfig {
     primaryAction: Action? = nil,
     secondaryAction: Action? = nil,
     onBack: (() -> Void)? = nil,
-    onHelp: (() -> Void)? = nil,
     onClose: (() -> Void)? = nil
   ) {
     self.style = style
@@ -77,7 +75,6 @@ public struct IntroConfig {
     self.primaryAction = primaryAction
     self.secondaryAction = secondaryAction
     self.onBack = onBack
-    self.onHelp = onHelp
     self.onClose = onClose
   }
 }

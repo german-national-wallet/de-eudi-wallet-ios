@@ -11,7 +11,6 @@ import logic_resources
 struct IssuanceConsentView<Router: RouterHost>: View {
 
   @ObservedObject private var viewModel: IssuanceConsentViewModel<Router>
-  @State private var showInfoSheet: Bool
   @State private var isShowingAllData: Bool
   @State private var isCancelDialogPresented = false
 
@@ -19,7 +18,6 @@ struct IssuanceConsentView<Router: RouterHost>: View {
 
   init(with viewModel: IssuanceConsentViewModel<Router>) {
     self.viewModel = viewModel
-    self.showInfoSheet = false
     self.isShowingAllData = false
   }
 
@@ -40,7 +38,6 @@ struct IssuanceConsentView<Router: RouterHost>: View {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
         onClose: { isCancelDialogPresented = true },
-        onHelp: { showInfoSheet = true },
         progress: (current: 1, total: 4)
       )
 
@@ -68,12 +65,6 @@ struct IssuanceConsentView<Router: RouterHost>: View {
       .scrollIndicators(.hidden)
 
       bottomActions
-    }
-    .sheet(isPresented: $showInfoSheet) {
-      BottomSheetView(
-        title: LocalizableStringKey.whyIsThisDataNeededTitle.toString,
-        message: LocalizableStringKey.whyIsThisDataNeededDescription.toString
-      )
     }
     .centerDialog(
       isPresented: $viewModel.isRejectSheetOpen,

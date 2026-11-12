@@ -25,7 +25,6 @@ struct SteppedIntroView: View {
         HeaderContentView(
           onBack: config.onBack,
           onClose: config.onClose,
-          onHelp: config.onHelp,
           progress: progress
         )
 
@@ -85,7 +84,6 @@ struct SteppedIntroView: View {
       primaryAction: .init(title: "Label", handler: {}),
       secondaryAction: .init(title: "Label", handler: {}),
       onBack: {},
-      onHelp: {},
       onClose: {}
     )
   )

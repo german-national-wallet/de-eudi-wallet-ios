@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import logic_business
 
 @testable import logic_storage
 
@@ -38,7 +39,7 @@ struct TransactionLogStorageControllerTests {
   @Test
   func store_WhenTheStoreIsCreated_ThenItsFolderIsExcludedFromBackup() async throws {
     let storeURL = makeStoreURL()
-    let sut = TransactionLogStorageControllerImpl(storeURL: storeURL)
+    let sut = TransactionLogStorageControllerImpl(storeURL: storeURL, encryption: PassthroughEncryption())
 
     try await sut.store(TransactionLog(identifier: "a", time: Date(), value: "{}"))
 
@@ -74,7 +75,7 @@ struct TransactionLogStorageControllerTests {
   }
 
   private func makeSUT() -> TransactionLogStorageControllerImpl {
-    TransactionLogStorageControllerImpl(storeURL: makeStoreURL())
+    TransactionLogStorageControllerImpl(storeURL: makeStoreURL(), encryption: PassthroughEncryption())
   }
 
   private func makeStoreURL() -> URL {
@@ -82,4 +83,10 @@ struct TransactionLogStorageControllerTests {
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
       .appendingPathComponent("transaction_log.store")
   }
+}
+
+private struct PassthroughEncryption: WalletDataEncryptionController {
+  func encrypt(_ data: Data) throws -> Data { data }
+  func decrypt(_ data: Data) throws -> Data { data }
+  func deleteKey() {}
 }

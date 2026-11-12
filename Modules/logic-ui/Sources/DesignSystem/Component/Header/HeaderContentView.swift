@@ -9,7 +9,6 @@ import logic_resources
 public struct HeaderContentView: View {
   let onBack: (() -> Void)?
   let onClose: (() -> Void)?
-  let onHelp: (() -> Void)?
   let progress: (current: Int, total: Int)?
 
   private let headerActionRowHeight: CGFloat = 48
@@ -27,12 +26,10 @@ public struct HeaderContentView: View {
   public init(
     onBack: (() -> Void)? = nil,
     onClose: (() -> Void)? = nil,
-    onHelp: (() -> Void)? = nil,
     progress: (current: Int, total: Int)? = nil
   ) {
     self.onBack = onBack
     self.onClose = onClose
-    self.onHelp = onHelp
     self.progress = progress
   }
 
@@ -49,19 +46,6 @@ public struct HeaderContentView: View {
         }
 
         Spacer()
-
-        if let onHelp = onHelp {
-          Button(action: { onHelp() }, label: {
-            Theme.shared.image.help
-              .resizable()
-              .scaledToFit()
-              .frame(width: DSStyle.Sizes.Icons.large, height: DSStyle.Sizes.Icons.large)
-              .foregroundColor(DSColor.onBackground)
-              .iconButtonSlot()
-          })
-          .accessibilityLabel(Text(LocalizableStringKey.headerAccessibilityHelp.toLocalizedStringKey))
-          .accessibilityIdentifier("headerHelpButton")
-        }
 
         if let onClose = onClose {
           Button(action: { onClose() }, label: {

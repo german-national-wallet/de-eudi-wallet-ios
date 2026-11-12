@@ -16,6 +16,7 @@
 import logic_ui
 import logic_business
 import logic_core
+import logic_api
 import wallet_backend
 import push_notification_service
 
@@ -109,6 +110,9 @@ public final class StartupRouter {
           ),
           deepLinkController: DIGraph.resolver.force(
             DeepLinkController.self
+          ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
           ),
           logger: DIGraph.resolver.force(
             Logging.self

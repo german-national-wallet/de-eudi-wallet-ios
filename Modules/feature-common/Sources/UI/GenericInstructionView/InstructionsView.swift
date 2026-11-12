@@ -57,7 +57,6 @@ public struct InstructionsView<Router: RouterHost>: View {
         IntroConfig.Action(title: title.toString, handler: viewModel.secondaryButtonTapped)
       },
       onBack: viewModel.backButtonTapped,
-      onHelp: config.onHelp,
       onClose: { isCancelDialogPresented = true }
     )
   }

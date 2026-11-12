@@ -52,11 +52,26 @@ struct WalletPinRepositoryTests {
     #expect(secureEnclave.storeEncryptedCallCount == 0)
     #expect(secureEnclave.derivedWith.isEmpty)
   }
+
+  @Test
+  func getPinPrivateKey_WhenSaltCannotBeStored_ThrowsAndNeverDerivesKey() async {
+    let secureEnclave = FakeSecureEnclaveController()
+    secureEnclave.storeError = SecureEnclaveControllerError.keychainWriteFailed
+    let sut = WalletPinRepositoryImpl(secureEnclaveController: secureEnclave)
+
+    await #expect(throws: SecureEnclaveControllerError.keychainWriteFailed) {
+      _ = try await sut.getPinPrivateKey(pin: "123456")
+    }
+
+    #expect(secureEnclave.retrieveStringFromKeychain(keyTag: .rwscaAuthPrivateKeySalt) == nil)
+    #expect(secureEnclave.derivedWith.isEmpty)
+  }
 }
 
 private final class FakeSecureEnclaveController: SecureEnclaveController {
   private var stringStorage: [SecureEnclaveKeys: String] = [:]
   var decryptionError: Error?
+  var storeError: Error?
   private(set) var storeEncryptedCallCount = 0
   /// Salts passed to `generateECPrivateKey`, in call order.
   private(set) var derivedWith: [String] = []
@@ -76,6 +91,7 @@ private final class FakeSecureEnclaveController: SecureEnclaveController {
 
   func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
     storeEncryptedCallCount += 1
+    if let storeError { throw storeError }
     stringStorage[keyTag] = value
   }
   func retrieveDecryptedString(keyTag: SecureEnclaveKeys) throws -> String? {

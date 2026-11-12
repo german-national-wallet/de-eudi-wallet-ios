@@ -35,4 +35,18 @@ final class ImageAssetAdditionsTests: XCTestCase {
       "Missing 'arrow-forward' asset in the resources bundle"
     )
   }
+
+  func test_credentialTeaserCardsAsset_existsInBundle() {
+    XCTAssertNotNil(
+      UIImage(named: "credential_teaser_cards", in: .assetsBundle, compatibleWith: nil),
+      "Missing 'credential_teaser_cards' asset in the resources bundle"
+    )
+  }
+
+  func test_dYouWordmarkAsset_existsInBundle() {
+    XCTAssertNotNil(
+      UIImage(named: "d_you_wordmark", in: .assetsBundle, compatibleWith: nil),
+      "Missing 'd_you_wordmark' asset in the resources bundle"
+    )
+  }
 }

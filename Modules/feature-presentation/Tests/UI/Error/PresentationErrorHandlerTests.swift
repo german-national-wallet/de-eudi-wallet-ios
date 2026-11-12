@@ -10,6 +10,7 @@ import logic_api
 import logic_core
 import logic_ui
 import logic_resources
+import feature_common
 @testable import feature_presentation
 @testable import feature_test
 
@@ -18,6 +19,7 @@ final class PresentationErrorHandlerTests: XCTestCase {
     private var classifier: MockPresentationErrorClassifier!
     private var analyticsController: MockAnalyticsController!
     private var walletKitController: MockWalletKitController!
+    private var presentationOriginStore: MockPresentationOriginStore!
     private var sut: PresentationErrorHandlerImpl!
     private let originator: AppRoute = .featureDashboardModule(.dashboard)
     
@@ -27,11 +29,17 @@ final class PresentationErrorHandlerTests: XCTestCase {
         classifier = MockPresentationErrorClassifier()
         analyticsController = MockAnalyticsController()
         walletKitController = MockWalletKitController()
+        presentationOriginStore = MockPresentationOriginStore()
         sut = PresentationErrorHandlerImpl(
             classifier: classifier,
             analyticsController: analyticsController,
-            walletKitController: walletKitController
+            walletKitController: walletKitController,
+            presentationOriginStore: presentationOriginStore
         )
+        stub(presentationOriginStore) { mock in
+            when(mock.getServiceProviderURL()).thenReturn(nil)
+            when(mock.setServiceProviderURL(any())).thenDoNothing()
+        }
         stub(analyticsController) { mock in
             when(mock.currentTraceID.get).thenReturn("active-trace")
             when(mock.endTrace(finalAttributes: any(), errorDescription: any())).thenReturn("trace-id")
@@ -43,6 +51,7 @@ final class PresentationErrorHandlerTests: XCTestCase {
     
     override func tearDown() {
         sut = nil
+        presentationOriginStore = nil
         walletKitController = nil
         analyticsController = nil
         classifier = nil
@@ -90,16 +99,22 @@ final class PresentationErrorHandlerTests: XCTestCase {
         XCTAssertEqual(dialog?.traceId, "trace-id")
     }
     
-    func testHandle_WhenNetworkUnavailable_ThenOfflineDialogWithoutErrorCode() {
+    func testHandle_WhenNetworkUnavailable_ThenNoInternetWithoutRetry() {
         stubClassifier(.networkUnavailable, code: "invalidQueryResolution")
-        
-        let dialog = dialog(handling: TestNSError.generic)
-        
-        XCTAssertEqual(dialog?.title, .globalNoInternetErrorTitle)
-        XCTAssertEqual(dialog?.message, .globalNoInternetErrorParagraph)
-        XCTAssertEqual(dialog?.primary.title, .globalNoInternetErrorPrimButton)
-        XCTAssertNil(dialog?.errorCode)
-        XCTAssertEqual(dialog?.primary.action, .popTo(originator))
+
+        guard case .noInternet(let retry) = sut.handle(TestNSError.generic, originator: originator) else {
+            return XCTFail("expected a no-internet presentation")
+        }
+
+        XCTAssertNil(retry)
+    }
+
+    func testHandle_WhenNetworkUnavailable_ThenKeepsThePresentationTraceOpen() {
+        stubClassifier(.networkUnavailable, code: "invalidQueryResolution")
+
+        _ = sut.handle(TestNSError.generic, originator: originator)
+
+        verify(analyticsController, never()).endTrace(finalAttributes: any(), errorDescription: any())
     }
     
     func testHandle_WhenEndTraceReturnsNil_ThenDialogFallsBackToActiveTraceId() {
@@ -246,45 +261,161 @@ final class PresentationErrorHandlerTests: XCTestCase {
 
     // MARK: - Retry
 
-    func testHandle_WhenNetworkUnavailableWithRetry_ThenRetryIsPrimaryAndLeaveIsSecondary() {
+    func testHandle_WhenNetworkUnavailableWithRetry_ThenNoInternetCarriesRetry() {
         stubClassifier(.networkUnavailable, code: "invalidQueryResolution")
         let retry = PresentationErrorDialogConfig.RetryAction(action: {})
 
-        guard case .dialog(let dialog) = sut.handle(TestNSError.generic, originator: originator, retryAction: retry) else {
-            return XCTFail("expected a dialog presentation")
+        guard case .noInternet(let carried) = sut.handle(TestNSError.generic, originator: originator, retryAction: retry) else {
+            return XCTFail("expected a no-internet presentation")
         }
 
-        XCTAssertEqual(dialog.primary.title, .globalTryAgainButton)
-        XCTAssertEqual(dialog.primary.action, .retry(retry))
-        XCTAssertEqual(dialog.secondary?.title, .globalNoInternetErrorPrimButton)
-        XCTAssertEqual(dialog.secondary?.action, .popTo(originator))
+        XCTAssertEqual(carried, retry)
     }
 
-    func testHandle_WhenNotNetworkUnavailable_ThenRetryActionIsIgnored() {
+    func testHandle_WhenNotNetworkUnavailable_ThenNeverNoInternet() {
         let retry = PresentationErrorDialogConfig.RetryAction(action: {})
         for errorClass in PresentationErrorClass.allCases where errorClass != .networkUnavailable {
             stubClassifier(errorClass, code: "any")
-            let presentation = sut.handle(TestNSError.generic, originator: originator, retryAction: retry)
-            if case .dialog(let dialog) = presentation {
-                XCTAssertNotEqual(dialog.primary.action, .retry(retry), "\(errorClass)")
-                XCTAssertNotEqual(dialog.secondary?.action, .retry(retry), "\(errorClass)")
-              }
+            if case .noInternet = sut.handle(TestNSError.generic, originator: originator, retryAction: retry) {
+                XCTFail("\(errorClass) must not be shown as no internet")
+            }
         }
+    }
+
+    // MARK: - Transport failures (classified by PresentationErrorClassifier)
+
+    func testHandle_WhenRelyingPartyUnreachableWithoutServiceProvider_ThenCancelIsTheOnlyButton() {
+        stubClassifier(.relyingPartyUnreachable, diagnosticCase: "openID4VPRequest")
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .pidPresentationTimeoutRpTitle)
+        XCTAssertEqual(dialog?.message, .pidPresentationTimeoutRpParagraph)
+        XCTAssertNil(dialog?.errorCode)
+        XCTAssertEqual(dialog?.traceId, "trace-id")
+        XCTAssertEqual(dialog?.primary.title, .pidPresentationTimeoutRpSecButton)
+        XCTAssertEqual(dialog?.primary.action, .popTo(originator))
+        XCTAssertNil(dialog?.primary.trailingIcon)
+        XCTAssertNil(dialog?.secondary)
+    }
+
+    func testHandle_WhenRelyingPartyUnreachableAndServiceProviderKnown_ThenBothButtonsAreOffered() {
+        let serviceProvider = URL(string: "https://verifier.example")!
+        stub(presentationOriginStore) { mock in
+            when(mock.getServiceProviderURL()).thenReturn(serviceProvider)
+        }
+        stubClassifier(.relyingPartyUnreachable, diagnosticCase: "openID4VPResponse")
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .pidPresentationTimeoutRpTitle)
+        XCTAssertEqual(dialog?.primary.title, .pidPresentationTimeoutRpPrimButton)
+        XCTAssertEqual(dialog?.primary.action, .openExternal(serviceProvider))
+        XCTAssertNotNil(dialog?.primary.trailingIcon)
+        XCTAssertEqual(dialog?.secondary?.title, .pidPresentationTimeoutRpSecButton)
+        XCTAssertEqual(dialog?.secondary?.action, .popTo(originator))
+    }
+
+    func testHandle_WhenConnectionTimedOut_ThenSlowInternetDialogWithoutExternalLink() {
+        stub(presentationOriginStore) { mock in
+            when(mock.getServiceProviderURL()).thenReturn(URL(string: "https://verifier.example")!)
+        }
+        stubClassifier(.connectionTimedOut, diagnosticCase: "openID4VPResponse")
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .pidPresentationTimeoutSlowInternetTitle)
+        XCTAssertEqual(dialog?.message, .pidPresentationTimeoutSlowInternetParagraph)
+        XCTAssertNil(dialog?.errorCode)
+        XCTAssertEqual(dialog?.traceId, "trace-id")
+        XCTAssertEqual(dialog?.primary.title, .pidPresentationTimeoutSlowInternetPrimButton)
+        XCTAssertEqual(dialog?.primary.action, .popTo(originator))
+        XCTAssertNil(dialog?.primary.trailingIcon)
+        XCTAssertNil(dialog?.secondary)
+    }
+
+    func testHandle_WhenUnclassifiedWithHttpStatus_ThenGenericDialogShowsIt() {
+        stubClassifier(.unclassified, code: "HTTP 500")
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .globalGenericPresentationErrorTitle)
+        XCTAssertEqual(dialog?.errorCode, "HTTP 500")
+        XCTAssertEqual(dialog?.primary.action, .popTo(originator))
+        XCTAssertNil(dialog?.secondary)
+    }
+
+    func testHandle_WhenRateLimitedWithRetryAfter_ThenShowsTheRateLimitDialogWithTheDuration() {
+        let failure = TransportFailure(kind: .rateLimited, source: .walletBackend, statusCode: 429, retryAfter: 120)
+        stubClassifier(.rateLimited, code: "HTTP 429", transportFailure: failure)
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .pidPresentationTimeoutTooManyRequestsTitle)
+        XCTAssertEqual(
+            dialog?.message,
+            .globalTimeoutTooManyRequestsParagraph([ConfirmationPopupViewModel.retryDuration(120) ?? ""])
+        )
+        XCTAssertNil(dialog?.errorCode)
+        XCTAssertEqual(dialog?.traceId, "")
+        XCTAssertEqual(dialog?.primary.title, .globalNoInternetErrorPrimButton)
+        XCTAssertEqual(dialog?.primary.action, .popTo(originator))
+        XCTAssertNil(dialog?.secondary)
+    }
+
+    func testHandle_WhenRateLimitedWithoutRetryAfter_ThenShowsTheRateLimitDialogWithTheFallbackText() {
+        let failure = TransportFailure(kind: .rateLimited, source: .openID4VPRequest, statusCode: 429)
+        stubClassifier(.rateLimited, code: "HTTP 429", transportFailure: failure)
+
+        let dialog = dialog(handling: TestNSError.generic)
+
+        XCTAssertEqual(dialog?.title, .pidPresentationTimeoutTooManyRequestsTitle)
+        XCTAssertEqual(dialog?.message, .globalErrorParagraph)
+        XCTAssertNil(dialog?.errorCode)
+    }
+
+    func testHandle_WhenClassifiedWithTransportFailure_ThenTraceUsesRedactedDescriptionAndOrigin() {
+        let failure = TransportFailure(kind: .timeout, source: .walletBackend, statusCode: 504)
+        stubClassifier(
+            .connectionTimedOut,
+            origin: .wallet,
+            code: "HTTP 504",
+            diagnosticCase: "walletBackend",
+            transportFailure: failure
+        )
+
+        _ = sut.handle(TestNSError.generic, originator: originator)
+
+        let expected = [
+            AnalyticsConstants.TraceAttribute.status: AnalyticsConstants.TraceStatus.failure,
+            AnalyticsConstants.TraceAttribute.errorClass: PresentationErrorClass.connectionTimedOut.rawValue,
+            AnalyticsConstants.TraceAttribute.errorOrigin: PresentationErrorOrigin.wallet.rawValue,
+            AnalyticsConstants.TraceAttribute.errorCode: "HTTP 504",
+            AnalyticsConstants.TraceAttribute.errorDiagnosticCase: "walletBackend"
+        ]
+        verify(analyticsController).endTrace(
+            finalAttributes: equal(to: expected),
+            errorDescription: equal(to: "TransportFailure timeout via walletBackend status 504")
+        )
     }
 
     // MARK: - Helpers
     
     private func stubClassifier(
         _ errorClass: PresentationErrorClass,
+        origin: PresentationErrorOrigin? = nil,
         code: String? = nil,
-        diagnosticCase: String? = nil
+        diagnosticCase: String? = nil,
+        transportFailure: TransportFailure? = nil
     ) {
         stub(classifier) { mock in
             when(mock.classify(any())).thenReturn(
                 ClassifiedPresentationError(
                     errorClass: errorClass,
+                    origin: origin,
                     diagnosticCode: code,
                     diagnosticCase: diagnosticCase,
+                    transportFailure: transportFailure,
                     underlying: TestNSError.generic
                 )
             )
@@ -319,5 +450,3 @@ final class PresentationErrorHandlerTests: XCTestCase {
 private enum TestNSError {
     static let generic = NSError(domain: "PresentationErrorHandlerTests", code: 1)
 }
-
-

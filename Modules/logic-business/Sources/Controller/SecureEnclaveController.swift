@@ -216,7 +216,6 @@ public final class SecureEnclaveControllerImpl: SecureEnclaveController {
 
   public func storeEncryptedString(value: String, keyTag: SecureEnclaveKeys) throws {
     let plaintext = Data(value.utf8)
-    walletDataEncryptionController.generateKeyIfNeeded()
     let ciphertext: Data
     do {
       ciphertext = try walletDataEncryptionController.encrypt(plaintext)

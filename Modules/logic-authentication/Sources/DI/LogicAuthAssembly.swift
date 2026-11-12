@@ -38,5 +38,10 @@ public final class LogicAuthAssembly: Assembly {
       )
     }
     .inObjectScope(ObjectScope.transient)
+
+    container.register(DeviceOwnerAuthenticationController.self) { _ in
+      DeviceOwnerAuthenticationControllerImpl()
+    }
+    .inObjectScope(ObjectScope.transient)
   }
 }

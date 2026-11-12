@@ -15,6 +15,7 @@
  */
 import Foundation
 import Swinject
+import logic_api
 import logic_business
 import logic_feature_flags
 
@@ -27,7 +28,8 @@ public final class LogicAssemblyModule: Assembly {
     container.register(FeatureFlagRepository.self) { r in
       FeatureFlagRepositoryImpl(
         prefsController: r.force(PrefsController.self),
-        logger: r.resolve(Logging.self)
+        logger: r.resolve(Logging.self),
+        connectivityMonitor: r.force(NetworkConnectivityMonitor.self)
       )
     }
     .inObjectScope(ObjectScope.container)

@@ -57,6 +57,11 @@ struct PresentationLoadingView<Router: RouterHost, RequestItem: Sendable>: View 
               PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
           }
       }
+      .noInternetDialog(
+        isPresented: $viewModel.isNoInternetDialogPresented,
+        onRetry: viewModel.onNoInternetRetry,
+        onCancel: viewModel.onNoInternetCancel
+      )
       .sheet(isPresented: $viewModel.showPIDResetConfirmationPopup) {
         ConfirmationPopupView(viewModel: viewModel.confirmationPopupViewModel)
           .transition(.opacity)

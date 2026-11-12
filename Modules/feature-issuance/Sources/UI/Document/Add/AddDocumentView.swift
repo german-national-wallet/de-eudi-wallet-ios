@@ -25,7 +25,6 @@ public struct AddDocumentView<Router: RouterHost>: View {
   @ObservedObject var viewModel: AddDocumentViewModel<Router>
   var contentSize: CGFloat = 0.0
   @State private var showWebView = false
-  private let verifier: String = "https://playground.eudi-wallet.org/"
   
   public init(with viewModel: AddDocumentViewModel<Router>) {
     self.viewModel = viewModel
@@ -53,13 +52,14 @@ public struct AddDocumentView<Router: RouterHost>: View {
         .accessibilityIdentifier("deeplinkTriggerButton")
       }
     }
+    .noInternetDialog($viewModel.noInternetDialog)
     .onAppear {
       Task {
         await self.viewModel.initialize()
       }
     }
     .sheet(isPresented: $showWebView) {
-      if let url = URL(string: verifier) {
+      if let url = AppEnvironment.uiTestWebURL {
         NavigationView {
           VStack {
             Text("Loading: \(url.absoluteString)")
@@ -94,6 +94,7 @@ public struct AddDocumentView<Router: RouterHost>: View {
 private struct Content: View {
   
   @ObservedObject var appState = AppState.shared
+  @State private var isCredentialCatalogueVisible = false
   private let showsSimulatedEIDCardToggle = AppBuildVariant.current.offersSimulatedEIDCard
   let viewState: AddDocumentViewState
   let action: () -> Void
@@ -105,61 +106,20 @@ private struct Content: View {
   
   var body: some View {
     ScrollView {
-      VStack(spacing: 0) {
-        VStack(alignment: .leading) {
-          DSTitleLabel(.chooseFromListTitle, font: DSTypography.Headline.large)
-            .padding()
-            .padding(.top)
-          
-          HStack {
-            Spacer()
-            Theme.shared.image.backgroundPID
-            Spacer()
-          }
-          Spacer()
-          HStack {
-            Text(.dashboardScreenSecondaryText)
-              .font(DSTypography.Body.medium)
-              .foregroundStyle(DSColor.onSurface)
-            Spacer(minLength: 45)
-            DSPrimaryButton(title: LocalizableStringKey.dashboardPrimaryButtonTitle.toString, action: action)
-            .accessibilityIdentifier("dashboardPrimaryButton")
-          }
-          .padding(.vertical, 23)
-          .padding(.horizontal, 13)
-          .background {
-            Rectangle()
-              .foregroundStyle(DSColor.backgroundPIDMedium)
-              .border(DSColor.outlineVariant, width: 1)
-          }
-        }
-
-        if showsSimulatedEIDCardToggle {
-          Toggle(isOn: $appState.useSimulatedEIDCard) {
-            Text(.pidInspectionInitialDashboardTempLabel1)
-              .foregroundStyle(DSColor.onSurface)
-              .font(DSTypography.Body.medium)
-              .bold()
-          }
-          .toggleStyle(DSToggle.TintedToggleStyle())
-          .padding()
-        }
-      }
-      .background {
-        RoundedRectangle(cornerRadius: 12)
-          .fill(DSColor.backgroundPIDLight)
-      }
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      .overlay {
-        RoundedRectangle(cornerRadius: 12)
-          .stroke(DSColor.outlineVariant, lineWidth: 1)
+      VStack(spacing: 16) {
+        PIDTeaserView(action: action)
+        CredentialTeaserView()
       }
       .padding(.horizontal, Theme.shared.dimension.padding)
-      .padding(.bottom)
-      .padding(.top)
-      
+      .padding(.vertical)
     }
     .shimmer(isLoading: viewState.isLoading)
     .ignoresSafeArea(edges: .bottom)
+    .sheet(isPresented: $isCredentialCatalogueVisible) {
+      if let url = AppEnvironment.credentialCatalogueLink {
+        SafariView(url: url)
+          .ignoresSafeArea()
+      }
+    }
   }
 }

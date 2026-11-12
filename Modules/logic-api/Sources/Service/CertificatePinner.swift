@@ -13,7 +13,7 @@ public struct CertificatePinner: Sendable {
   private enum Constants {
     static let certificateFileExtension = "der"
     static let certificateSubdirectory = "Wallet/Certificates/Pinning"
-    static let pidProviderHostSuffix = "pid-provider.bundesdruckerei.de"
+    static let pidProviderHostSuffixes = ["pid-provider.bundesdruckerei.de", "pid-issuer.bundesdruckerei.de"]
     static let pidProviderFilePrefix = "pidp-tls-pin-"
     static let letsEncryptFilePrefix = "le-tls-pin-"
     static let letsEncryptHostSuffixesKey = "TLS_PIN_HOST_SUFFIXES"
@@ -25,7 +25,10 @@ public struct CertificatePinner: Sendable {
   private let publicKeyHashesByHostSuffix: [String: Set<Data>]
 
   public init(letsEncryptHostSuffixes: [String] = CertificatePinner.letsEncryptHostSuffixesFromBundle()) {
-    var filePrefixByHostSuffix = [Constants.pidProviderHostSuffix: Constants.pidProviderFilePrefix]
+    var filePrefixByHostSuffix: [String: String] = [:]
+    for hostSuffix in Constants.pidProviderHostSuffixes {
+      filePrefixByHostSuffix[hostSuffix] = Constants.pidProviderFilePrefix
+    }
     for hostSuffix in letsEncryptHostSuffixes {
       filePrefixByHostSuffix[hostSuffix.lowercased()] = Constants.letsEncryptFilePrefix
     }

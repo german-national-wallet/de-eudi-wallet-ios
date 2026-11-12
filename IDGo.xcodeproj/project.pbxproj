@@ -14,6 +14,7 @@
 		2CF5FF3D2CA6F580004411A4 /* Wallet.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 2CF5FF3C2CA6F580004411A4 /* Wallet.xctestplan */; };
 		521F44972D6DF87E0014ED7E /* .env in Resources */ = {isa = PBXBuildFile; fileRef = 521F44962D6DF87E0014ED7E /* .env */; };
 		52D029092E8B2665008A0FA2 /* WalletUITests.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 52D029082E8B2665008A0FA2 /* WalletUITests.xctestplan */; };
+		52D0290B2E8B2665008A0FA4 /* WalletAmborUITests.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 52D0290A2E8B2665008A0FA3 /* WalletAmborUITests.xctestplan */; };
 		B79DD5702F3B5DEB0033AEB3 /* version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B79DD56F2F3B5DEB0033AEB3 /* version.xcconfig */; };
 		F02921632B8E07870076A58B /* WalletSandbox.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F02921612B8E07870076A58B /* WalletSandbox.xcconfig */; };
 		F02921642B8E07870076A58B /* WalletStaging.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F02921622B8E07870076A58B /* WalletStaging.xcconfig */; };
@@ -63,6 +64,7 @@
 		52819D5E2D864E7F00C8480C /* IDGo.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = IDGo.xctestplan; sourceTree = "<group>"; };
 		52CC859B2CB6836100E1EDC9 /* IDGo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IDGo.entitlements; sourceTree = "<group>"; };
 		52D029082E8B2665008A0FA2 /* WalletUITests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = WalletUITests.xctestplan; sourceTree = "<group>"; };
+		52D0290A2E8B2665008A0FA3 /* WalletAmborUITests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = WalletAmborUITests.xctestplan; sourceTree = "<group>"; };
 		52F1F928302C6AC900104619 /* GoogleService-Info-Dev.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Dev.plist"; sourceTree = "<group>"; };
 		52F1F92A302C6AC900104619 /* GoogleService-Info-Sandbox.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Sandbox.plist"; sourceTree = "<group>"; };
 		52F1F92C302C6AC900104619 /* GoogleService-Info-Staging.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Staging.plist"; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				52D029082E8B2665008A0FA2 /* WalletUITests.xctestplan */,
+				52D0290A2E8B2665008A0FA3 /* WalletAmborUITests.xctestplan */,
 				52819D5E2D864E7F00C8480C /* IDGo.xctestplan */,
 				521F44962D6DF87E0014ED7E /* .env */,
 				52CC859B2CB6836100E1EDC9 /* IDGo.entitlements */,
@@ -351,6 +354,7 @@
 				F02921632B8E07870076A58B /* WalletSandbox.xcconfig in Resources */,
 				F1CACAE02AC3097100B40DED /* WalletDev.xcconfig in Resources */,
 				52D029092E8B2665008A0FA2 /* WalletUITests.xctestplan in Resources */,
+				52D0290B2E8B2665008A0FA4 /* WalletAmborUITests.xctestplan in Resources */,
 				F02921642B8E07870076A58B /* WalletStaging.xcconfig in Resources */,
 				B79DD5702F3B5DEB0033AEB3 /* version.xcconfig in Resources */,
 			);
@@ -546,7 +550,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -714,7 +718,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -889,7 +893,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1070,7 +1074,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1244,7 +1248,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1412,7 +1416,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1580,7 +1584,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1748,7 +1752,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

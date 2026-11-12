@@ -234,6 +234,35 @@ final class RPInfoViewModelTests: XCTestCase {
     verify(interactor, never()).stopPresentation()
   }
 
+  func testDoWork_WhenRegistrationHasPurpose_ThenExposesIt() async {
+    stubPresentation(returning: .success(makeRequest(purpose: "Age verification")))
+
+    await sut.doWork()
+
+    XCTAssertEqual(sut.purpose, "Age verification")
+  }
+
+  func testDoWork_WhenRequestIsRefused_ThenDoesNotExposePurpose() async {
+    stubPresentation(returning: .success(makeRequest(isOverAsking: true, purpose: "Age verification")))
+    stubRejectedRoute { _ in }
+
+    await sut.doWork()
+
+    XCTAssertNil(sut.purpose)
+  }
+
+  func testDoWork_WhenRefetchedRequestIsRefused_ThenClearsPreviousPurpose() async {
+    stubPresentation(returning: .success(makeRequest(purpose: "Age verification")))
+    await sut.doWork()
+    XCTAssertEqual(sut.purpose, "Age verification")
+
+    stubPresentation(returning: .success(makeRequest(isOverAsking: true, purpose: "Age verification")))
+    stubRejectedRoute { _ in }
+    await sut.doWork()
+
+    XCTAssertNil(sut.purpose)
+  }
+
   // MARK: - Decline
 
   func testOnDecline_ThenShowsPopupAndSendsNothing() async {
@@ -328,7 +357,8 @@ final class RPInfoViewModelTests: XCTestCase {
   private func makeRequest(
     isOverAsking: Bool = false,
     supervisoryAuthorityURI: URL? = nil,
-    hasUnreadableRegistration: Bool = false
+    hasUnreadableRegistration: Bool = false,
+    purpose: String? = nil
   ) -> OnlineAuthenticationRequestSuccessModel {
     OnlineAuthenticationRequestSuccessModel(
       requestDataCells: [],
@@ -337,7 +367,8 @@ final class RPInfoViewModelTests: XCTestCase {
       isTrusted: true,
       isOverAsking: isOverAsking,
       supervisoryAuthorityURI: supervisoryAuthorityURI,
-      hasUnreadableRegistration: hasUnreadableRegistration
+      hasUnreadableRegistration: hasUnreadableRegistration,
+      purpose: purpose
     )
   }
 
@@ -347,6 +378,20 @@ final class RPInfoViewModelTests: XCTestCase {
       when(mock.declinePresentation()).thenDoNothing()
       when(mock.stopPresentation()).thenDoNothing()
     }
+  }
+
+  func testOnNoInternetCancel_ThenStopsThePresentationAndGoesBack() {
+    stub(interactor) { mock in
+      when(mock.stopPresentation()).thenDoNothing()
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    sut.onNoInternetCancel()
+
+    verify(interactor).stopPresentation()
+    verify(router).pop()
   }
 
   private func stubRejectedRoute(_ onRejected: @escaping (PresentationRejectedUiConfig) -> Void) {

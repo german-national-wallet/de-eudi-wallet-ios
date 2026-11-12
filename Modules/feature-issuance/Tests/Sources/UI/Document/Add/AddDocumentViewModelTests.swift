@@ -10,6 +10,7 @@ import Cuckoo
 import feature_common
 import logic_analytics
 import logic_core
+import logic_api
 import logic_ui
 @testable import feature_issuance
 
@@ -21,6 +22,7 @@ final class AddDocumentViewModelTests: XCTestCase {
   private var deepLinkController: MockDeepLinkController!
   private var secureEnclaveController: MockSecureEnclaveController!
   private var analyticsController: MockAnalyticsController!
+  private var connectivityMonitor: MockNetworkConnectivityMonitor!
   private var sut: AddDocumentViewModel<MockRouterHost>!
 
   override func setUp() {
@@ -31,18 +33,25 @@ final class AddDocumentViewModelTests: XCTestCase {
     deepLinkController = MockDeepLinkController()
     secureEnclaveController = MockSecureEnclaveController()
     analyticsController = MockAnalyticsController()
-    sut = AddDocumentViewModel(
+    connectivityMonitor = .stubbed()
+    sut = makeSUT(flow: .extraDocument)
+  }
+
+  private func makeSUT(flow: IssuanceFlowUiConfig.Flow) -> AddDocumentViewModel<MockRouterHost> {
+    AddDocumentViewModel(
       router: router,
       interactor: interactor,
       deepLinkController: deepLinkController,
       secureEnclaveController: secureEnclaveController,
       analyticsController: analyticsController,
-      config: IssuanceFlowUiConfig(flow: .extraDocument)
+      connectivityMonitor: connectivityMonitor,
+      config: IssuanceFlowUiConfig(flow: flow)
     )
   }
 
   override func tearDown() {
     sut = nil
+    connectivityMonitor = nil
     analyticsController = nil
     secureEnclaveController = nil
     deepLinkController = nil
@@ -81,6 +90,46 @@ final class AddDocumentViewModelTests: XCTestCase {
 
     XCTAssertNotNil(sut.viewState.error)
     verify(interactor).fetchScopedDocuments(with: any())
+  }
+
+  func testInitialize_WhenOffline_ThenShowsNoInternetDialogInsteadOfError() async {
+    stub(interactor) { mock in
+      when(mock.fetchScopedDocuments(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+
+    await sut.initialize()
+
+    XCTAssertTrue(sut.noInternetDialog.isPresented)
+    XCTAssertNil(sut.viewState.error)
+  }
+
+  func testInitialize_WhenOfflineAndCancelTappedInExtraDocumentFlow_ThenGoesBack() async {
+    stub(interactor) { mock in
+      when(mock.fetchScopedDocuments(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    await sut.initialize()
+    sut.noInternetDialog.cancel()
+
+    verify(router).pop()
+    XCTAssertNil(sut.viewState.error)
+  }
+
+  func testInitialize_WhenOfflineAndClosedWithoutPreviousScreen_ThenStaysOnTheScreenWithoutError() async {
+    sut = makeSUT(flow: .noDocument)
+    stub(interactor) { mock in
+      when(mock.fetchScopedDocuments(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+
+    await sut.initialize()
+    sut.noInternetDialog.cancel()
+
+    XCTAssertNil(sut.viewState.error)
+    XCTAssertFalse(sut.viewState.isLoading)
+    verifyNoMoreInteractions(router)
   }
 
   func testOnClick_WhenCalled_ThenStartsIssuanceTraceAndPushesOnboarding() async {

@@ -9,6 +9,7 @@ import XCTest
 import Cuckoo
 import OpenID4VCI
 import logic_core
+import logic_api
 import logic_resources
 import logic_ui
 import feature_common
@@ -20,6 +21,7 @@ final class OfferCodeViewModelTests: XCTestCase {
 
   private var router: MockRouterHost!
   private var interactor: MockDocumentOfferInteractor!
+  private var connectivityMonitor: MockNetworkConnectivityMonitor!
   private var sut: OfferCodeViewModel<MockRouterHost>!
 
   override func setUp() {
@@ -27,15 +29,18 @@ final class OfferCodeViewModelTests: XCTestCase {
 
     router = MockRouterHost()
     interactor = MockDocumentOfferInteractor()
+    connectivityMonitor = .stubbed()
     sut = OfferCodeViewModel(
       router: router,
       interactor: interactor,
+      connectivityMonitor: connectivityMonitor,
       config: makeConfig()
     )
   }
 
   override func tearDown() {
     sut = nil
+    connectivityMonitor = nil
     interactor = nil
     router = nil
 
@@ -123,9 +128,31 @@ final class OfferCodeViewModelTests: XCTestCase {
     XCTAssertNotNil(sut.viewState.error)
   }
 
+  func testPrimaryButtonAction_WhenTheLoaderReportsNoInternet_ThenShowsNoInternetDialogAndRetryPushesTheLoaderAgain() async {
+    let reported = expectation(description: "Wait for the failure to be reported back")
+    sut.codeInput = "123456"
+    stub(router) { mock in
+      when(mock.push(with: any())).thenDoNothing()
+    }
+
+    sut.primaryButtonAction()
+    capturedLoaderFailureHandler()?(NetworkError.noInternet)
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+      reported.fulfill()
+    }
+    await fulfillment(of: [reported], timeout: 1)
+    XCTAssertTrue(sut.noInternetDialog.isPresented)
+    XCTAssertNil(sut.viewState.error)
+    XCTAssertTrue(sut.errorMessage.isEmpty)
+
+    sut.noInternetDialog.retry()
+    verify(router, times(2)).push(with: any())
+  }
+
   private func capturedLoaderRoute() -> FeatureIssuanceRouteModule? {
     let captor = ArgumentCaptor<AppRoute>()
-    verify(router).push(with: captor.capture())
+    verify(router, atLeastOnce()).push(with: captor.capture())
     guard case .featureIssuanceModule(let module) = captor.value else {
       return nil
     }

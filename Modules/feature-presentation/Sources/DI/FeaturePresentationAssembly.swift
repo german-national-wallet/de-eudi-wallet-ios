@@ -37,6 +37,7 @@ public final class FeaturePresentationAssembly: Assembly {
             and: r.force(SecureEnclaveController.self),
             and: r.force(CredentialsInteractor.self),
             also: r.force(SessionCoordinatorHolder.self),
+            presentationOriginStore: r.force(PresentationOriginStore.self),
             logger: r.force(Logging.self)
         )
     }
@@ -46,7 +47,8 @@ public final class FeaturePresentationAssembly: Assembly {
       PresentationErrorHandlerImpl(
         classifier: r.force(PresentationErrorClassifier.self),
         analyticsController: r.force(AnalyticsController.self),
-        walletKitController: r.force(WalletKitController.self)
+        walletKitController: r.force(WalletKitController.self),
+        presentationOriginStore: r.force(PresentationOriginStore.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

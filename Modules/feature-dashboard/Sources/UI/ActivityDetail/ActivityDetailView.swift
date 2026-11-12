@@ -35,7 +35,7 @@ struct ActivityDetailView<Router: RouterHost>: View {
 
   var body: some View {
     ContentScreenView(padding: .zero) {
-      HeaderContentView(onBack: viewModel.backButtonTapped, onHelp: viewModel.onHelpTapped)
+      HeaderContentView(onBack: viewModel.backButtonTapped)
 
       ScrollView {
         content
@@ -128,7 +128,7 @@ private struct PresentationDetailContent: View {
       VStack(alignment: .leading, spacing: DSStyle.Spacers.SPACING_SMALL) {
         LabeledValue(label: presentation.dateLabel, value: presentation.date)
         if let failure = presentation.failureMessage {
-          ActivityBannerView(style: .warning, message: failure)
+          DSBannerView(style: .warning, message: failure)
             .accessibilityIdentifier("activityDetailFailureBanner")
         }
       }

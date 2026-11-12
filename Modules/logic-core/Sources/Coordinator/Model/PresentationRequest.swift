@@ -24,12 +24,14 @@ public struct PresentationRequest: Sendable {
   public let policyViolations: [PresentationPolicyViolation]
   public let supervisoryAuthorityURI: URL?
   public let hasRegistrationPolicy: Bool
+  public var serviceProviderURL: URL?
+  public var purpose: String?
 
   public var isOverAsking: Bool {
-    policyViolations.containsOverAskedClaims
+    policyViolations.containsOverAskedClaims || policyViolations.containsMissingEntitlement
   }
 
   public var hasUnreadableRegistration: Bool {
-    !hasRegistrationPolicy && !policyViolations.isEmpty
+    (!hasRegistrationPolicy && !policyViolations.isEmpty) || policyViolations.containsUnverifiedRegistration
   }
 }

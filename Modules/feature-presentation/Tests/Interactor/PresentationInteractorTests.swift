@@ -9,7 +9,7 @@ import XCTest
 import Cuckoo
 import feature_common
 import feature_issuance
-import logic_core
+@testable import logic_core
 import logic_ui
 import JOSESwift
 import Security
@@ -24,6 +24,7 @@ final class PresentationInteractorTests: XCTestCase {
   private var secureEnclaveController: MockSecureEnclaveController!
   private var sessionCoordinatorHolder: MockSessionCoordinatorHolder!
   private var coordinator: MockRemoteSessionCoordinator!
+  private var presentationOriginStore: MockPresentationOriginStore!
   private var sut: PresentationInteractorImpl!
 
   override func setUp() {
@@ -34,6 +35,11 @@ final class PresentationInteractorTests: XCTestCase {
     secureEnclaveController = MockSecureEnclaveController()
     sessionCoordinatorHolder = MockSessionCoordinatorHolder()
     coordinator = MockRemoteSessionCoordinator(session: Constants.mockPresentationSession)
+    presentationOriginStore = MockPresentationOriginStore()
+    stub(presentationOriginStore) { mock in
+      when(mock.setServiceProviderURL(any())).thenDoNothing()
+      when(mock.getServiceProviderURL()).thenReturn(nil)
+    }
 
     stub(sessionCoordinatorHolder) { mock in
       when(mock.setActiveRemoteCoordinator(any())).thenDoNothing()
@@ -50,12 +56,14 @@ final class PresentationInteractorTests: XCTestCase {
         walletPoPController: walletPoPController,
         secureEnclaveController: secureEnclaveController
       ),
-      also: sessionCoordinatorHolder
+      also: sessionCoordinatorHolder,
+      presentationOriginStore: presentationOriginStore
     )
   }
 
   override func tearDown() {
     sut = nil
+    presentationOriginStore = nil
     coordinator = nil
     sessionCoordinatorHolder = nil
     secureEnclaveController = nil
@@ -63,6 +71,49 @@ final class PresentationInteractorTests: XCTestCase {
     walletKitController = nil
 
     super.tearDown()
+  }
+
+  func testOnRequestReceived_WhenRequestCarriesServiceProviderURL_ThenStoresIt() async {
+    let serviceProvider = URL(string: "https://verifier.example/info")!
+    let request = PresentationRequest(
+      itemSets: [],
+      relyingParty: "Relying Party",
+      dataRequestInfo: "",
+      isTrusted: true,
+      policyViolations: [],
+      supervisoryAuthorityURI: nil,
+      hasRegistrationPolicy: true,
+      serviceProviderURL: serviceProvider
+    )
+    stub(coordinator) { mock in
+      when(mock.requestReceived()).thenReturn(request)
+    }
+
+    let result = await sut.onRequestReceived()
+
+    guard case .success = result else {
+      return XCTFail("expected success, got \(result)")
+    }
+    verify(presentationOriginStore).setServiceProviderURL(equal(to: serviceProvider))
+  }
+
+  func testOnRequestReceived_WhenRequestHasNoServiceProviderURL_ThenStoreIsCleared() async {
+    let request = PresentationRequest(
+      itemSets: [],
+      relyingParty: "Relying Party",
+      dataRequestInfo: "",
+      isTrusted: true,
+      policyViolations: [],
+      supervisoryAuthorityURI: nil,
+      hasRegistrationPolicy: false
+    )
+    stub(coordinator) { mock in
+      when(mock.requestReceived()).thenReturn(request)
+    }
+
+    _ = await sut.onRequestReceived()
+
+    verify(presentationOriginStore).setServiceProviderURL(isNil())
   }
 
   func testOnResponsePrepare_WhenRequestItemsAreEmpty_ThenReturnsConversionFailure() async {
@@ -239,14 +290,14 @@ final class PresentationInteractorTests: XCTestCase {
     verify(walletKitController).fetchDocuments(with: equal(to: [Constants.euPidModelId]))
   }
 
-  func testGetClaimCount_WhenDocumentExists_ThenReturnsClaimCount() {
+  func testGetClaimCount_WhenDocumentExists_ThenReturnsLeafClaimCount() {
     stub(walletKitController) { mock in
       when(mock.fetchDocument(with: equal(to: Constants.euPidModelId))).thenReturn(Constants.euPidModel)
     }
 
     XCTAssertEqual(
       sut.getClaimCount(documentID: Constants.euPidModelId),
-      Constants.euPidModel.docClaims.count
+      Constants.euPidModel.docClaims.leafCount
     )
     verify(walletKitController).fetchDocument(with: equal(to: Constants.euPidModelId))
   }

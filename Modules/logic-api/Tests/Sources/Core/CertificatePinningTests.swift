@@ -24,6 +24,7 @@ struct CertificatePinningTests {
   func pinnedHostSuffix_KeepsPinningThePIDProvider() {
     #expect(sut.pinnedHostSuffix(for: "demo.pid-provider.bundesdruckerei.de") == "pid-provider.bundesdruckerei.de")
     #expect(sut.pinnedHostSuffix(for: "preprod.pid-provider.bundesdruckerei.de") == "pid-provider.bundesdruckerei.de")
+    #expect(sut.pinnedHostSuffix(for: "demo.pid-issuer.bundesdruckerei.de") == "pid-issuer.bundesdruckerei.de")
   }
 
   @Test
@@ -49,6 +50,7 @@ struct CertificatePinningTests {
     #expect(sut.anchors(forHostSuffix: "nwb.youniqx.com").isEmpty)
     #expect(sut.anchors(forHostSuffix: "eudiw.gov.de").isEmpty)
     #expect(sut.anchors(forHostSuffix: "pid-provider.bundesdruckerei.de").isEmpty)
+    #expect(sut.anchors(forHostSuffix: "pid-issuer.bundesdruckerei.de").isEmpty)
     #expect(sut.anchors(forHostSuffix: "evil.com").isEmpty)
   }
 
@@ -73,6 +75,7 @@ struct CertificatePinningTests {
     #expect(try sut.serverTrustEvaluator(forHost: "wallet-backend-dev.apps.sandbox.nwb.youniqx.com") != nil)
     #expect(try sut.serverTrustEvaluator(forHost: "wallet.eudiw.gov.de") != nil)
     #expect(try sut.serverTrustEvaluator(forHost: "demo.pid-provider.bundesdruckerei.de") != nil)
+    #expect(try sut.serverTrustEvaluator(forHost: "demo.pid-issuer.bundesdruckerei.de") != nil)
 
     #expect(try sut.serverTrustEvaluator(forHost: "fhd.eudi-wallet.org") == nil)
     #expect(try sut.serverTrustEvaluator(forHost: "evil.com") == nil)

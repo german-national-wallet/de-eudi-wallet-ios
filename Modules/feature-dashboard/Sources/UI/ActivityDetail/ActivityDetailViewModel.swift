@@ -47,10 +47,6 @@ final class ActivityDetailViewModel<Router: RouterHost>: ViewModel<Router, Activ
     }
   }
 
-  func onHelpTapped() {
-    // Intentionally empty: the app has no help destination yet
-  }
-
   func onDeleteRequested() {
     setState { $0.copy(isDeleteConfirmationPresented: true) }
   }

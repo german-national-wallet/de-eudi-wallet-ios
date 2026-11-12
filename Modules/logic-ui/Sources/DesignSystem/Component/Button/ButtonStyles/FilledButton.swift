@@ -66,6 +66,7 @@ public extension DesignSystem.Components.Buttons {
             .stroke(isEnabled ? outlineColor : outlineColor.opacity(0.38), lineWidth: borderWidth)
           : nil
         )
+        .contentShape([.interaction, .hoverEffect], RoundedRectangle(cornerRadius: 100))
         .animation(.easeInOut(duration: 0.2), value: isPressed)
     }
   }

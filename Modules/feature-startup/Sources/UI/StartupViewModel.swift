@@ -38,9 +38,11 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
   private let pnsAccountInteractor: PNSAccountInteractor
   private let walletRevocationInteractor: WalletRevocationInteractor
   private let deepLinkController: DeepLinkController
+  private let connectivityMonitor: NetworkConnectivityMonitor
   private let logger: Logging?
 
   @Published var isErrorPopupVisible = false
+  @Published var noInternetDialog = NoInternetDialogState()
   var errorPopupViewModel = ConfirmationPopupViewModel()
 
   init(
@@ -50,6 +52,7 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
     pnsAccountInteractor: PNSAccountInteractor,
     walletRevocationInteractor: WalletRevocationInteractor,
     deepLinkController: DeepLinkController,
+    connectivityMonitor: NetworkConnectivityMonitor,
     logger: Logging?,
     splashDuration: TimeInterval = 1.5
   ) {
@@ -58,6 +61,7 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
     self.pnsAccountInteractor = pnsAccountInteractor
     self.walletRevocationInteractor = walletRevocationInteractor
     self.deepLinkController = deepLinkController
+    self.connectivityMonitor = connectivityMonitor
     self.logger = logger
     CustomFonts().loadFonts()
 
@@ -85,9 +89,13 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
       logger?.d("wallet is revoked, skipping registration")
       return
     }
-    do {
-      let route = await initialize()
+    let route = await initialize()
+    await registerWalletInstance(continueRoute: route)
+  }
 
+  private func registerWalletInstance(continueRoute route: AppRoute) async {
+    defer { setState { $0.copy(isAnimating: false) } }
+    do {
       _ = try await walletRegistrationInteractor.registerWalletInstance()
 
       /// Runs on both the wallet activation and every subsequent start-up, since this is the same
@@ -107,6 +115,25 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
         router.push(with: destination)
       }
 
+    } catch where connectivityMonitor.isNoInternet(error) && !walletRevocationInteractor.isWalletRevoked {
+      logger?.e("wallet registration failed: no internet")
+      noInternetDialog.present(
+        retry: { [weak self] in
+          Task { await self?.registerWalletInstance(continueRoute: route) }
+        },
+        cancel: { [weak self] in
+          self?.isErrorPopupVisible = true
+          self?.configureErrorPopupViewModel(error: .unknown)
+        }
+      )
+    } catch let error where TransportFailure.find(in: error) != nil {
+      guard let failure = TransportFailure.find(in: error) else { return }
+      logger?.e("wallet registration failed: \(failure)")
+      guard !walletRevocationInteractor.isWalletRevoked else {
+        return
+      }
+      isErrorPopupVisible = true
+      configureErrorPopupViewModel(transportFailure: failure)
     } catch let error as BackendError {
       logger?.e("wallet registration failed: \(error) code=\(error.errorCode) traceId=\(error.traceId) detail=\(error.serverDescription)")
       guard !walletRevocationInteractor.isWalletRevoked else {
@@ -211,5 +238,19 @@ final class StartupViewModel<Router: RouterHost>: ViewModel<Router, StartupState
       self.isErrorPopupVisible = false
       self.closeButtonTapped()
     }
+  }
+
+  func configureErrorPopupViewModel(transportFailure: TransportFailure) {
+    errorPopupViewModel.configure(
+      transportFailure: transportFailure,
+      retry: { [weak self] in
+        self?.isErrorPopupVisible = false
+        Task { await self?.registerWallet() }
+      },
+      dismiss: { [weak self] in
+        self?.isErrorPopupVisible = false
+        self?.closeButtonTapped()
+      }
+    )
   }
 }

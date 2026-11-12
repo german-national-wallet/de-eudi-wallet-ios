@@ -82,5 +82,7 @@ public enum PINScreenType: Sendable {
   case eidCanFlow
 
   case eidPinAfterCanFlow
+
+  case eidPinRetryFlow
   
 }

@@ -40,7 +40,7 @@ let package = Package(
     ),
     .package(
       url: "https://github.com/german-national-wallet/de-eudi-lib-ios-wallet-kit.git",
-      revision: "59e1e8cc2dde82734b6059a17754fb7a1016e171"
+      revision: "ffa947404a6974244e253e0735b6690980257691"
     ),
     .package(name: "logic-test", path: "../logic-test")
   ],

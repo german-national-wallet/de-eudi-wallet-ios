@@ -72,6 +72,7 @@ public final class FeatureIssuanceAssembly: Assembly {
       NetworkManagerImpl(
         baseHost: r.force(ConfigLogic.self).walletHostUrl,
         logger: r.force(Logging.self),
+        connectivityMonitor: r.force(NetworkConnectivityMonitor.self),
         debugConfigController: r.force(DebugConfigController.self)
       )
     }

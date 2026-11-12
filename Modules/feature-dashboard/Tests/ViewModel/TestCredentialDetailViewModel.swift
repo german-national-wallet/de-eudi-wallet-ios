@@ -8,6 +8,7 @@
 import XCTest
 import Cuckoo
 import logic_core
+import logic_api
 @testable import feature_dashboard
 @testable import feature_test
 
@@ -18,6 +19,7 @@ final class TestCredentialDetailViewModel: XCTestCase {
   private var mockDeepLinkController: MockDeepLinkController!
   private var mockRouter: MockRouterHost!
   private var mockPidRevokeInteractor: MockPIDRevokeInteractor!
+  private var connectivityMonitor: MockNetworkConnectivityMonitor!
 
   override func setUp() {
     super.setUp()
@@ -25,6 +27,7 @@ final class TestCredentialDetailViewModel: XCTestCase {
     mockRouter = MockRouterHost()
     mockDeepLinkController = MockDeepLinkController()
     mockPidRevokeInteractor = MockPIDRevokeInteractor()
+    connectivityMonitor = .stubbed()
 
     stub(mockRouter) { mock in
       when(mock.pop()).thenDoNothing()
@@ -37,6 +40,7 @@ final class TestCredentialDetailViewModel: XCTestCase {
     mockRouter = nil
     mockDeepLinkController = nil
     mockPidRevokeInteractor = nil
+    connectivityMonitor = nil
     super.tearDown()
   }
 
@@ -46,7 +50,8 @@ final class TestCredentialDetailViewModel: XCTestCase {
       interactor: mockInteractor,
       document: document,
       deepLinkController: mockDeepLinkController,
-      pidRevokeInteractor: mockPidRevokeInteractor
+      pidRevokeInteractor: mockPidRevokeInteractor,
+      connectivityMonitor: connectivityMonitor
     )
   }
 
@@ -167,5 +172,49 @@ final class TestCredentialDetailViewModel: XCTestCase {
     verify(mockRouter, times(0)).pop()
     verify(mockRouter, times(0)).popTo(with: any())
     verify(mockDeepLinkController, times(0)).setDeeplinkFlowFlag(any())
+  }
+
+  func testDeleteCredential_WhenPIDDeletionFailsOffline_ThenShowsNoInternetDialogInsteadOfErrorPopup() async throws {
+    stub(mockPidRevokeInteractor) { mock in
+      when(mock.deletePIDFromWallet()).thenThrow(NetworkError.noInternet)
+    }
+    let viewModel = makeViewModel(document: Constants.euPidModel)
+
+    try await viewModel.deleteCredential()
+
+    XCTAssertTrue(viewModel.noInternetDialog.isPresented)
+    XCTAssertFalse(viewModel.isErrorPopupVisible)
+    verify(mockInteractor, times(0)).getAdditionalDocuments()
+    verifyNoMoreInteractions(mockRouter)
+  }
+
+  func testDeleteCredential_WhenPIDDeletionFailsOfflineAndRetryTapped_ThenDeletesAgain() async throws {
+    let attempted = expectation(description: "PID deletion attempted twice")
+    attempted.expectedFulfillmentCount = 2
+    stub(mockPidRevokeInteractor) { mock in
+      when(mock.deletePIDFromWallet()).then { _ in
+        attempted.fulfill()
+        throw NetworkError.noInternet
+      }
+    }
+    let viewModel = makeViewModel(document: Constants.euPidModel)
+
+    try await viewModel.deleteCredential()
+    viewModel.noInternetDialog.retry()
+
+    await fulfillment(of: [attempted], timeout: 5)
+  }
+
+  func testDeleteCredential_WhenLocalDeletionFailsWhileOffline_ThenShowsTheExistingErrorPopup() async throws {
+    connectivityMonitor = .stubbed(isOffline: true)
+    stub(mockInteractor) { mock in
+      when(mock.deleteDocument(with: any())).thenThrow(NSError(domain: "test", code: -1, userInfo: nil))
+    }
+    let viewModel = makeViewModel(document: Constants.isoMdlModel)
+
+    try await viewModel.deleteCredential()
+
+    XCTAssertTrue(viewModel.isErrorPopupVisible)
+    XCTAssertFalse(viewModel.noInternetDialog.isPresented)
   }
 }

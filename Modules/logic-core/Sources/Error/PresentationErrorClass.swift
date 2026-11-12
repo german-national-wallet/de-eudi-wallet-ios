@@ -19,6 +19,9 @@ public enum PresentationErrorClass: String, Sendable, Equatable, CaseIterable {
   case walletPinBlocked
   case relyingPartyRequestInvalid
   case relyingPartyNotTrusted
+  case relyingPartyUnreachable
+  case connectionTimedOut
+  case rateLimited
   case networkUnavailable
   case unclassified
 
@@ -26,9 +29,10 @@ public enum PresentationErrorClass: String, Sendable, Equatable, CaseIterable {
     switch self {
     case .userDeclined, .walletPinBlocked: .user
     case .credentialNotAvailable, .walletInternal: .wallet
-    case .relyingPartyRequestInvalid, .relyingPartyNotTrusted: .relyingParty
+    case .relyingPartyRequestInvalid, .relyingPartyNotTrusted, .relyingPartyUnreachable: .relyingParty
     case .networkUnavailable: .device
-    case .unclassified: .unknown
+    // Transport failures get their origin from the failing endpoint in the classifier.
+    case .connectionTimedOut, .rateLimited, .unclassified: .unknown
     }
   }
 }

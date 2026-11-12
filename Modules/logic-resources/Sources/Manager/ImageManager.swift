@@ -133,6 +133,7 @@ public protocol ImageManagerProtocol: Sendable {
   var workInProgessIcon: Image { get }
   var tranportPinLetter: Image { get }
   var help: Image { get }
+  var dYouWordmark: Image { get }
   var buildingBlocks: Image { get }
   var externalLink: Image { get }
   var activitySupport: Image { get }
@@ -155,6 +156,7 @@ public protocol ImageManagerProtocol: Sendable {
   var presentationWrongPinErrorInfo: Image { get }
   var walletKey: Image { get }
   var notification: Image { get }
+  var credentialTeaserCards: Image { get }
 }
 
 final class ImageManager: ImageManagerProtocol {
@@ -274,6 +276,7 @@ final class ImageManager: ImageManagerProtocol {
     case workInProgessLockIcon = "work-in-progress-lock"
     case workInProgessIcon = "wip_card"
     case help = "question_icon"
+    case dYouWordmark = "d_you_wordmark"
     case buildingBlocks = "building_blocks"
     case externalLink = "external_link"
     case activitySupport = "activity_support"
@@ -296,6 +299,7 @@ final class ImageManager: ImageManagerProtocol {
     case presentationWrongPinErrorInfo = "presentation_wrong_pin_error_info"
     case walletKey = "key_icon"
     case notification = "notification_icon"
+    case credentialTeaserCards = "credential_teaser_cards"
   }
 
   // MARK: - Properties
@@ -655,6 +659,9 @@ final class ImageManager: ImageManagerProtocol {
   var help: Image {
     Image(ImageEnum.help.rawValue, bundle: bundle)
   }
+  var dYouWordmark: Image {
+    Image(ImageEnum.dYouWordmark.rawValue, bundle: bundle)
+  }
   var buildingBlocks: Image {
     Image(ImageEnum.buildingBlocks.rawValue, bundle: bundle)
   }
@@ -727,5 +734,8 @@ final class ImageManager: ImageManagerProtocol {
   }
   var notification: Image {
     Image(ImageEnum.notification.rawValue, bundle: bundle)
+  }
+  var credentialTeaserCards: Image {
+    Image(ImageEnum.credentialTeaserCards.rawValue, bundle: bundle)
   }
 }

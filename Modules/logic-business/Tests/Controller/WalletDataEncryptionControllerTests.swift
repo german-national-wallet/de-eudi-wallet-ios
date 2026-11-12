@@ -22,33 +22,69 @@ struct WalletDataEncryptionControllerTests {
   }
 
   @Test
-  func generateKeyIfNeeded_createsKeyWhenMissing() {
+  func loadOrCreateKey_createsKeyWhenMissing() throws {
     let (sut, storage) = makeSUT()
     #expect(storage.loadKey() == nil)
 
-    sut.generateKeyIfNeeded()
+    let key = try sut.loadOrCreateKey()
 
-    #expect(storage.loadKey() != nil)
+    #expect(storage.loadKey()?.bytes == key.bytes)
   }
 
   @Test
-  func generateKeyIfNeeded_isIdempotent() {
-    let (sut, storage) = makeSUT()
-    sut.generateKeyIfNeeded()
-    let firstBytes = storage.loadKey()?.bytes
+  func loadOrCreateKey_isIdempotent() throws {
+    let (sut, _) = makeSUT()
+    let firstKey = try sut.loadOrCreateKey()
 
-    sut.generateKeyIfNeeded()
-    let secondBytes = storage.loadKey()?.bytes
+    let secondKey = try sut.loadOrCreateKey()
 
     // The key must not be regenerated on subsequent calls.
-    #expect(firstBytes != nil)
-    #expect(firstBytes == secondBytes)
+    #expect(firstKey.bytes == secondKey.bytes)
+  }
+
+  @Test
+  func loadOrCreateKey_throwsWhenKeyCannotBeStored() {
+    let (sut, storage) = makeSUT()
+    storage.storeError = WalletDataEncryptionError.keyUnavailable
+
+    #expect(throws: WalletDataEncryptionError.keyUnavailable) {
+      _ = try sut.loadOrCreateKey()
+    }
+    #expect(storage.loadKey() == nil)
+  }
+
+  @Test
+  func loadOrCreateKey_concurrentCallersConvergeOnOneKey() throws {
+    let (sut, storage) = makeSUT()
+    let bothLoaded = DispatchGroup()
+    bothLoaded.enter()
+    bothLoaded.enter()
+    storage.afterLoad = {
+      bothLoaded.leave()
+      _ = bothLoaded.wait(timeout: .now() + 5)
+    }
+    let keys = KeyCollector()
+    let finished = DispatchGroup()
+
+    for _ in 0..<2 {
+      finished.enter()
+      Thread {
+        keys.append(try? sut.loadOrCreateKey())
+        finished.leave()
+      }.start()
+    }
+
+    #expect(finished.wait(timeout: .now() + 5) == .success)
+    storage.afterLoad = nil
+    let storedKey = try #require(storage.loadKey())
+    #expect(keys.all.count == 2)
+    #expect(keys.all.allSatisfy { $0?.bytes == storedKey.bytes })
   }
 
   @Test
   func encryptThenDecrypt_roundTripsToOriginal() throws {
     let (sut, _) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
     let plaintext = Data("super-secret-mdvm-token".utf8)
 
     let ciphertext = try sut.encrypt(plaintext)
@@ -61,7 +97,7 @@ struct WalletDataEncryptionControllerTests {
   @Test
   func encrypt_usesFreshNoncePerCall() throws {
     let (sut, _) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
     let plaintext = Data("repeated-value".utf8)
 
     let first = try sut.encrypt(plaintext)
@@ -72,8 +108,18 @@ struct WalletDataEncryptionControllerTests {
   }
 
   @Test
-  func encrypt_throwsWhenKeyMissing() {
-    let (sut, _) = makeSUT()
+  func encrypt_createsKeyWhenMissing() throws {
+    let (sut, storage) = makeSUT()
+
+    _ = try sut.encrypt(Data("x".utf8))
+
+    #expect(storage.loadKey() != nil)
+  }
+
+  @Test
+  func encrypt_throwsWhenKeyCannotBeStored() {
+    let (sut, storage) = makeSUT()
+    storage.storeError = WalletDataEncryptionError.keyUnavailable
 
     #expect(throws: WalletDataEncryptionError.keyUnavailable) {
       _ = try sut.encrypt(Data("x".utf8))
@@ -92,7 +138,7 @@ struct WalletDataEncryptionControllerTests {
   @Test
   func decrypt_throwsOnTamperedCiphertext() throws {
     let (sut, _) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
     var ciphertext = try sut.encrypt(Data("hello".utf8))
 
     // Flip the last byte to break the GCM authentication tag.
@@ -104,9 +150,9 @@ struct WalletDataEncryptionControllerTests {
   }
 
   @Test
-  func decrypt_throwsOnGarbageInput() {
+  func decrypt_throwsOnGarbageInput() throws {
     let (sut, _) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
 
     #expect(throws: WalletDataEncryptionError.invalidCiphertextFormat) {
       _ = try sut.decrypt(Data("not-a-sealed-box".utf8))
@@ -116,7 +162,7 @@ struct WalletDataEncryptionControllerTests {
   @Test
   func deleteKey_makesPreviouslyEncryptedDataUnreadable() throws {
     let (sut, _) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
     let ciphertext = try sut.encrypt(Data("secret".utf8))
 
     sut.deleteKey()
@@ -129,11 +175,12 @@ struct WalletDataEncryptionControllerTests {
   @Test
   func decrypt_failsAfterKeyRotation() throws {
     let (sut, storage) = makeSUT()
-    sut.generateKeyIfNeeded()
+    _ = try sut.loadOrCreateKey()
     let ciphertext = try sut.encrypt(Data("bound-to-key".utf8))
 
     // Simulate a new key being provisioned (e.g. after a wipe + re-register).
-    storage.storeKey(CryptoKit.SymmetricKey(size: .bits256))
+    storage.deleteKey()
+    _ = try storage.storeKey(CryptoKit.SymmetricKey(size: .bits256))
 
     // Data sealed with the old key can no longer be opened with the new key.
     #expect(throws: WalletDataEncryptionError.authenticationFailed) {
@@ -144,11 +191,34 @@ struct WalletDataEncryptionControllerTests {
 
 // In-memory key store keeps the crypto tests deterministic and free of Keychain side effects.
 private final class InMemorySymmetricKeyStorage: SymmetricKeyStorage, @unchecked Sendable {
+  private let lock = NSLock()
   private var key: CryptoKit.SymmetricKey?
+  var storeError: Error?
+  var afterLoad: (@Sendable () -> Void)?
 
-  func loadKey() -> CryptoKit.SymmetricKey? { key }
-  func storeKey(_ key: CryptoKit.SymmetricKey) { self.key = key }
-  func deleteKey() { key = nil }
+  func loadKey() -> CryptoKit.SymmetricKey? {
+    let loadedKey = lock.withLock { key }
+    afterLoad?()
+    return loadedKey
+  }
+  func storeKey(_ key: CryptoKit.SymmetricKey) throws -> CryptoKit.SymmetricKey {
+    if let storeError { throw storeError }
+    return lock.withLock {
+      if let existingKey = self.key { return existingKey }
+      self.key = key
+      return key
+    }
+  }
+  func deleteKey() { lock.withLock { key = nil } }
+}
+
+private final class KeyCollector: @unchecked Sendable {
+  private let lock = NSLock()
+  private var keys: [CryptoKit.SymmetricKey?] = []
+
+  var all: [CryptoKit.SymmetricKey?] { lock.withLock { keys } }
+
+  func append(_ key: CryptoKit.SymmetricKey?) { lock.withLock { keys.append(key) } }
 }
 
 private extension CryptoKit.SymmetricKey {

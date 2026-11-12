@@ -167,7 +167,7 @@ private func icon(_ image: Image) -> some View {
           .init(
             title: .settingsOverviewListSupport,
             leadingIcon: Theme.shared.image.help,
-            action: {}()
+            action: {}
           )
         ]
       ),
@@ -177,21 +177,21 @@ private func icon(_ image: Image) -> some View {
           .init(
             title: .settingsOverviewListRevocation,
             leadingIcon: Theme.shared.image.walletKey,
-            action: {}()
+            action: {}
           ),
           .init(
             title: .settingsOverviewListNotification,
             leadingIcon: Theme.shared.image.notification,
             trailingIcon: .externalLink,
-            action: {}()
+            action: {}
           )
         ]
       ),
       .init(
         title: .settingsOverviewHeadlineLegal,
         items: [
-          .init(title: .settingsOverviewListAboutEudi, action: {}()),
-          .init(title: .settingsOverviewListImpress, action: {}())
+          .init(title: .settingsOverviewListAboutEudi, action: {}),
+          .init(title: .settingsOverviewListImpress, action: {})
         ]
       )
     ],

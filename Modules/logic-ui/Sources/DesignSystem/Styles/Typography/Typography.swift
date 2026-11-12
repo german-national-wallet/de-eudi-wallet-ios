@@ -14,7 +14,7 @@ public extension DesignSystem.Styles.Typography {
 
   struct Headline {
     public static let large = Font.custom("EUDIDiatypeWide-Semibold", size: 32)
-    public static let medium = Font.custom("EUDIDiatypeWide-Semibold", size: 28)
+    public static let medium = Font.custom("EUDIDiatypeSemiExtended-Bold", size: 22)
     public static let small = Font.custom("EUDIDiatypeWide-Semibold", size: 24)
   }
 

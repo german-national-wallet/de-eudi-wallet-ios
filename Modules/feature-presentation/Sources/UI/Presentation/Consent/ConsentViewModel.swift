@@ -22,17 +22,12 @@ struct ConsentItemGroup {
   let items: [ConsentItem]
 }
 
-final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
+final class ConsentViewModel<Router: RouterHost>: PresentationRequestBaseViewModel<Router> {
   @Published var consentItems: [ConsentItem] = []
   @Published var consentItemGroups: [ConsentItemGroup] = []
-  @Published var errorDialog: PresentationErrorDialogConfig?
   @Published var isConfirmationPopupVisible = false
   @Published var reportURL: URL?
 
-  let interactor: PresentationInteractor
-  let pinSessionInteractor: PinSessionInteractor
-  private let analyticsController: AnalyticsController
-  private let errorHandler: PresentationErrorHandler
   private let openURL: @MainActor (URL) -> Void
 
   private let relyingParty: String
@@ -51,13 +46,16 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     relyingParty: String,
     openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
   ) {
-    self.interactor = interactor
-    self.pinSessionInteractor = pinSessionInteractor
-    self.analyticsController = analyticsController
-    self.errorHandler = errorHandler
     self.openURL = openURL
     self.relyingParty = relyingParty
-    super.init(router: router, originator: originator)
+    super.init(
+      router: router,
+      interactor: interactor,
+      pinSessionInteractor: pinSessionInteractor,
+      analyticsController: analyticsController,
+      errorHandler: errorHandler,
+      originator: originator
+    )
   }
   
   override func doWork() async {
@@ -93,37 +91,8 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       self.onPresentationDoWorkSuccess()
     case .failure(let error):
       presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: .init(action: { [weak self] in
-        self?.analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
         Task { await self?.doWork() }
       })))
-    }
-  }
-  
-  override func onShare() {
-    Task {
-      let items = self.viewState.items
-      let documentIDs = items.map(\.section.id)
-      let isPIDRequest = interactor.isPIDPresentation(documentIDs: documentIDs)
-
-      let result = await Task.detached { () -> Result<RequestItemConvertible, Error> in
-        return await self.interactor.onResponsePrepare(requestItems: items)
-      }.value
-
-      switch result {
-      case .success:
-        if let route = isPIDRequest ? self.getPinRoute() : self.getSuccessRoute() {
-          self.router.push(with: route)
-        } else {
-          self.router.popTo(
-            with: self.getPopRoute() ?? .featureDashboardModule(.dashboard)
-          )
-        }
-      case .failure(let error):
-        if isPIDRequest {
-          pinSessionInteractor.clear()
-        }
-        self.presentError(self.errorHandler.handle(error, originator: self.getOriginator()))
-      }
     }
   }
   
@@ -143,7 +112,7 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     }
   }
   
-  func getPinRoute() -> AppRoute? {
+  override func getPinRoute() -> AppRoute? {
     return switch interactor.getCoordinator() {
     case .success(let remoteSessionCoordinator):
         .featurePresentationModule(
@@ -203,28 +172,13 @@ final class ConsentViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     UIApplication.shared.open(reportURL)
   }
 
-  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
-    errorDialog = nil
-    switch action {
-    case .popTo(let route):
-      router.popTo(with: route)
-    case .addDigitalIDAgain:
-      router.popTo(with: getOriginator())
-    case .dismiss:
-      isConfirmationPopupVisible = false
-    case .retry(let retryAction):
-      retryAction.action()
-    }
+  override func onErrorDialogDismiss() {
+    isConfirmationPopupVisible = false
   }
 
-  private func presentError(_ presentation: PresentationErrorPresentation) {
+  override func presentError(_ presentation: PresentationErrorPresentation) {
     setState { $0.copy(isLoading: false, initialized: true) }
-    switch presentation {
-    case .notice(let config):
-      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
-    case .dialog(let config):
-      errorDialog = config
-    }
+    super.presentError(presentation)
   }
   
   private func getLocalizedFieldName(_ fieldName: String) -> String {

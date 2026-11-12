@@ -90,6 +90,7 @@ final class WalletKitControllerImpl: WalletKitController {
   let wallet: EudiWallet
   var batchRefreshThreshold: Int { walletKitConfig.batchRefreshThreshold }
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
+  private let presentationOriginStore: PresentationOriginStore
   private let secureAreas: [any SecureArea]
   private let walletKitConfig: WalletKitConfig
   private let configLogic: ConfigLogic
@@ -105,6 +106,7 @@ final class WalletKitControllerImpl: WalletKitController {
     keyChainController: KeyChainController,
     featureFlagRepository: FeatureFlagRepository,
     sessionCoordinatorHolder: SessionCoordinatorHolder,
+    presentationOriginStore: PresentationOriginStore,
     secureAreas: [SecureArea],
     networking: any NetworkingProtocol,
     transactionLogger: (any TransactionLogger)? = nil,
@@ -118,11 +120,8 @@ final class WalletKitControllerImpl: WalletKitController {
     self.featureFlagRepository = featureFlagRepository
     self.logger = logger
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
+    self.presentationOriginStore = presentationOriginStore
     self.secureAreas = secureAreas
-
-    // TODO: Switch to `.hardFail` to enforce reader-cert CRL revocation once a
-    // reliable reader-cert CRL endpoint is available. Using `.warning` (optional) for now.
-    let crlRevocationPolicy: RevocationPolicy = .warning
 
     guard let walletKit = try? EudiWallet(
       eudiWalletConfig: EudiWalletConfiguration(
@@ -267,6 +266,7 @@ final class WalletKitControllerImpl: WalletKitController {
   
   func stopPresentation() {
     self.sessionCoordinatorHolder.clear()
+    self.presentationOriginStore.setServiceProviderURL(nil)
   }
   
   func fetchAllDocuments() -> [DocClaimsDecodable] {
@@ -620,6 +620,7 @@ extension WalletKitControllerImpl {
     logger?.d("CredentialRequest: issuePendingDocument credential_configuration_ids=[\(mdocConfigId), \(sdJwtConfigId)]")
     let identifiers = [DocTypeIdentifier.identifier(mdocConfigId), DocTypeIdentifier.identifier(sdJwtConfigId)]
     if let pendingDoc = wallet.storage.pendingDocuments.last {
+      await deletePopKeys()
       let issuedDoc = try await mapIssuerMetadataFailure {
         try await wallet.resumePendingIssuanceDocuments(
           issuerName: walletKitConfig.pidIssuerName,

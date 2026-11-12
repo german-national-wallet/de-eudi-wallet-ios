@@ -19,6 +19,7 @@ import MdocDataModel18013
 import feature_common
 import logic_analytics
 import logic_core
+import logic_api
 
 @MainActor
 public final class IssuanceRouter {
@@ -40,6 +41,9 @@ public final class IssuanceRouter {
           ),
           analyticsController: DIGraph.resolver.force(
             AnalyticsController.self
+          ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
           ),
           config: config
         )
@@ -79,6 +83,9 @@ public final class IssuanceRouter {
           ), credentialsInteractor: DIGraph.resolver.force(
             CredentialsInteractor.self
           ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
+          ),
           config: config
         )
       ).eraseToAnyView()
@@ -88,6 +95,9 @@ public final class IssuanceRouter {
           router: host,
           interactor: DIGraph.resolver.force(
             DocumentOfferInteractor.self
+          ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
           ),
           config: config
         )
@@ -116,6 +126,9 @@ public final class IssuanceRouter {
           issuanceCancellationInteractor: DIGraph.resolver.force(
             IssuanceCancellationInteractor.self
           ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
+          ),
           config: config,
           requestURI: requestURI,
           eidPin: eidPin,
@@ -142,6 +155,8 @@ public final class IssuanceRouter {
             onPinEntered: onCANEntered,
             pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
+          connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
+          presentationOriginStore: DIGraph.resolver.force(PresentationOriginStore.self),
             logger: DIGraph.resolver.force(Logging.self)
           )
         ).eraseToAnyView()
@@ -164,6 +179,8 @@ public final class IssuanceRouter {
             onPinEntered: onCANEntered,
             pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
+          connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
+          presentationOriginStore: DIGraph.resolver.force(PresentationOriginStore.self),
             logger: DIGraph.resolver.force(Logging.self)
 
           )
@@ -184,6 +201,8 @@ public final class IssuanceRouter {
           onPinEntered: onPinEntered,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
+          connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
+          presentationOriginStore: DIGraph.resolver.force(PresentationOriginStore.self),
           logger: DIGraph.resolver.force(Logging.self)
         ),
         onPinEntered: onPinEntered
@@ -242,6 +261,8 @@ public final class IssuanceRouter {
           onPinEntered: onCANEntered,
           pinSessionInteractor: DIGraph.resolver.force(PinSessionInteractor.self),
           issuanceCancellationInteractor: DIGraph.resolver.force(IssuanceCancellationInteractor.self),
+          connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self),
+          presentationOriginStore: DIGraph.resolver.force(PresentationOriginStore.self),
           logger: DIGraph.resolver.force(Logging.self)
         )
       )
@@ -374,8 +395,6 @@ public final class IssuanceRouter {
 
     case .issuanceProcessOverviewView(let issuanceInteractor):
       IssuanceProcessOverviewView(
-        router: host,
-        issuanceInteractor: issuanceInteractor,
         onBack: { host.pop() },
         onClose: {
           Task {
@@ -452,6 +471,9 @@ public final class IssuanceRouter {
           pinSessionInteractor: DIGraph.resolver.force(
             PinSessionInteractor.self
           ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
+          ),
           logger: DIGraph.resolver.force(Logging.self)
         )
       ).eraseToAnyView()
@@ -463,7 +485,8 @@ public final class IssuanceRouter {
           .init(
             router: host,
             config: config,
-            interactor: DIGraph.resolver.force(DocumentOfferInteractor.self)
+            interactor: DIGraph.resolver.force(DocumentOfferInteractor.self),
+            connectivityMonitor: DIGraph.resolver.force(NetworkConnectivityMonitor.self)
           )
       )
       .eraseToAnyView()

@@ -57,7 +57,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     }.value
 
     switch state {
-    case .success(let items, let relyingParty, _, let isTrusted, let isOverAsking, let hasUnreadableRegistration):
+    case .success(let items, let relyingParty, _, let isTrusted, let isOverAsking, let hasUnreadableRegistration, let purpose):
       if hasUnreadableRegistration || isOverAsking {
         await onRefusedByPolicy(reason: hasUnreadableRegistration ? .unregisteredRelyingParty : .overAsking) { [interactor] in
           interactor.stopPresentation()
@@ -83,7 +83,10 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
             relyingPartyData: RelyingPartyData(
               isVerified: viewState.isTrusted,
               name: getRelyingParty(),
-              description: getCaption()
+              description: purpose.map { .custom($0) } ?? getCaption(),
+              descriptionTextConfig: purpose.map { _ in
+                TextConfig(font: Theme.shared.font.bodyMedium.font, maxLines: 4)
+              }
             )
           )
         )

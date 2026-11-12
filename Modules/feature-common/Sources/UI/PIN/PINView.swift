@@ -22,9 +22,6 @@ public struct PINView<Router: RouterHost>: View {
       HeaderContentView(
         onBack: viewModel.backButtonTapped,
         onClose: { isCancelDialogPresented = true },
-        onHelp: viewModel.viewState.config.showsHelpButton
-          ? { viewModel.isSheetPresented = true }
-          : nil,
         progress: viewModel.viewState.config.progressSteps.map {
           (current: $0.current, total: $0.total)
         }
@@ -60,6 +57,11 @@ public struct PINView<Router: RouterHost>: View {
       }
     }
     .background(DSColor.background.ignoresSafeArea())
+    .overlay {
+      if viewModel.isErrorPopupVisible {
+        ConfirmationPopupView(viewModel: viewModel.errorPopupViewModel)
+      }
+    }
     .onAppear {
       viewModel.onViewAppeared()
       pinInput = ""
@@ -95,7 +97,7 @@ public struct PINView<Router: RouterHost>: View {
           .background(DSColor.background)
           .ignoresSafeArea()
 
-      case .issueEidPinFlow:
+      case .issueEidPinFlow, .eidPinRetryFlow:
         CardPinLetterInfoSheetView(
           onSetCardPin: viewModel.setCardPinTapped,
           onClose: { viewModel.isSheetPresented = false }
@@ -123,6 +125,7 @@ public struct PINView<Router: RouterHost>: View {
       config: viewModel.cancelConfirmationConfig,
       onConfirm: viewModel.handleCloseButton
     )
+    .noInternetDialog($viewModel.noInternetDialog)
   }
 
   func addBottomButtons() -> AnyView {

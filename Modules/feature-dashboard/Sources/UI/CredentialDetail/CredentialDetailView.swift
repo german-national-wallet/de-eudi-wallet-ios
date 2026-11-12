@@ -79,6 +79,7 @@ struct CredentialDetailView<Router: RouterHost>: View {
           ConfirmationPopupView(viewModel: viewModel.errorPopupViewModel)
         }
       }
+      .noInternetDialog($viewModel.noInternetDialog)
     }
   }
   

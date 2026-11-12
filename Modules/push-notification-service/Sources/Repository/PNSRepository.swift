@@ -113,7 +113,7 @@ public final class PNSRepositoryImpl: PNSRepository {
       logger?.e("[PNS] unable to encode the local registration record")
       return
     }
-    _ = try secureEnclaveController.storeEncryptedString(value: value, keyTag: .mppRegistrationToken)
+    try secureEnclaveController.storeEncryptedString(value: value, keyTag: .mppRegistrationToken)
   }
 
   public func deleteStoredRegistration() {

@@ -65,7 +65,7 @@ public final class WPBRepositoryImpl: WPBRepository {
   }
 
   public func storeWIID(_ wiid: String) throws {
-    _ = try secureEnclaveController.storeEncryptedString(value: wiid, keyTag: .wbWIID)
+    try secureEnclaveController.storeEncryptedString(value: wiid, keyTag: .wbWIID)
   }
 
   public func deleteWIID() {
@@ -73,7 +73,7 @@ public final class WPBRepositoryImpl: WPBRepository {
   }
 
   public func storeRevocationCode(_ revocationCode: String) throws {
-    _ = try secureEnclaveController.storeEncryptedString(value: revocationCode, keyTag: .wpbWiRevocationCode)
+    try secureEnclaveController.storeEncryptedString(value: revocationCode, keyTag: .wpbWiRevocationCode)
   }
 
   public func deleteRevocationCode() {

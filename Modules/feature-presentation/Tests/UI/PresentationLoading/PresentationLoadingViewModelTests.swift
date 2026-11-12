@@ -194,6 +194,67 @@ final class PresentationLoadingViewModelTests: XCTestCase {
     verify(router, never()).push(with: any())
   }
 
+  func testDoWork_WhenOffline_ThenKeepsPinSessionAndShowsNoInternetDialog() async {
+    stubOfflineSendFailure()
+
+    await sut.doWork()
+
+    XCTAssertTrue(sut.isNoInternetDialogPresented)
+    XCTAssertNil(sut.errorDialog)
+    verify(pinSessionInteractor, never()).clear()
+  }
+
+  func testOnNoInternetCancel_ThenClearsPinSessionAndReturnsToShareStep() async {
+    stubOfflineSendFailure()
+    stub(pinSessionInteractor) { mock in
+      when(mock.clear()).thenDoNothing()
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+    await sut.doWork()
+
+    sut.onNoInternetCancel()
+
+    verify(pinSessionInteractor).clear()
+    verify(router).pop()
+  }
+
+  func testOnNoInternetRetry_ThenSendsAgainWithinTheSameTrace() async {
+    stubOfflineSendFailure()
+    let handledAgain = expectation(description: "second offline failure handled")
+    var handleCount = 0
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).then { _, _ in
+        handleCount += 1
+        if handleCount == 2 {
+          handledAgain.fulfill()
+        }
+        return .noInternet(retry: nil)
+      }
+    }
+    await sut.doWork()
+
+    sut.onNoInternetRetry()
+    await fulfillment(of: [handledAgain], timeout: 5)
+
+    verify(analyticsController, never()).startTrace(name: any(), initialAttributes: any())
+    verify(analyticsController, never()).endTrace(finalAttributes: any(), errorDescription: any())
+    verify(interactor, times(2)).onSendResponse()
+    verify(errorHandler, times(2)).handle(any(), originator: any())
+  }
+
+  private func stubOfflineSendFailure() {
+    stub(errorHandler) { mock in
+      when(mock.handle(any(), originator: any())).thenReturn(.noInternet(retry: nil))
+    }
+    stub(interactor) { mock in
+      when(mock.onSendResponse()).thenReturn(.failure(URLError(.notConnectedToInternet)))
+      when(mock.isPIDPresentation(documentIDs: any())).thenReturn(true)
+      when(mock.getSessionStatePublisher()).thenReturn(.success(Self.finishedStream()))
+    }
+  }
+
   private static func finishedStream() -> AsyncStream<PresentationState> {
     AsyncStream { continuation in
       continuation.finish()

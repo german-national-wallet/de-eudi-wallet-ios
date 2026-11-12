@@ -26,7 +26,6 @@ public extension UIConfig {
     let issuanceInteractor: IssuanceVerificationInteractor?
     public let onBack: (() -> Void)?
     public let onClose: (() -> Void)?
-    public let onHelp: (() -> Void)?
     public let finishAuthorizationResponse: FinishAuthorizationResponse?
     
     public let primaryRoute: AppRoute
@@ -48,7 +47,6 @@ public extension UIConfig {
       issuanceInteractor: IssuanceVerificationInteractor? = nil,
       onBack: (() -> Void)? = nil,
       onClose: (() -> Void)? = nil,
-      onHelp: (() -> Void)? = nil,
       finishAuthorizationResponse: FinishAuthorizationResponse? = nil
     ) {
       self.mainTitle = mainTitle
@@ -64,7 +62,6 @@ public extension UIConfig {
       self.issuanceInteractor = issuanceInteractor
       self.onBack = onBack
       self.onClose = onClose
-      self.onHelp = onHelp
       self.finishAuthorizationResponse = finishAuthorizationResponse
     }
   }

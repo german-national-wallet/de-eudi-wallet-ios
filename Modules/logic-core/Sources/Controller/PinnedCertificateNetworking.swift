@@ -13,10 +13,16 @@ final class PinnedCertificateNetworking: NSObject, @unchecked Sendable, Networki
 
   private let certificatePinner: CertificatePinner
   private let networkLogger: NetworkLogger
+  private let connectivityMonitor: NetworkConnectivityMonitor
   private var session: URLSession!
 
-  init(logger: Logging?, certificatePinner: CertificatePinner = .shared) {
+  init(
+    logger: Logging?,
+    connectivityMonitor: NetworkConnectivityMonitor,
+    certificatePinner: CertificatePinner = .shared
+  ) {
     self.certificatePinner = certificatePinner
+    self.connectivityMonitor = connectivityMonitor
     networkLogger = NetworkLogger(logger: logger)
     super.init()
     session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
@@ -27,6 +33,10 @@ final class PinnedCertificateNetworking: NSObject, @unchecked Sendable, Networki
   }
 
   func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+    guard !connectivityMonitor.isOffline else {
+      throw URLError(.notConnectedToInternet)
+    }
+
     let (data, response) = try await session.data(for: request)
     networkLogger.log(
       request: request,

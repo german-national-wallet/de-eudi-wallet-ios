@@ -16,9 +16,11 @@
 import logic_ui
 import logic_business
 import logic_core
+import logic_api
 import logic_analytics
 import feature_issuance
 import feature_common
+import logic_authentication
 
 @MainActor
 public final class DashboardRouter {
@@ -33,7 +35,8 @@ public final class DashboardRouter {
           settingsTabInteractor: DIGraph.resolver.force(SettingsTabInteractor.self),
           secureEnclaveController: DIGraph.resolver.force(SecureEnclaveController.self),
           configLogic: DIGraph.resolver.force(ConfigLogic.self),
-          deepLinkController: DIGraph.resolver.force(DeepLinkController.self)
+          deepLinkController: DIGraph.resolver.force(DeepLinkController.self),
+          deviceOwnerAuthenticationController: DIGraph.resolver.force(DeviceOwnerAuthenticationController.self)
         )
       ).eraseToAnyView()
     case .debugConfig:
@@ -67,6 +70,9 @@ public final class DashboardRouter {
           ),
           pidRevokeInteractor: DIGraph.resolver.force(
             PIDRevokeInteractor.self
+          ),
+          connectivityMonitor: DIGraph.resolver.force(
+            NetworkConnectivityMonitor.self
           )
         )
       ).eraseToAnyView()

@@ -106,6 +106,11 @@ struct ConsentView<Router: RouterHost>: View {
       subtitle: .pidPresentationDialogRpRejectionParagraph,
       buttons: declineButtons
     )
+    .noInternetDialog(
+      isPresented: $viewModel.isNoInternetDialogPresented,
+      onRetry: viewModel.onNoInternetRetry,
+      onCancel: viewModel.onNoInternetCancel
+    )
    }
 
   private var declineButtons: [CustomAlertDialogConfig] {

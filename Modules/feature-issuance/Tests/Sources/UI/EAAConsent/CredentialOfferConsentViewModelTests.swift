@@ -9,6 +9,7 @@ import XCTest
 import Cuckoo
 import feature_common
 import logic_core
+import logic_api
 import logic_ui
 @testable import feature_issuance
 
@@ -17,6 +18,7 @@ final class CredentialOfferConsentViewModelTests: XCTestCase {
 
   private var router: MockRouterHost!
   private var interactor: MockDocumentOfferInteractor!
+  private var connectivityMonitor: MockNetworkConnectivityMonitor!
   private var sut: CredentialOfferConsentViewModel<MockRouterHost>!
 
   override func setUp() {
@@ -24,15 +26,18 @@ final class CredentialOfferConsentViewModelTests: XCTestCase {
 
     router = MockRouterHost()
     interactor = MockDocumentOfferInteractor()
+    connectivityMonitor = .stubbed()
     sut = CredentialOfferConsentViewModel(
       router: router,
       config: makeConfig(),
-      interactor: interactor
+      interactor: interactor,
+      connectivityMonitor: connectivityMonitor
     )
   }
 
   override func tearDown() {
     sut = nil
+    connectivityMonitor = nil
     interactor = nil
     router = nil
 
@@ -107,6 +112,67 @@ final class CredentialOfferConsentViewModelTests: XCTestCase {
       return XCTFail("Expected the loader to be pushed")
     }
     XCTAssertNil((config as? DocumentLoaderUiConfig)?.txCodeValue)
+  }
+
+  func testInitialize_WhenOffline_ThenShowsNoInternetDialogAndRetryProcessesTheOfferAgain() async {
+    let processed = expectation(description: "offer processed twice")
+    processed.expectedFulfillmentCount = 2
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).then { _ in
+        processed.fulfill()
+        return .failure(NetworkError.noInternet)
+      }
+    }
+
+    await sut.initialize()
+    XCTAssertTrue(sut.noInternetDialog.isPresented)
+    XCTAssertNil(sut.viewState.error)
+
+    sut.noInternetDialog.retry()
+    await fulfillment(of: [processed], timeout: 5)
+  }
+
+  func testInitialize_WhenOfflineAndCancelTapped_ThenGoesBack() async {
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any())).thenReturn(.failure(NetworkError.noInternet))
+    }
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+    }
+
+    await sut.initialize()
+    sut.noInternetDialog.cancel()
+
+    verify(router).pop()
+  }
+
+  func testPrimaryButtonAction_WhenTheLoaderReportsNoInternet_ThenShowsNoInternetDialogInsteadOfFailurePopup() async {
+    let pushed = expectation(description: "Wait for the loader to be pushed")
+    stub(interactor) { mock in
+      when(mock.processOfferRequest(with: any()))
+        .thenReturn(.success(makeDocumentOfferUIModel()))
+    }
+    stub(router) { mock in
+      when(mock.push(with: any())).then { _ in
+        pushed.fulfill()
+      }
+    }
+    await sut.initialize()
+    sut.primaryButtonAction()
+    await fulfillment(of: [pushed], timeout: 2)
+
+    let captor = ArgumentCaptor<AppRoute>()
+    verify(router).push(with: captor.capture())
+    guard case .featureIssuanceModule(.documentLoaderView(_, let onFailure)) = captor.value else {
+      return XCTFail("Expected the loader to be pushed")
+    }
+    onFailure?(NetworkError.noInternet)
+    for _ in 0..<200 where !sut.noInternetDialog.isPresented {
+      try? await Task.sleep(for: .milliseconds(10))
+    }
+
+    XCTAssertTrue(sut.noInternetDialog.isPresented)
+    XCTAssertFalse(sut.showIssuanceFailurePopup)
   }
 
   func testSecondaryButtonAction_WhenCalled_ThenShowsCancelConfirmationPopup() {

@@ -1263,6 +1263,10 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_start")
       case .nfcSystemSheetParagraphStart:
         bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_start")
+      case .nfcSystemSheetTitleProgress:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_progress")
+      case .nfcSystemSheetParagraphProgress:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_progress")
       case .nfcSystemSheetTitleSuccess:
         bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.title_success")
       case .nfcSystemSheetParagraphSuccessOneTimePin:
@@ -1275,6 +1279,10 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_one_time_pin")
       case .nfcSystemSheetParagraphErrorCardPin:
         bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_card_pin")
+      case .nfcSystemSheetParagraphErrorRetry:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_retry")
+      case .nfcSystemSheetParagraphErrorButton:
+        bundle.localizedString(forKey: "nfc_scanning.system_sheet_nfc.paragraph_error_button")
       case .pidEidFunctionInfoTitle:
         bundle.localizedString(forKey: "pid_issuance.eid_function_info.title")
       case .pidEidFunctionInfoHeading1:
@@ -1335,6 +1343,14 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: mapKey("pid_inspection.initial_dashboard.paragraph"))
       case .dashboardPrimaryButtonTitle:
         bundle.localizedString(forKey: mapKey("dashboard_primary_button_title"))
+      case .initialPidTeaserTitle:
+        bundle.localizedString(forKey: "overview.initial_pid_teaser.title")
+      case .initialPidTeaserPrimaryButton:
+        bundle.localizedString(forKey: "overview.initial_pid_teaser.prim_button")
+      case .initialCredentialTeaserLabel:
+        bundle.localizedString(forKey: "overview.initial_credential_teaser.label")
+      case .initialCredentialTeaserButtonA11y:
+        bundle.localizedString(forKey: "overview.initial_credential_teaser.sec_button_a11y")
       case .issuanceConsentViewTitle:
         bundle.localizedString(forKey: mapKey("issuance_consent_view_title"))
       case .issuanceDigitalID:
@@ -1598,8 +1614,44 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "pid_presentation.rwscd_auth_verification_failed.paragraph")
       case .pidPresentationRwscdAuthVerificationFailedPrimButton:
         bundle.localizedString(forKey: "pid_presentation.rwscd_auth_verification_failed.prim_button")
+      case .pidPresentationTimeoutRpTitle:
+        bundle.localizedString(forKey: "pid_presentation.timeout_rp.title")
+      case .pidPresentationTimeoutRpParagraph:
+        bundle.localizedString(forKey: "pid_presentation.timeout_rp.paragraph")
+      case .pidPresentationTimeoutRpPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.timeout_rp.prim_button")
+      case .pidPresentationTimeoutRpSecButton:
+        bundle.localizedString(forKey: "pid_presentation.timeout_rp.sec_button")
+      case .pidPresentationTimeoutSlowInternetTitle:
+        bundle.localizedString(forKey: "pid_presentation.timeout_slow_internet.title")
+      case .pidPresentationTimeoutSlowInternetParagraph:
+        bundle.localizedString(forKey: "pid_presentation.timeout_slow_internet.paragraph")
+      case .pidPresentationTimeoutSlowInternetPrimButton:
+        bundle.localizedString(forKey: "pid_presentation.timeout_slow_internet.prim_button")
+      case .pidPresentationTimeoutTooManyRequestsTitle:
+        bundle.localizedString(forKey: "pid_presentation.timeout_too_many_requests.title")
+      case .globalTimeoutSlowInternetErrorTitle:
+        bundle.localizedString(forKey: "global.timeout_slow_internet_error.title")
+      case .globalTimeoutSlowInternetErrorParagraph:
+        bundle.localizedString(forKey: "global.timeout_slow_internet_error.paragraph")
+      case .globalTimeoutSlowInternetErrorPrimButton:
+        bundle.localizedString(forKey: "global.timeout_slow_internet_error.prim_button")
+      case .globalTimeoutTooManyRequestsTitle:
+        bundle.localizedString(forKey: "global.timeout_too_many_requests.title")
+      case .globalTimeoutTooManyRequestsParagraph(let args):
+        bundle.localizedStringWithArguments(forKey: "global.timeout_too_many_requests.paragraph", arguments: args)
+      case .globalTimeoutTooManyRequestsPrimButton:
+        bundle.localizedString(forKey: "global.timeout_too_many_requests.prim_button")
+      case .pidIssuanceTimeoutParRequestExpiredTitle:
+        bundle.localizedString(forKey: "pid_issuance.timeout_par_request_expired.title")
+      case .pidIssuanceTimeoutParRequestExpiredParagraph:
+        bundle.localizedString(forKey: "pid_issuance.timeout_par_request_expired.paragraph")
+      case .pidIssuanceTimeoutParRequestExpiredPrimButton:
+        bundle.localizedString(forKey: "pid_issuance.timeout_par_request_expired.prim_button")
+      case .pidIssuanceTimeoutParRequestExpiredSecButton:
+        bundle.localizedString(forKey: "pid_issuance.timeout_par_request_expired.sec_button")
       case .eaaPresentationCredentialNotFoundParagraphCredentalNotAvailable:
-          bundle.localizedString(forKey: "eaa_presentation.credential_not_found.paragraph_credental_not_available")
+        bundle.localizedString(forKey: "eaa_presentation.credential_not_found.paragraph_credental_not_available")
       case .globalGenericPresentationErrorTitle:
         bundle.localizedString(forKey: "global.generic_presentation_error.title")
       case .globalGenericPresentationErrorParagraph:
@@ -1891,6 +1943,8 @@ final class LocalizableManager: LocalizableManagerType {
         bundle.localizedString(forKey: "tap_navigation.label_4")
 
       // MARK: Activities
+      case .globalPaUsageParagraphActivities:
+        bundle.localizedString(forKey: "global.pa_usage.paragraph_activities_ios")
       case .activitiesOverviewTitle:
         bundle.localizedString(forKey: "activities.overview.title")
       case .activitiesOverviewEmptyHeadline:

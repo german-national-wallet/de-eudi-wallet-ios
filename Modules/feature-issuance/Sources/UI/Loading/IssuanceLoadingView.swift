@@ -41,6 +41,7 @@ struct IssuanceLoadingView<Router: RouterHost>: View {
       }
     }
     .ignoresSafeArea(.keyboard, edges: .bottom)
+    .noInternetDialog($viewModel.noInternetDialog)
 
     .background(DisableSwipeBackGesture())
   }

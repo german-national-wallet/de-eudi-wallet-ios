@@ -69,10 +69,6 @@ final class IssuancePidPreviewViewModel<Router: RouterHost>: ViewModel<Router, I
     // TODO: - Provide action here
   }
 
-  func helpTapped() {
-    // TODO: - Provide action here
-  }
-
   func showIssuerDetails() {
     router.push(
       with: .featureIssuanceModule(

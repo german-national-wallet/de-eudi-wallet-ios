@@ -35,6 +35,11 @@ struct PresentationRequestView<Router: RouterHost>: View {
         PresentationErrorDialogView(config: dialog, onAction: viewModel.onErrorDialogAction)
       }
     }
+    .noInternetDialog(
+      isPresented: $viewModel.isNoInternetDialogPresented,
+      onRetry: viewModel.onNoInternetRetry,
+      onCancel: viewModel.onNoInternetCancel
+    )
     .onReceive(
       NotificationCenter.default.publisher(
         for: NSNotification.PresentationVC

@@ -46,7 +46,6 @@ public extension UIConfig {
     public let initialErrorMessage: LocalizableStringKey?
     public let pinScreenType: PINScreenType
     public let progressSteps: ProgressSteps?
-    public let showsHelpButton: Bool
     public let quickPinSize: Int
     public let imageIcon: Image?
     public let imageSize: CGSize
@@ -73,7 +72,6 @@ public extension UIConfig {
       && lhs.initialErrorMessage == rhs.initialErrorMessage
       && lhs.pinScreenType == rhs.pinScreenType
       && lhs.progressSteps == rhs.progressSteps
-      && lhs.showsHelpButton == rhs.showsHelpButton
       && lhs.quickPinSize == rhs.quickPinSize
       && lhs.imageSize == rhs.imageSize
       && lhs.pinForConfirmationFlow == rhs.pinForConfirmationFlow
@@ -110,7 +108,6 @@ public extension UIConfig {
       initialErrorMessage: LocalizableStringKey? = nil,
       pinScreenType: PINScreenType,
       progressSteps: ProgressSteps? = nil,
-      showsHelpButton: Bool = false,
       imageIcon: Image? = Theme.shared.image.personalausweisLogo,
       imageSize: CGSize = CGSize(width: 72, height: 72),
       quickPinSize: Int = 6,
@@ -133,7 +130,6 @@ public extension UIConfig {
       self.initialErrorMessage = initialErrorMessage
       self.pinScreenType = pinScreenType
       self.progressSteps = progressSteps
-      self.showsHelpButton = showsHelpButton
       self.imageIcon = imageIcon
       self.imageSize = imageSize
       self.quickPinSize = quickPinSize

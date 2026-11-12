@@ -20,6 +20,7 @@ let package = Package(
     .package(name: "feature-issuance", path: "../feature-issuance"),
     .package(name: "feature-proximity", path: "../feature-proximity"),
     .package(name: "logic-feature-flags", path: "../logic-feature-flags"),
+    .package(name: "logic-api", path: "../logic-api"),
     .package(name: "wallet-backend", path: "../wallet-backend"),
     .package(name: "push-notification-service", path: "../push-notification-service")
   ],
@@ -34,6 +35,7 @@ let package = Package(
         "feature-issuance",
         "feature-proximity",
         "logic-feature-flags",
+        "logic-api",
         "wallet-backend",
         "push-notification-service"
       ],

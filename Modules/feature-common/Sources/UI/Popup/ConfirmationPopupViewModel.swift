@@ -7,6 +7,7 @@ import SwiftUI
 import Combine
 import logic_ui
 import logic_api
+import logic_core
 import logic_resources
 
 public final class ConfirmationPopupViewModel: ObservableObject {
@@ -20,8 +21,9 @@ public final class ConfirmationPopupViewModel: ObservableObject {
   var confirmButtonBackgroundColor: Color = DSColor.primary
   var infoIcon: Image?
   var titleIcon: Image?
-  var primaryButtontitle: String?
-  var secondaryButtontitle: String?
+  public var primaryButtontitle: String?
+  public var primaryButtonTrailingIcon: Image?
+  public var secondaryButtontitle: String?
   public var primaryAction: (() -> Void)?
   public var secondaryAction: (() -> Void)?
 
@@ -36,6 +38,7 @@ public final class ConfirmationPopupViewModel: ObservableObject {
     titleIcon: Image? = nil,
     confirmButtonBackgroundColor: Color = DSColor.primary,
     primaryButtontitle: String? = nil,
+    primaryButtonTrailingIcon: Image? = nil,
     secondaryButtontitle: String? = nil,
     primaryAction: (() -> Void)?,
     secondaryAction: (() -> Void)?
@@ -52,6 +55,7 @@ public final class ConfirmationPopupViewModel: ObservableObject {
     self.isVisible = true
     self.isTraceIdCopied = false
     self.primaryButtontitle = primaryButtontitle
+    self.primaryButtonTrailingIcon = primaryButtonTrailingIcon
     self.secondaryButtontitle = secondaryButtontitle
   }
 
@@ -87,7 +91,7 @@ public final class ConfirmationPopupViewModel: ObservableObject {
       detail: content.paragraph.toString,
       errorCode: backendError.errorCode,
       traceId: backendError.traceId.isEmpty ? analyticsTraceId : backendError.traceId,
-      titleIcon: Theme.shared.image.errorIndicator,
+      titleIcon: content.icon.image,
       primaryButtontitle: content.primaryButtonTitle?.toString
         ?? LocalizableStringKey.globalErrorPrimaryButtonTitle.toString,
       primaryAction: primaryAction,

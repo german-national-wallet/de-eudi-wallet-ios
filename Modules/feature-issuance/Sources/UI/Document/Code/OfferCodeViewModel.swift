@@ -19,6 +19,7 @@ import logic_resources
 import logic_business
 import feature_common
 import logic_core
+import logic_api
 
 @Copyable
 struct OfferCodeViewState: ViewState {
@@ -36,12 +37,15 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
   @Published var codeIsFocused: Bool = true
   @Published var errorMessage = String()
   @Published var showCloseConfirmationPopup: Bool = false
+  @Published var noInternetDialog = NoInternetDialogState()
 
   private let interactor: DocumentOfferInteractor
+  private let connectivityMonitor: NetworkConnectivityMonitor
 
   init(
     router: Router,
     interactor: DocumentOfferInteractor,
+    connectivityMonitor: NetworkConnectivityMonitor,
     config: any UIConfigType
   ) {
     guard
@@ -50,6 +54,7 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
       fatalError("OfferCodeViewModel:: Invalid configuraton")
     }
     self.interactor = interactor
+    self.connectivityMonitor = connectivityMonitor
     super.init(
       router: router,
       initialState: .init(
@@ -110,10 +115,6 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
     }
   }
 
-  func onHelp() {
-    // TODO: Implement help action
-  }
-
   func closeButtonAction() {
     codeIsFocused = false
     showCloseConfirmationPopup = true
@@ -163,6 +164,11 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
   private func onIssuanceFailed(_ error: Error) {
     if error.isGrantRejection {
       errorMessage = LocalizableStringKey.eaaOfferTxCodeInvalidEntry.toString
+    } else if connectivityMonitor.isNoInternet(error) {
+      noInternetDialog.present(
+        retry: { [weak self] in self?.pushLoader() },
+        cancel: {}
+      )
     } else {
       setState {
         $0.copy(

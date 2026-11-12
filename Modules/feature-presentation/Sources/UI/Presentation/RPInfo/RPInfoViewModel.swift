@@ -9,18 +9,15 @@ import feature_common
 import logic_analytics
 import logic_core
 
-final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
+final class RPInfoViewModel<Router: RouterHost>: PresentationRequestBaseViewModel<Router> {
   @Published var isRequestInfoModalShowing: Bool = false
   @Published var isVerifiedEntityModalShowing: Bool = false
   @Published var itemsChanged: Bool = false
   @Published var viewDetail = false
-  @Published var errorDialog: PresentationErrorDialogConfig?
   @Published var isConfirmationPopupVisible = false
   @Published var reportURL: URL?
+  @Published var purpose: String?
     
-  private let interactor: PresentationInteractor
-  private let analyticsController: AnalyticsController
-  private let errorHandler: PresentationErrorHandler
   private let logger: Logging?
   private let openURL: @MainActor (URL) -> Void
 
@@ -33,12 +30,16 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     logger: Logging?,
     openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
   ) {
-    self.interactor = interactor
-    self.analyticsController = analyticsController
-    self.errorHandler = errorHandler
     self.logger = logger
     self.openURL = openURL
-    super.init(router: router, originator: originator)
+    super.init(
+      router: router,
+      interactor: interactor,
+      pinSessionInteractor: nil,
+      analyticsController: analyticsController,
+      errorHandler: errorHandler,
+      originator: originator
+    )
   }
 
   private func onRejectedByPolicy(reason: PresentationRejectedUiConfig.Reason, reportURI: URL? = nil) async {
@@ -51,8 +52,13 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
   }
 
   override func doWork() async {
-    self.onStartLoading()
     analyticsController.startTrace(name: AnalyticsConstants.TraceName.presentation, initialAttributes: [:])
+    await fetchRequest()
+  }
+
+  private func fetchRequest() async {
+    purpose = nil
+    self.onStartLoading()
     let result = await Task.detached { () -> Result<OnlineAuthenticationRequestSuccessModel, Error> in
       return await self.interactor.onDeviceEngagement()
     }.value
@@ -66,6 +72,7 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
         logger?.d("presentation refused: request not covered by the relying party's registration certificate")
         return
       }
+      purpose = authenticationRequest.purpose
       self.onReceivedItems(
         with: authenticationRequest.requestDataCells,
         title: .requestDataTitle(
@@ -76,7 +83,9 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
       )
       self.onPresentationDoWorkSuccess()
     case .failure(let error):
-      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: retryAction))
+      presentError(errorHandler.handle(error, originator: getOriginator(), retryAction: .init { [weak self] in
+        Task { await self?.fetchRequest() }
+      }))
     }
   }
 
@@ -127,28 +136,17 @@ final class RPInfoViewModel<Router: RouterHost>: BaseRequestViewModel<Router> {
     isRequestInfoModalShowing = true
   }
 
-  func onErrorDialogAction(_ action: PresentationErrorDialogConfig.Action) {
-    errorDialog = nil
-    switch action {
-    case .popTo(let route):
-      router.popTo(with: route)
-    case .addDigitalIDAgain:
-      router.popTo(with: getOriginator())
-    case .dismiss:
-      isConfirmationPopupVisible = false
-    case .retry(let retryAction):
-      isConfirmationPopupVisible = false
-      retryAction.action()
-    }
+  override func onErrorDialogDismiss() {
+    isConfirmationPopupVisible = false
   }
 
-  private func presentError(_ presentation: PresentationErrorPresentation) {
+  override func onNoInternetCancel() {
+    interactor.stopPresentation()
+    super.onNoInternetCancel()
+  }
+
+  override func presentError(_ presentation: PresentationErrorPresentation) {
     setState { $0.copy(initialized: true) }
-    switch presentation {
-    case .notice(let config):
-      router.push(with: .featurePresentationModule(.presentationErrorNotice(config: config)))
-    case .dialog(let config):
-      errorDialog = config
-    }
+    super.presentError(presentation)
   }
 }

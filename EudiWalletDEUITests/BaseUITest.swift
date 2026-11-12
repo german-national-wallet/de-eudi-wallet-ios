@@ -25,16 +25,37 @@ class BaseUITest: XCTestCase {
     continueAfterFailure = false
   }
 
+  /// Web page opened by the UI-testing deep-link sheet (`deeplinkTriggerButton`). Set per test
+  /// through `openApp(webURL:)`; `relaunchApp()` keeps it. `nil` leaves the app's playground default.
+  private(set) var launchWebURL: String?
+  private(set) var skipsRegistrationCertificateValidation = false
+
   /// Launches the app in UI-testing mode.
-  /// - Parameter resetWallet: when `true` (the default, used when a test starts) the wallet
-  ///   keychain is wiped so the test begins from a clean state. Pass `false` for mid-test
-  ///   relaunches so issued credentials survive the relaunch.
-  func openApp(resetWallet: Bool = true) {
+  /// - Parameters:
+  ///   - resetWallet: when `true` (the default, used when a test starts) the wallet
+  ///     keychain is wiped so the test begins from a clean state. Pass `false` for mid-test
+  ///     relaunches so issued credentials survive the relaunch.
+  ///   - webURL: page for the deep-link sheet, e.g. a Ambor page URL (see `AmborFlow.swift`).
+  ///   - skipRegistrationCertificateValidation: lets the app accept presentation requests without a
+  ///     relying-party registration certificate (local Ambor verifier). Playground tests leave it off.
+  func openApp(resetWallet: Bool = true, webURL: String? = nil, skipRegistrationCertificateValidation: Bool = false) {
+    if let webURL {
+      launchWebURL = webURL
+    }
+    if skipRegistrationCertificateValidation {
+      skipsRegistrationCertificateValidation = true
+    }
     var arguments = ["--ui-testing"]
     if resetWallet {
       arguments.append("--reset-wallet")
     }
     app.launchArguments = arguments
+    if let launchWebURL {
+      app.launchEnvironment["UI_TEST_WEB_URL"] = launchWebURL
+    }
+    if skipsRegistrationCertificateValidation {
+      app.launchEnvironment["UI_TEST_SKIP_WRPRC"] = "1"
+    }
     app.launch()
   }
 
@@ -83,6 +104,36 @@ class BaseUITest: XCTestCase {
   ) throws {
     try tap("deeplinkTriggerButton", timeout: 30)
     try tap(link, timeout: timeout)
+  }
+
+  // MARK: - Shared wallet flows
+
+  /// Issues the PID through the simulated eID flow of the demo PID provider.
+  func issuePID() throws {
+    try tap("dashboardPrimaryButton", timeout: 30)
+    try tap("onboardingCardsPrimaryOption")
+    try tap("onboardingPinKnownOption")
+    try tap("processOverviewContinueButton")
+    try exists("issuanceConsentViewTitle")
+    try tap("issuanceConsentViewPrimaryButton")
+    try enterWalletPin()
+    try tap("issuanceCardStartScanningButton", timeout: 30)
+    try tap("issuancePidPreviewContinueButton", timeout: 60)
+    try tap("instructionsScreen1PrimaryButton", timeout: 30)
+    try enterWalletPin()
+    try enterWalletPin()
+    try exists("deeplinkTriggerButton", timeout: 60)
+  }
+
+  /// Deletes the single EAA shown on the dashboard and waits for the dashboard to return.
+  func deleteEAA(_ label: String) throws {
+    try tap("eaaCredentialTitleView", timeout: 10)
+    try tap("deleteButton")
+
+    guard elementExists("credentialTitleView", timeout: 5)
+            || elementExists("dashboardPrimaryButton", timeout: 15) else {
+      throw UITestError(message: "Dashboard not shown after deleting \"\(label)\"")
+    }
   }
 
   // MARK: - UITest helpers

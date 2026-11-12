@@ -69,7 +69,7 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
             title: .settingsOverviewListSupport,
             leadingIcon: Theme.shared.image.help,
             showDivider: false,
-            action: {}()
+            action: { [weak self] in self?.openWebLink(AppEnvironment.faqLink) }
           )
         ]
       ),
@@ -82,7 +82,7 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
             title: .settingsOverviewListRevocation,
             leadingIcon: Theme.shared.image.walletKey,
             showDivider: false,
-            action: self.openWalletLossProtection()
+            action: { [weak self] in self?.openWalletLossProtection() }
           ),
           .init(
             id: "settingsNotificationItem",
@@ -90,7 +90,7 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
             leadingIcon: Theme.shared.image.notification,
             trailingIcon: .externalLink,
             showDivider: false,
-            action: self.openNotificationSettings()
+            action: { [weak self] in self?.openNotificationSettings() }
           )
         ]
       ),
@@ -102,31 +102,31 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
             id: "settingsAboutItem",
             title: .settingsOverviewListAboutEudi,
             showDivider: false,
-            action: self.openWebLink(AppEnvironment.aboutLink)
+            action: { [weak self] in self?.openWebLink(AppEnvironment.aboutLink) }
           ),
           .init(
             id: "settingsAccessibilityItem",
             title: .settingsOverviewListAccessibility,
             showDivider: false,
-            action: self.openWebLink(AppEnvironment.accessibilityStatementLink)
+            action: { [weak self] in self?.openWebLink(AppEnvironment.accessibilityStatementLink) }
           ),
           .init(
             id: "settingsPrivacyPolicyItem",
             title: .settingsOverviewListPrivacyPolicy,
             showDivider: false,
-            action: self.openWebLink(AppEnvironment.privacyPolicyLink)
+            action: { [weak self] in self?.openWebLink(AppEnvironment.privacyPolicyLink) }
           ),
           .init(
             id: "settingsTermsItem",
             title: .settingsOverviewListTermsAndConditions,
             showDivider: false,
-            action: self.openWebLink(AppEnvironment.termsAndConditionsLink)
+            action: { [weak self] in self?.openWebLink(AppEnvironment.termsAndConditionsLink) }
           ),
           .init(
             id: "settingsImprintItem",
             title: .settingsOverviewListImpress,
             showDivider: false,
-            action: self.openWebLink(AppEnvironment.imprintLink)
+            action: { [weak self] in self?.openWebLink(AppEnvironment.imprintLink) }
           )
         ] + makeDebugItems()
       )
@@ -141,13 +141,13 @@ final class SettingsTabViewModel<Router: RouterHost>: ViewModel<Router, Settings
         title: .globalRetrieveLogs,
         showDivider: false,
         isShareLink: true,
-        action: {}()
+        action: {}
       ),
       .init(
         id: "settingsDebugConfigItem",
         title: .custom("Debug config"),
         showDivider: false,
-        action: self.openDebugConfig()
+        action: { [weak self] in self?.openDebugConfig() }
       )
     ]
   }

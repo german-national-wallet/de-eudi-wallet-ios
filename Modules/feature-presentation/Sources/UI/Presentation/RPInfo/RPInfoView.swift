@@ -23,6 +23,7 @@ struct RPInfoView<Router: RouterHost>: View {
       ZStack {
         RPInfoViewContent(
           viewState: viewModel.viewState,
+          purpose: viewModel.purpose,
           getScreenRect: getScreenRect(),
           continueAction: viewModel.onContinue,
           declineAction: viewModel.onDecline,
@@ -57,6 +58,11 @@ struct RPInfoView<Router: RouterHost>: View {
       subtitle: .confirmItendificationRefusalMessage,
       buttons: declineButtons
     )
+    .noInternetDialog(
+      isPresented: $viewModel.isNoInternetDialogPresented,
+      onRetry: viewModel.onNoInternetRetry,
+      onCancel: viewModel.onNoInternetCancel
+    )
     .navigationBarBackButtonHidden()
     .background(EnableSwipeBackGesture())
   }
@@ -79,6 +85,7 @@ struct RPInfoView<Router: RouterHost>: View {
   @ViewBuilder
   private func RPInfoViewContent(
     viewState: RequestViewState,
+    purpose: String?,
     getScreenRect: CGRect,
     continueAction: @escaping () -> Void,
     declineAction: @escaping () -> Void,
@@ -102,17 +109,19 @@ struct RPInfoView<Router: RouterHost>: View {
             .fontWeight(DSStyle.FontWeight.medium_500)
             .foregroundColor(DSColor.onBackground)
 
-          Text(.presentationConfirmationDescription1([""]))
-            .font(DSTypography.Body.large)
-            .fontWeight(DSStyle.FontWeight.regular_400)
-            .foregroundColor(DSColor.onSurfaceVariant)
-
-          Text(.presentationConfirmationDescription2([""]))
-            .font(DSTypography.Body.large)
-            .fontWeight(DSStyle.FontWeight.regular_400)
-            .foregroundColor(DSColor.onSurfaceVariant)
+          if let purpose {
+            DSBannerView(style: .info, headline: .activitiesLogDetailPurpose, message: .custom(purpose), messageLineLimit: 4)
+          }
         }
         Spacer()
+
+        if purpose == nil {
+          DSBannerView(
+            style: .info,
+            headline: .presentationConfirmationDescription1([""]),
+            message: .presentationConfirmationDescription2([""])
+          )
+        }
 
         HStack {
           DSSecondaryButton(title: LocalizableStringKey.reject.toString, action: declineAction)

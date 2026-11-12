@@ -36,7 +36,7 @@ final class WalletPinRepositoryImpl: WalletPinRepository {
     // Stored as base64 so the PIN key derivation can decode it back to the raw 16 salt bytes
     let newSalt = Data(saltBytes).base64EncodedString()
 
-    _ = try secureEnclaveController.storeEncryptedString(value: newSalt, keyTag: saltTag)
+    try secureEnclaveController.storeEncryptedString(value: newSalt, keyTag: saltTag)
 
     return newSalt
   }

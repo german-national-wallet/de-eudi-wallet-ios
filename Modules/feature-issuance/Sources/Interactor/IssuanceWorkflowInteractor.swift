@@ -441,7 +441,7 @@ extension IssuanceWorkflowInteractorImpl: WorkflowCallbacks {
       sessionStarted: sheetText(.nfcSystemSheetTitleStart, .nfcSystemSheetParagraphStart),
       sessionFailed: sheetText(.nfcSystemSheetTitleError, errorParagraph),
       sessionSucceeded: sheetText(.nfcSystemSheetTitleSuccess, successParagraph),
-      sessionInProgress: nil
+      sessionInProgress: sheetText(.nfcSystemSheetTitleProgress, .nfcSystemSheetParagraphProgress)
     )
   }
   

@@ -129,7 +129,7 @@ final class EAAAndPIDUITests: BaseUITest {
     try exists("Next")
     try tap("Next")
     try tap("offerIntroPrimaryButton")
-    app.typeText(code)
+    try fill("pinTextView", value: code)
     try tap("pinSubmitPrimaryButton")
     try exists("FitLife Membership", timeout: 60)
 
@@ -196,33 +196,5 @@ final class EAAAndPIDUITests: BaseUITest {
     
     // Deleting EAA
     try deleteEAA("Driving Licence")
-  }
-  
-  // MARK: - helpers
-
-  private func issuePID() throws {
-    try tap("dashboardPrimaryButton", timeout: 30)
-    try tap("onboardingCardsPrimaryOption")
-    try tap("onboardingPinKnownOption")
-    try tap("processOverviewContinueButton")
-    try exists("issuanceConsentViewTitle")
-    try tap("issuanceConsentViewPrimaryButton")
-    try enterWalletPin()
-    try tap("issuanceCardStartScanningButton", timeout: 30)
-    try tap("issuancePidPreviewContinueButton", timeout: 60)
-    try tap("instructionsScreen1PrimaryButton", timeout: 30)
-    try enterWalletPin()
-    try enterWalletPin()
-    try exists("deeplinkTriggerButton", timeout: 60)
-  }
-
-  private func deleteEAA(_ label: String) throws {
-    try tap("eaaCredentialTitleView", timeout: 10)
-    try tap("deleteButton")
-
-    guard elementExists("credentialTitleView", timeout: 5)
-            || elementExists("dashboardPrimaryButton", timeout: 15) else {
-      throw UITestError(message: "Dashboard not shown after deleting \"\(label)\"")
-    }
   }
 }
